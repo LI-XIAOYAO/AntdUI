@@ -107,6 +107,18 @@ namespace AntdUI
             }
         }
 
+        /// <summary>
+        /// 最小日期
+        /// </summary>
+        [Description("最小日期"), Category("数据"), DefaultValue(null)]
+        public DateTime? MinDate { get; set; }
+
+        /// <summary>
+        /// 最大日期
+        /// </summary>
+        [Description("最大日期"), Category("数据"), DefaultValue(null)]
+        public DateTime? MaxDate { get; set; }
+
         protected override void OnTextChanged(EventArgs e)
         {
             if (isempty) showS = showE = true;
@@ -270,7 +282,7 @@ namespace AntdUI
             {
                 if (textFocus == value) return;
                 textFocus = value;
-                if (FocusExpandDropdown && !ReadOnly && value)
+                if (!ReadOnly && value)
                 {
                     if (subForm == null)
                     {
@@ -316,7 +328,7 @@ namespace AntdUI
         {
             if (!StartFocused && !EndFocused) StartFocused = true;
             StartEndFocused();
-            TextFocus = true;
+            if (FocusExpandDropdown) TextFocus = true;
             base.OnGotFocus(e);
         }
 

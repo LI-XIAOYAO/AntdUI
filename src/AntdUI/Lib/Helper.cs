@@ -2116,8 +2116,46 @@ namespace AntdUI
             return false;
         }
 
+        public static bool DateExceed(DateTime date, DateTime? min, DateTime? max)
+        {
+            if (min.HasValue && min.Value >= date) return false;
+            if (max.HasValue && max.Value <= date) return false;
+            return true;
+        }
+
+        public static bool DateExceedRelax(DateTime date, DateTime? min, DateTime? max)
+        {
+            if (min.HasValue && min.Value > date) return false;
+            if (max.HasValue && max.Value < date) return false;
+            return true;
+        }
+
         #region 剪贴板
 
+        public static string? ClipboardGetText(this Control control)
+        {
+            if (control.InvokeRequired)
+            {
+                string? r = null;
+                control.Invoke(new Action(() =>
+                {
+                    r = ClipboardGetText();
+                }));
+                return r;
+            }
+            return ClipboardGetText();
+        }
+        public static string? ClipboardGetText()
+        {
+            try
+            {
+                return Clipboard.GetText();
+            }
+            catch
+            {
+                return Win32.GetClipBoardText();
+            }
+        }
         public static bool ClipboardSetText(this Control control, string? text)
         {
             if (control.InvokeRequired)
@@ -2125,21 +2163,11 @@ namespace AntdUI
                 bool r = false;
                 control.Invoke(new Action(() =>
                 {
-                    r = ClipboardSetText(control, text);
+                    r = ClipboardSetText(text);
                 }));
                 return r;
             }
-            try
-            {
-                if (text == null) Clipboard.Clear();
-                else Clipboard.SetText(text);
-                return true;
-            }
-            catch
-            {
-                if (Win32.SetClipBoardText(text)) return true;
-            }
-            return false;
+            return ClipboardSetText(text);
         }
         public static bool ClipboardSetText(string? text)
         {
