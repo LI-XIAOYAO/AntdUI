@@ -87,11 +87,7 @@ namespace Demo
             progress7 = new AntdUI.Progress();
             progress8 = new AntdUI.Progress();
             progress9 = new AntdUI.Progress();
-            panel_top = new Panel();
-            label_title = new Label();
-            btn_min = new AntdUI.Button();
-            btn_max = new AntdUI.Button();
-            btn_close = new AntdUI.Button();
+            panel_top = new AntdUI.PageHeader();
             tooltipComponent1 = new AntdUI.TooltipComponent();
             avatar2 = new AntdUI.Carousel();
             panel8 = new AntdUI.Panel();
@@ -112,7 +108,6 @@ namespace Demo
             input1 = new AntdUI.Input();
             button5 = new AntdUI.Button();
             button6 = new AntdUI.Button();
-            panel_top.SuspendLayout();
             panel8.SuspendLayout();
             panel9.SuspendLayout();
             SuspendLayout();
@@ -382,10 +377,8 @@ namespace Demo
             progress1.Loading = true;
             progress1.Location = new Point(40, 332);
             progress1.Name = "progress1";
-            progress1.ShowText = true;
             progress1.Size = new Size(480, 30);
             progress1.TabIndex = 10;
-            progress1.Text = "%";
             progress1.Value = 0.5F;
             progress1.Click += Progress_Blue_1;
             // 
@@ -394,11 +387,9 @@ namespace Demo
             progress2.ContainerControl = this;
             progress2.Location = new Point(40, 378);
             progress2.Name = "progress2";
-            progress2.ShowText = true;
             progress2.Size = new Size(480, 30);
             progress2.State = AntdUI.TType.Success;
             progress2.TabIndex = 10;
-            progress2.Text = "%";
             progress2.Value = 1F;
             // 
             // progress3
@@ -406,58 +397,50 @@ namespace Demo
             progress3.ContainerControl = this;
             progress3.Location = new Point(40, 424);
             progress3.Name = "progress3";
-            progress3.ShowText = true;
             progress3.Size = new Size(480, 30);
             progress3.State = AntdUI.TType.Error;
             progress3.TabIndex = 10;
-            progress3.Text = "%";
             progress3.Value = 0.7F;
             progress3.Click += Progress_Red;
             // 
             // progress4
             // 
             progress4.ContainerControl = this;
-            progress4.Font = new Font("Microsoft YaHei UI Light", 16F, FontStyle.Regular, GraphicsUnit.Point);
+            progress4.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress4.Loading = true;
             progress4.Location = new Point(42, 488);
             progress4.Name = "progress4";
             progress4.Radius = 5;
-            progress4.Shape = AntdUI.TShape.Circle;
-            progress4.ShowText = true;
+            progress4.Shape = AntdUI.TShapeProgress.Circle;
             progress4.Size = new Size(110, 110);
             progress4.TabIndex = 10;
-            progress4.Text = "%";
             progress4.Value = 0.68F;
             progress4.Click += Progress_Blue_2;
             // 
             // progress5
             // 
             progress5.ContainerControl = this;
-            progress5.Font = new Font("Microsoft YaHei UI Light", 16F, FontStyle.Regular, GraphicsUnit.Point);
+            progress5.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress5.Location = new Point(201, 488);
             progress5.Name = "progress5";
             progress5.Radius = 5;
-            progress5.Shape = AntdUI.TShape.Circle;
-            progress5.ShowText = true;
+            progress5.Shape = AntdUI.TShapeProgress.Circle;
             progress5.Size = new Size(110, 110);
             progress5.State = AntdUI.TType.Success;
             progress5.TabIndex = 10;
-            progress5.Text = "%";
             progress5.Value = 1F;
             // 
             // progress6
             // 
             progress6.ContainerControl = this;
-            progress6.Font = new Font("Microsoft YaHei UI Light", 16F, FontStyle.Regular, GraphicsUnit.Point);
+            progress6.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress6.Location = new Point(360, 488);
             progress6.Name = "progress6";
             progress6.Radius = 5;
-            progress6.Shape = AntdUI.TShape.Circle;
-            progress6.ShowText = true;
+            progress6.Shape = AntdUI.TShapeProgress.Circle;
             progress6.Size = new Size(110, 110);
             progress6.State = AntdUI.TType.Error;
             progress6.TabIndex = 10;
-            progress6.Text = "%";
             progress6.Value = 0.7F;
             progress6.Click += Progress_Red;
             // 
@@ -466,12 +449,13 @@ namespace Demo
             progress7.Back = Color.FromArgb(40, 22, 119, 255);
             progress7.ContainerControl = this;
             progress7.Location = new Point(42, 622);
-            progress7.Mini = true;
             progress7.Name = "progress7";
             progress7.Radius = 4;
+            progress7.Shape = AntdUI.TShapeProgress.Mini;
             progress7.Size = new Size(139, 36);
             progress7.TabIndex = 10;
             progress7.Text = "In Progress";
+            progress7.UseSystemText = true;
             progress7.Value = 0.68F;
             progress7.Click += Progress_Blue_2;
             // 
@@ -480,13 +464,14 @@ namespace Demo
             progress8.Back = Color.FromArgb(40, 0, 204, 0);
             progress8.ContainerControl = this;
             progress8.Location = new Point(201, 622);
-            progress8.Mini = true;
             progress8.Name = "progress8";
             progress8.Radius = 4;
+            progress8.Shape = AntdUI.TShapeProgress.Mini;
             progress8.Size = new Size(128, 36);
             progress8.State = AntdUI.TType.Success;
             progress8.TabIndex = 10;
             progress8.Text = "Success";
+            progress8.UseSystemText = true;
             progress8.Value = 1F;
             // 
             // progress9
@@ -494,88 +479,32 @@ namespace Demo
             progress9.Back = Color.FromArgb(40, 255, 79, 87);
             progress9.ContainerControl = this;
             progress9.Location = new Point(360, 622);
-            progress9.Mini = true;
             progress9.Name = "progress9";
             progress9.Radius = 4;
+            progress9.Shape = AntdUI.TShapeProgress.Mini;
             progress9.Size = new Size(128, 36);
             progress9.State = AntdUI.TType.Error;
             progress9.TabIndex = 10;
             progress9.Text = "Failed";
+            progress9.UseSystemText = true;
             progress9.Value = 0.7F;
             progress9.Click += Progress_Red;
             // 
             // panel_top
             // 
-            panel_top.Controls.Add(label_title);
-            panel_top.Controls.Add(btn_min);
-            panel_top.Controls.Add(btn_max);
-            panel_top.Controls.Add(btn_close);
             panel_top.Dock = DockStyle.Top;
+            panel_top.Icon = Properties.Resources.logo;
             panel_top.Location = new Point(0, 0);
             panel_top.Name = "panel_top";
+            panel_top.ShowButton = true;
+            panel_top.ShowIcon = true;
             panel_top.Size = new Size(1300, 40);
             panel_top.TabIndex = 0;
-            // 
-            // label_title
-            // 
-            label_title.Dock = DockStyle.Fill;
-            label_title.Location = new Point(0, 0);
-            label_title.Name = "label_title";
-            label_title.Padding = new Padding(10, 0, 0, 0);
-            label_title.Size = new Size(1142, 40);
-            label_title.TabIndex = 0;
-            label_title.Text = "Ant Design 5.0";
-            label_title.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // btn_min
-            // 
-            btn_min.BackActive = Color.FromArgb(172, 172, 172);
-            btn_min.BackColor = Color.Transparent;
-            btn_min.BackHover = Color.FromArgb(223, 223, 223);
-            btn_min.Dock = DockStyle.Right;
-            btn_min.Font = new Font("Microsoft YaHei UI Light", 18F, FontStyle.Regular, GraphicsUnit.Point);
-            btn_min.Ghost = true;
-            btn_min.Icon = Properties.Resources.app_minb;
-            btn_min.Location = new Point(1142, 0);
-            btn_min.Name = "btn_min";
-            btn_min.Size = new Size(50, 40);
-            btn_min.TabIndex = 3;
-            btn_min.Click += btn_min_Click;
-            // 
-            // btn_max
-            // 
-            btn_max.BackActive = Color.FromArgb(172, 172, 172);
-            btn_max.BackColor = Color.Transparent;
-            btn_max.BackHover = Color.FromArgb(223, 223, 223);
-            btn_max.Dock = DockStyle.Right;
-            btn_max.Font = new Font("Microsoft YaHei UI Light", 18F, FontStyle.Regular, GraphicsUnit.Point);
-            btn_max.Ghost = true;
-            btn_max.Icon = Properties.Resources.app_maxb;
-            btn_max.Location = new Point(1192, 0);
-            btn_max.Name = "btn_max";
-            btn_max.Size = new Size(50, 40);
-            btn_max.TabIndex = 2;
-            btn_max.Click += btn_max_Click;
-            // 
-            // btn_close
-            // 
-            btn_close.BackActive = Color.FromArgb(145, 31, 20);
-            btn_close.BackColor = Color.Transparent;
-            btn_close.BackHover = Color.FromArgb(196, 43, 28);
-            btn_close.Dock = DockStyle.Right;
-            btn_close.Font = new Font("Microsoft YaHei UI Light", 20F, FontStyle.Regular, GraphicsUnit.Point);
-            btn_close.Ghost = true;
-            btn_close.Icon = Properties.Resources.app_closeb;
-            btn_close.IconHover = Properties.Resources.app_close;
-            btn_close.Location = new Point(1242, 0);
-            btn_close.Name = "btn_close";
-            btn_close.Size = new Size(58, 40);
-            btn_close.TabIndex = 1;
-            btn_close.Click += btn_close_Click;
+            panel_top.Text = "AntdUI";
             // 
             // tooltipComponent1
             // 
-            tooltipComponent1.Font = new Font("Microsoft YaHei UI Light", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            tooltipComponent1.Font = new Font("Microsoft YaHei UI Light", 9F);
             // 
             // avatar2
             // 
@@ -617,7 +546,7 @@ namespace Demo
             // 
             label5.BackColor = Color.Transparent;
             label5.Dock = DockStyle.Fill;
-            label5.Font = new Font("Microsoft YaHei UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
+            label5.Font = new Font("Microsoft YaHei UI", 11F);
             label5.Location = new Point(24, 73);
             label5.Name = "label5";
             label5.Padding = new Padding(20, 10, 0, 0);
@@ -639,7 +568,7 @@ namespace Demo
             // 
             label7.BackColor = Color.Transparent;
             label7.Dock = DockStyle.Top;
-            label7.Font = new Font("Microsoft YaHei UI", 15.75F, FontStyle.Bold, GraphicsUnit.Point);
+            label7.Font = new Font("Microsoft YaHei UI", 15.75F, FontStyle.Bold);
             label7.Location = new Point(24, 24);
             label7.Name = "label7";
             label7.Padding = new Padding(20, 0, 0, 0);
@@ -682,7 +611,7 @@ namespace Demo
             // 
             label8.BackColor = Color.Transparent;
             label8.Dock = DockStyle.Top;
-            label8.Font = new Font("Microsoft YaHei UI Light", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            label8.Font = new Font("Microsoft YaHei UI Light", 12F, FontStyle.Bold);
             label8.Location = new Point(38, 188);
             label8.Name = "label8";
             label8.Size = new Size(327, 30);
@@ -692,7 +621,7 @@ namespace Demo
             // 
             // tooltipComponent2
             // 
-            tooltipComponent2.Font = new Font("Microsoft YaHei UI Light", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            tooltipComponent2.Font = new Font("Microsoft YaHei UI Light", 12F);
             // 
             // badge1
             // 
@@ -749,7 +678,7 @@ namespace Demo
             // avatar3
             // 
             avatar3.BackColor = Color.FromArgb(0, 144, 255);
-            avatar3.Font = new Font("Microsoft YaHei UI", 14F, FontStyle.Regular, GraphicsUnit.Point);
+            avatar3.Font = new Font("Microsoft YaHei UI", 14F);
             avatar3.ForeColor = Color.White;
             avatar3.Location = new Point(795, 79);
             avatar3.Name = "avatar3";
@@ -775,7 +704,7 @@ namespace Demo
             button5.BackHover = Color.FromArgb(100, 64, 150, 255);
             button5.ForeColor = Color.White;
             button5.Ghost = true;
-            button5.Icon = Properties.Resources.search;
+            button5.IconSvg = "SearchOutlined";
             button5.Location = new Point(887, 625);
             button5.Margin = new Padding(4);
             button5.Name = "button5";
@@ -793,11 +722,11 @@ namespace Demo
             button6.BackHover = Color.FromArgb(100, 64, 150, 255);
             button6.ForeColor = Color.White;
             button6.Ghost = true;
-            button6.Icon = Properties.Resources.search;
+            button6.IconSvg = "SearchOutlined";
             button6.Location = new Point(1080, 625);
             button6.Margin = new Padding(4);
             button6.Name = "button6";
-            button6.Size = new Size(170, 49);
+            button6.Size = new Size(166, 47);
             button6.TabIndex = 0;
             button6.Text = "Search Button";
             button6.Click += Button_Click;
@@ -853,14 +782,12 @@ namespace Demo
             Controls.Add(button6);
             Controls.Add(button5);
             Controls.Add(button1);
-            Font = new Font("Microsoft YaHei UI Light", 12F, FontStyle.Regular, GraphicsUnit.Point);
+            Font = new Font("Microsoft YaHei UI Light", 12F);
             ForeColor = Color.Black;
-            Margin = new Padding(3, 4, 3, 4);
             MinimumSize = new Size(1300, 720);
             Name = "Main";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Ant Design 5.0";
-            panel_top.ResumeLayout(false);
+            Text = "AntdUI";
             panel8.ResumeLayout(false);
             panel9.ResumeLayout(false);
             ResumeLayout(false);
@@ -903,11 +830,7 @@ namespace Demo
         private AntdUI.Progress progress7;
         private AntdUI.Progress progress8;
         private AntdUI.Progress progress9;
-        private Panel panel_top;
-        private Label label_title;
-        private AntdUI.Button btn_close;
-        private AntdUI.Button btn_min;
-        private AntdUI.Button btn_max;
+        private AntdUI.PageHeader panel_top;
         private AntdUI.TooltipComponent tooltipComponent1;
         private AntdUI.Panel panel8;
         private Label label5;

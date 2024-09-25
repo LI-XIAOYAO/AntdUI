@@ -510,7 +510,7 @@ namespace AntdUI
             }
         }
 
-        StringFormat sf_center = Helper.SF_Ellipsis();
+        readonly StringFormat s_c = Helper.SF_Ellipsis(), s_l = Helper.SF_ALL(lr: StringAlignment.Near);
         void PaintItem(Graphics g, TreeItem item, SolidBrush fore, SolidBrush fore_active, SolidBrush hover, SolidBrush active, SolidBrush brushTextTertiary, float radius, int sx, int sy)
         {
             if (item.Select)
@@ -684,11 +684,11 @@ namespace AntdUI
                 color = item.Fore.Value;
                 using (var brush = new SolidBrush(color))
                 {
-                    g.DrawStr(item.Text, Font, brush, item.txt_rect, blockNode ? Helper.stringFormatLeft : sf_center);
+                    g.DrawStr(item.Text, Font, brush, item.txt_rect, blockNode ? s_l : s_c);
                 }
             }
-            else g.DrawStr(item.Text, Font, fore, item.txt_rect, blockNode ? Helper.stringFormatLeft : sf_center);
-            if (item.SubTitle != null) g.DrawStr(item.SubTitle, Font, brushTextTertiary, item.subtxt_rect, Helper.stringFormatLeft);
+            else g.DrawStr(item.Text, Font, fore, item.txt_rect, blockNode ? s_l : s_c);
+            if (item.SubTitle != null) g.DrawStr(item.SubTitle, Font, brushTextTertiary, item.subtxt_rect, s_l);
             if (item.Icon != null) g.DrawImage(item.Icon, item.ico_rect);
             else if (item.IconSvg != null)
             {
@@ -752,12 +752,15 @@ namespace AntdUI
 
         #region 鼠标
 
+        TreeItem? MDown = null;
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            MDown = null;
             if (ScrollBar.MouseDownY(e.Location) && ScrollBar.MouseDownX(e.Location))
             {
                 if (items == null || items.Count == 0) return;
+                OnTouchDown(e.X, e.Y);
                 foreach (var it in items)
                 {
                     if (IMouseDown(e, it)) return;
@@ -768,40 +771,65 @@ namespace AntdUI
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            ScrollBar.MouseUpY();
-            ScrollBar.MouseUpX();
+            if (ScrollBar.MouseUpY() && ScrollBar.MouseUpX() && OnTouchUp())
+            {
+                if (items == null || items.Count == 0 || MDown == null) return;
+                foreach (var it in items)
+                {
+                    if (IMouseUp(e, it, MDown)) return;
+                }
+            }
         }
-
         bool IMouseDown(MouseEventArgs e, TreeItem item)
         {
-            bool can = item.CanExpand;
             int down = item.Contains(e.Location, blockNode ? 0 : ScrollBar.ValueX, ScrollBar.ValueY, checkable);
             if (down > 0)
             {
-                if (e.Clicks > 1) OnNodeMouseDoubleClick(item, e);
-                else OnNodeMouseClick(item, e);
-                if (blockNode)
+                MDown = item;
+                return true;
+            }
+            if (item.CanExpand && item.Expand)
+            {
+                foreach (var sub in item.Sub)
                 {
-                    if (can) item.Expand = !item.Expand;
-                    item.Select = true;
-                    OnSelectChanged(item, e);
-                    Invalidate();
+                    if (IMouseDown(e, sub)) return true;
                 }
-                else if (down == 3 && item.Enabled)
+            }
+            return false;
+        }
+        bool IMouseUp(MouseEventArgs e, TreeItem item, TreeItem MDown)
+        {
+            bool can = item.CanExpand;
+            if (MDown == item)
+            {
+                int down = item.Contains(e.Location, blockNode ? 0 : ScrollBar.ValueX, ScrollBar.ValueY, checkable);
+                if (down > 0)
                 {
-                    item.Checked = !item.Checked;
-                    if (CheckStrictly)
+                    if (e.Clicks > 1) OnNodeMouseDoubleClick(item, e);
+                    else OnNodeMouseClick(item, e);
+                    if (blockNode)
                     {
-                        SetCheck(item, item.Checked);
-                        SetCheckStrictly(item.PARENTITEM);
+                        if (can) item.Expand = !item.Expand;
+                        item.Select = true;
+                        OnSelectChanged(item, e);
+                        Invalidate();
                     }
-                }
-                else if (down == 2 && can) item.Expand = !item.Expand;
-                else
-                {
-                    item.Select = true;
-                    OnSelectChanged(item, e);
-                    Invalidate();
+                    else if (down == 3 && item.Enabled)
+                    {
+                        item.Checked = !item.Checked;
+                        if (CheckStrictly)
+                        {
+                            SetCheck(item, item.Checked);
+                            SetCheckStrictly(item.PARENTITEM);
+                        }
+                    }
+                    else if (down == 2 && can) item.Expand = !item.Expand;
+                    else
+                    {
+                        item.Select = true;
+                        OnSelectChanged(item, e);
+                        Invalidate();
+                    }
                 }
                 return true;
             }
@@ -809,7 +837,7 @@ namespace AntdUI
             {
                 foreach (var sub in item.Sub)
                 {
-                    if (IMouseDown(e, sub)) return true;
+                    if (IMouseUp(e, sub, MDown)) return true;
                 }
             }
             return false;
@@ -846,10 +874,13 @@ namespace AntdUI
             base.OnMouseMove(e);
             if (ScrollBar.MouseMoveY(e.Location) && ScrollBar.MouseMoveX(e.Location))
             {
-                if (items == null || items.Count == 0) return;
-                int hand = 0;
-                foreach (var it in items) IMouseMove(it, e.Location, ref hand);
-                SetCursor(hand > 0);
+                if (OnTouchMove(e.X, e.Y))
+                {
+                    if (items == null || items.Count == 0) return;
+                    int hand = 0;
+                    foreach (var it in items) IMouseMove(it, e.Location, ref hand);
+                    SetCursor(hand > 0);
+                }
             }
             else ILeave();
         }
@@ -881,6 +912,8 @@ namespace AntdUI
             ScrollBar.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
+        protected override void OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
+        protected override void OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
 
         void ILeave()
         {
@@ -1129,7 +1162,9 @@ namespace AntdUI
                         ExpandThread = true;
                         if (value)
                         {
-                            var t = Animation.TotalFrames(10, ExpandCount(this) * 50);
+                            int time = ExpandCount(this) * 10;
+                            if (time > 1000) time = 1000;
+                            int t = Animation.TotalFrames(10, time);
                             ThreadExpand = new ITask(false, 10, t, oldval, AnimationType.Ball, (i, val) =>
                             {
                                 ExpandProg = val;

@@ -97,7 +97,7 @@ namespace AntdUI
             if (filtertext == null || string.IsNullOrEmpty(filtertext)) EndHeight = y + 10;
             else EndHeight = TextChangeCore(filtertext);
             var point = control.PointToScreen(Point.Empty);
-            MyPoint(point, control, EndHeight, Placement, ShowArrow, rect_read);
+            MyPoint(point, control, Placement, ShowArrow, rect_read);
 
             KeyCall = keys =>
             {
@@ -149,7 +149,7 @@ namespace AntdUI
             };
         }
 
-        void MyPoint(Point point, Control control, int height, TAlignFrom Placement, bool ShowArrow, Rectangle rect_read) => CLocation(control, point, Placement, ShowArrow, ArrowSize, r_w, height, rect_read, ref Inverted, ref ArrowAlign);
+        void MyPoint(Point point, Control control, TAlignFrom Placement, bool ShowArrow, Rectangle rect_read) => CLocation(point, Placement, ShowArrow, ArrowSize, 10, r_w + 20, EndHeight, rect_read, ref Inverted, ref ArrowAlign);
 
         void ReadList(object obj, int i, int w, int y2, int gap_x, int gap_y, int gap, int font_size, int text_height, ref int item_count, ref int divider_count, ref int y, ref int selY, bool NoIndex = true)
         {
@@ -326,7 +326,7 @@ namespace AntdUI
                     height = y;
                 }
                 EndHeight = height;
-                if (PARENT is SelectMultiple control) MyPoint(control, height);
+                if (PARENT is SelectMultiple control) MyPoint(control);
                 shadow_temp?.Dispose();
                 shadow_temp = null;
                 Print();
@@ -406,7 +406,7 @@ namespace AntdUI
             }
         }
 
-        void MyPoint(SelectMultiple control, int height) => MyPoint(control.PointToScreen(Point.Empty), control, height, control.Placement, control.DropDownArrow, control.ReadRectangle);
+        void MyPoint(SelectMultiple control) => MyPoint(control.PointToScreen(Point.Empty), control, control.Placement, control.DropDownArrow, control.ReadRectangle);
 
         #endregion
 
@@ -423,13 +423,16 @@ namespace AntdUI
         bool down = false;
         protected override void OnMouseDown(MouseEventArgs e)
         {
-            if (scrollY.MouseDown(e.Location)) down = true;
+            if (scrollY.MouseDown(e.Location))
+            {
+                OnTouchDown(e.X, e.Y);
+                down = true;
+            }
             base.OnMouseDown(e);
         }
         protected override void OnMouseUp(MouseEventArgs e)
         {
-            scrollY.MouseUp(e.Location);
-            if (down)
+            if (scrollY.MouseUp(e.Location) && OnTouchUp() && down)
             {
                 foreach (var it in Items)
                 {
@@ -493,7 +496,7 @@ namespace AntdUI
         protected override void OnMouseMove(MouseEventArgs e)
         {
             hoveindex = -1;
-            if (scrollY.MouseMove(e.Location))
+            if (scrollY.MouseMove(e.Location) && OnTouchMove(e.X, e.Y))
             {
                 int count = 0;
                 for (int i = 0; i < Items.Count; i++)
@@ -512,6 +515,7 @@ namespace AntdUI
 
         #endregion
 
+        readonly StringFormat s_f = Helper.SF_NoWrap();
         public override Bitmap PrintBit()
         {
             var rect = TargetRectXY;
@@ -531,7 +535,7 @@ namespace AntdUI
                     {
                         string emptytext = Localization.Provider?.GetLocalizedString("NoData") ?? "暂无数据";
                         using (var brush = new SolidBrush(Color.FromArgb(180, Style.Db.Text)))
-                        { g.DrawStr(emptytext, Font, brush, rect_read, Helper.stringFormatCenter2); }
+                        { g.DrawStr(emptytext, Font, brush, rect_read, s_f); }
                     }
                     else
                     {
@@ -803,6 +807,7 @@ namespace AntdUI
             scrollY.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
+        protected override void OnTouchScrollY(int value) => scrollY.MouseWheel(value);
 
         #endregion
     }
