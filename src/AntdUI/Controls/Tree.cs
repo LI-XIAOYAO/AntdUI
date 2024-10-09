@@ -495,16 +495,12 @@ namespace AntdUI
                 if (it.show)
                 {
                     PaintItem(g, it, fore, fore_active, hover, active, brushTextTertiary, radius, sx, sy);
-                    if (it.Expand && it.items != null && it.items.Count > 0)
+                    if ((it.Expand || it.ExpandThread) && it.items != null && it.items.Count > 0)
                     {
+                        var state = g.Save();
+                        if (it.ExpandThread) g.SetClip(new RectangleF(rect.X, it.rect.Bottom, rect.Width, it.ExpandHeight * it.ExpandProg));
                         PaintItem(g, rect, sx, sy, it.items, fore, fore_active, hover, active, brushTextTertiary, radius);
-                        if (it.ExpandThread)
-                        {
-                            using (var brush = new SolidBrush(BackColor))
-                            {
-                                g.FillRectangle(brush, new RectangleF(rect.X, it.rect.Bottom + it.ExpandHeight * it.ExpandProg, rect.Width, it.ExpandHeight));
-                            }
-                        }
+                        g.Restore(state);
                     }
                 }
             }
@@ -728,7 +724,7 @@ namespace AntdUI
 
         void PaintArrow(Graphics g, TreeItem item, Pen pen, int sx, int sy, float rotate)
         {
-            int size = item.arr_rect.Width, size_arrow = size / 2;
+            int size_arrow = item.arr_rect.Width / 2;
             g.TranslateTransform(item.arr_rect.X + size_arrow, item.arr_rect.Y + size_arrow);
             g.RotateTransform(rotate);
             g.DrawLines(pen, new Rectangle(-size_arrow, -size_arrow, item.arr_rect.Width, item.arr_rect.Height).TriangleLines(-1, .4F));
@@ -753,9 +749,11 @@ namespace AntdUI
         #region 鼠标
 
         TreeItem? MDown = null;
+        bool doubleClick = false;
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            doubleClick = e.Clicks > 1;
             MDown = null;
             if (ScrollBar.MouseDownY(e.Location) && ScrollBar.MouseDownX(e.Location))
             {
@@ -805,7 +803,7 @@ namespace AntdUI
                 int down = item.Contains(e.Location, blockNode ? 0 : ScrollBar.ValueX, ScrollBar.ValueY, checkable);
                 if (down > 0)
                 {
-                    if (e.Clicks > 1) OnNodeMouseDoubleClick(item, e);
+                    if (doubleClick) OnNodeMouseDoubleClick(item, e);
                     else OnNodeMouseClick(item, e);
                     if (blockNode)
                     {
@@ -912,8 +910,8 @@ namespace AntdUI
             ScrollBar.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
-        protected override void OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
-        protected override void OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
+        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
+        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
 
         void ILeave()
         {
@@ -1506,5 +1504,7 @@ namespace AntdUI
         internal Rectangle txt_rect { get; set; }
         internal Rectangle subtxt_rect { get; set; }
         internal Rectangle ico_rect { get; set; }
+
+        public override string? ToString() => text;
     }
 }

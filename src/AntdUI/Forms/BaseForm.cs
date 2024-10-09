@@ -32,10 +32,11 @@ namespace AntdUI
             SetStyle(
                 ControlStyles.UserPaint |
                 ControlStyles.DoubleBuffer |
+                ControlStyles.AllPaintingInWmPaint |
                 ControlStyles.OptimizedDoubleBuffer, true);
             UpdateStyles();
         }
-        internal void SetCursor(bool val)
+        public void SetCursor(bool val)
         {
             if (InvokeRequired)
             {

@@ -38,11 +38,11 @@ namespace AntdUI
             Size = new Size(0, 0);
         }
 
-        internal Control? PARENT = null;
-        internal Func<Keys, bool>? KeyCall = null;
+        public Control? PARENT = null;
+        public Func<Keys, bool>? KeyCall = null;
 
-        internal virtual bool CanLoadMessage { get; set; } = true;
-        internal virtual void LoadMessage()
+        public virtual bool CanLoadMessage { get; set; } = true;
+        public virtual void LoadMessage()
         {
             if (InvokeRequired)
             {
@@ -154,7 +154,7 @@ namespace AntdUI
             }
         }
 
-        internal void Render(Bitmap bmp)
+        public void Render(Bitmap bmp)
         {
             try
             {
@@ -164,7 +164,7 @@ namespace AntdUI
             catch { }
         }
 
-        internal void SetCursor(bool val)
+        public void SetCursor(bool val)
         {
             if (InvokeRequired)
             {
@@ -356,6 +356,8 @@ namespace AntdUI
             oldY = y;
             if (Config.TouchEnabled)
             {
+                taskTouch?.Dispose();
+                taskTouch = null;
                 mdownd = 0;
                 mdown = true;
             }
@@ -395,41 +397,45 @@ namespace AntdUI
             }
             return true;
         }
+
+        ITask? taskTouch = null;
         protected virtual bool OnTouchUp()
         {
+            taskTouch?.Dispose();
+            taskTouch = null;
             mdown = false;
             if (mdownd > 0)
             {
                 if (mdownd == 1)
                 {
                     int moveY = oldMY, moveYa = Math.Abs(moveY);
-                    if (moveYa > 2)
+                    if (moveYa > 10)
                     {
                         // 缓冲动画
-                        int duration = (int)(moveYa * .1F), incremental = moveYa / 2, sleep = 20;
+                        int duration = (int)Math.Ceiling(moveYa * .1F), incremental = moveYa / 2, sleep = 20;
                         if (moveY > 0)
                         {
-                            ITask.Run(() =>
+                            taskTouch = new ITask(this, () =>
                             {
-                                while (moveYa > 0)
+                                if (moveYa > 0 && OnTouchScrollY(-incremental))
                                 {
-                                    OnTouchScrollY(-incremental);
                                     moveYa -= duration;
-                                    System.Threading.Thread.Sleep(sleep);
+                                    return true;
                                 }
-                            });
+                                return false;
+                            }, sleep);
                         }
                         else
                         {
-                            ITask.Run(() =>
+                            taskTouch = new ITask(this, () =>
                             {
-                                while (moveYa > 0)
+                                if (moveYa > 0 && OnTouchScrollY(incremental))
                                 {
-                                    OnTouchScrollY(incremental);
                                     moveYa -= duration;
-                                    System.Threading.Thread.Sleep(sleep);
+                                    return true;
                                 }
-                            });
+                                return false;
+                            }, sleep);
                         }
                     }
                 }
@@ -437,13 +443,20 @@ namespace AntdUI
             }
             return true;
         }
-        protected virtual void OnTouchScrollX(int value) { }
-        protected virtual void OnTouchScrollY(int value) { }
+        protected virtual bool OnTouchScrollX(int value) => false;
+        protected virtual bool OnTouchScrollY(int value) => false;
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            taskTouch?.Dispose();
+            taskTouch = null;
+            base.OnMouseWheel(e);
+        }
 
         #endregion
     }
 
-    internal interface SubLayeredForm
+    public interface SubLayeredForm
     {
         ILayeredForm? SubForm();
     }

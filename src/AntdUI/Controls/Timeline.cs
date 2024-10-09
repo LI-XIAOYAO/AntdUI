@@ -314,8 +314,8 @@ namespace AntdUI
             base.OnLeave(e);
             ScrollBar.Leave();
         }
-        protected override void OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
-        protected override void OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
+        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
+        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
 
         #endregion
 
@@ -471,5 +471,7 @@ namespace AntdUI
         internal RectangleF txt_rect { get; set; }
         internal RectangleF description_rect { get; set; }
         internal RectangleF ico_rect { get; set; }
+
+        public override string? ToString() => Text;
     }
 }

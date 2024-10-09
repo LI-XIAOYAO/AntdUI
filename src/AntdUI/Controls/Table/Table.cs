@@ -486,7 +486,15 @@ namespace AntdUI
         public void ScrollLine(int i)
         {
             if (rows == null || !ScrollBar.ShowY) return;
-            ScrollBar.ValueY = rows[i].RECT.Y;
+            if (fixedHeader) ScrollBar.ValueY = rows[i].RECT.Y - rows[0].RECT.Height;
+            else ScrollBar.ValueY = rows[i].RECT.Y;
+        }
+
+        void ScrollLine(int i, RowTemplate[] rows)
+        {
+            if (!ScrollBar.ShowY) return;
+            if (fixedHeader) ScrollBar.ValueY = rows[i].RECT.Y - rows[0].RECT.Height;
+            else ScrollBar.ValueY = rows[i].RECT.Y;
         }
 
         /// <summary>
@@ -561,6 +569,41 @@ namespace AntdUI
                 catch { }
             }
             return false;
+        }
+
+        /// <summary>
+        /// 获取排序序号
+        /// </summary>
+        public int[] SortIndex()
+        {
+            if (SortData == null)
+            {
+                if (dataTmp == null || dataTmp.rows.Length == 0) return new int[0];
+                var list = new int[dataTmp.rows.Length];
+                for (int i = 0; i < dataTmp.rows.Length; i++) list[i] = i;
+                return list;
+            }
+            else return SortData;
+        }
+
+        /// <summary>
+        /// 获取排序序号
+        /// </summary>
+        public object[] SortList()
+        {
+            if (dataTmp == null || dataTmp.rows.Length == 0) return new object[0];
+            if (SortData == null)
+            {
+                var list = new object[dataTmp.rows.Length];
+                for (int i = 0; i < dataTmp.rows.Length; i++) list[i] = dataTmp.rows[i].record;
+                return list;
+            }
+            else
+            {
+                var list = new List<object>(dataTmp.rows.Length);
+                foreach (var i in SortData) list.Add(dataTmp.rows[i].record);
+                return list.ToArray();
+            }
         }
 
         #endregion
