@@ -57,7 +57,7 @@ Winform UI library use Ant Design 5.0
 ➡️| [**Pagination** 分页](https://gitee.com/antdui/AntdUI/wikis/控件/Pagination) | ✅ | ✅ |
 ➡️| [**Steps** 步骤条](https://gitee.com/antdui/AntdUI/wikis/控件/Steps) | ❎ | ❎ |
 ||||
-⬇️| 数据录入 `12` | 动画 | 禁用 |
+⬇️| 数据录入 `13` | 动画 | 禁用 |
 ➡️| [**Checkbox** 多选框](https://gitee.com/antdui/AntdUI/wikis/控件/Checkbox) | ✅ | ✅ |
 ➡️| [**ColorPicker** 颜色选择器](https://gitee.com/antdui/AntdUI/wikis/控件/ColorPicker) | ✅ | ✅ |
 ➡️| [**DatePicker** 日期选择框](https://gitee.com/antdui/AntdUI/wikis/控件/DatePicker) | ✅ | ✅ |
@@ -70,6 +70,7 @@ Winform UI library use Ant Design 5.0
 ➡️| [**Slider** 滑动输入条](https://gitee.com/antdui/AntdUI/wikis/控件/Slider) | ✅ | ❎ |
 ➡️| [**Switch** 开关](https://gitee.com/antdui/AntdUI/wikis/控件/Switch) | ✅ | ✅ |
 ➡️| [**TimePicker** 时间选择框](https://gitee.com/antdui/AntdUI/wikis/控件/TimePicker) | ✅ | ✅ |
+➡️| [**UploadDragger** 拖拽上传](https://gitee.com/antdui/AntdUI/wikis/控件/UploadDragger) | ✅ | ❎ |
 ||||
 ⬇️| 数据展示 `16` | 动画 | 禁用 |
 ➡️| [**Avatar** 头像](https://gitee.com/antdui/AntdUI/wikis/控件/Avatar) | ❎ | ❎ |
@@ -143,5 +144,13 @@ Winform UI library use Ant Design 5.0
 | ![Message](screenshot/Message.gif?raw=true) | ![Notification](screenshot/Notification.gif?raw=true) |
 | **Switch** 开关 | **Table** 表格 |
 | ![Switch](screenshot/Switch.gif?raw=true) | ![Table](screenshot/Table.gif?raw=true) |
+
+
+## 特别声明
+
+AntdUI 项目已加入 [dotNET China](https://gitee.com/dotnetchina)  组织。<br/>
+
+![dotnetchina](https://gitee.com/dotnetchina/home/raw/master/assets/dotnetchina-raw.png "dotNET China LOGO")
+
 
 🦦 招募小伙伴一起维护项目
