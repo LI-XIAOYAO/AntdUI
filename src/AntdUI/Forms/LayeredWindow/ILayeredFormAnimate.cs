@@ -267,7 +267,7 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Render(bmp_tmp);
+                Print(bmp_tmp);
             }
         }
         void SetAnimateValueY(int y, byte _alpha)
@@ -278,18 +278,17 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Render(bmp_tmp);
+                Print(bmp_tmp);
             }
         }
         internal void SetAnimateValueY(int y)
         {
-            if (closepassive) return;
             if (TargetRect.Y != y)
             {
                 SetLocationY(y);
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Render(bmp_tmp);
+                Print(bmp_tmp);
             }
         }
         void SetAnimateValue(int x, int y, byte _alpha)
@@ -300,7 +299,7 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Render(bmp_tmp);
+                Print(bmp_tmp);
             }
         }
 
@@ -310,37 +309,16 @@ namespace AntdUI
 
         #region 关闭
 
+        DateTime closetime;
         bool handclose = false;
-        bool closepassive = false;
-        public void CloseMe(bool passive)
+        public void CloseMe()
         {
-            if (handclose) return;
+            var now = DateTime.Now;
+            if (handclose && (now - closetime).TotalSeconds < 2) return;
+            closetime = now;
             handclose = true;
             task_start?.Dispose();
-            if (passive) MsgQueue.Add(this);
-            else
-            {
-                closepassive = true;
-                //执行关闭动画
-                if (Config.Animation)
-                {
-                    ITask.Run(() =>
-                    {
-                        StopAnimation().Wait();
-                    }, () =>
-                    {
-                        bool isRemove = list[key].Remove(this);
-                        IClose(true);
-                        if (isRemove) MsgQueue.Add(new object[] { Align, key });
-                    });
-                }
-                else
-                {
-                    bool isRemove = list[key].Remove(this);
-                    IClose(true);
-                    if (isRemove) MsgQueue.Add(new object[] { Align, key });
-                }
-            }
+            MsgQueue.Add(this);
         }
 
         #endregion
@@ -356,7 +334,7 @@ namespace AntdUI
     public static class MsgQueue
     {
         static ManualResetEvent _event = new ManualResetEvent(false);
-        static ConcurrentQueue<object> queue = new ConcurrentQueue<object>();
+        static ConcurrentQueue<object> queue = new ConcurrentQueue<object>(), queue_cache = new ConcurrentQueue<object>();
         internal static List<string> volley = new List<string>();
 
         #region 添加队列
@@ -364,24 +342,18 @@ namespace AntdUI
         public static void Add(Notification.Config config)
         {
             queue.Enqueue(config);
-            _event.Set();
+            _event.SetWait();
         }
         public static void Add(Message.Config config)
         {
             queue.Enqueue(config);
-            _event.Set();
-        }
-
-        public static void Add(object?[] command)
-        {
-            queue.Enqueue(command);
-            _event.Set();
+            _event.SetWait();
         }
 
         internal static void Add(ILayeredFormAnimate command)
         {
             queue.Enqueue(command);
-            _event.Set();
+            _event.SetWait();
         }
 
         #endregion
@@ -396,35 +368,40 @@ namespace AntdUI
             while (true)
             {
                 if (_event.Wait()) return;
-                while (queue.TryDequeue(out var d))
-                {
-                    try
-                    {
-                        if (d is Notification.Config configNotification) Open(configNotification);
-                        else if (d is Message.Config configMessage) Open(configMessage);
-                        else if (d is ILayeredFormAnimate formAnimate)
-                        {
-                            if (Config.Animation) formAnimate.StopAnimation().Wait();
-                            formAnimate.IClose(true);
-                            Close(formAnimate.Align, formAnimate.key);
-                        }
-                        else if (d is object?[] command)
-                        {
-                            if (command[0] is TAlignFrom align && command[1] is string key) Close(align, key);
-                        }
-                    }
-                    catch { }
-                }
+                while (queue.TryDequeue(out var d)) Hand(d);
                 volley.Clear();
-                _event.Reset();
+                _event.ResetWait();
             }
         }
 
-        static void Open(Notification.Config config)
+        static void Hand(object d)
+        {
+            try
+            {
+                if (d is Notification.Config configNotification)
+                {
+                    if (Open(configNotification)) _event.ResetWait();
+                }
+                else if (d is Message.Config configMessage)
+                {
+                    if (Open(configMessage)) _event.ResetWait();
+                }
+                else if (d is ILayeredFormAnimate formAnimate)
+                {
+                    if (Config.Animation) formAnimate.StopAnimation().Wait();
+                    formAnimate.IClose(true);
+                    Close(formAnimate.Align, formAnimate.key);
+                    if (queue_cache.TryDequeue(out var d_cache)) Hand(d_cache);
+                }
+            }
+            catch { }
+        }
+
+        static bool Open(Notification.Config config)
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.ID != null && volley.Contains("N" + config.ID)) return;
+                if (config.ID != null && volley.Contains("N" + config.ID)) return false;
                 bool ishand = false;
                 config.Form.Invoke(new Action(() =>
                 {
@@ -440,15 +417,20 @@ namespace AntdUI
                         else from.Show(config.Form);
                     }
                 }));
-                if (ishand) Add(config);
+                if (ishand)
+                {
+                    queue_cache.Enqueue(config);
+                    return true;
+                }
             }
+            return false;
         }
 
-        static void Open(Message.Config config)
+        static bool Open(Message.Config config)
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.ID != null && volley.Contains("M" + config.ID)) return;
+                if (config.ID != null && volley.Contains("M" + config.ID)) return false;
                 bool ishand = false;
                 config.Form.Invoke(new Action(() =>
                 {
@@ -460,8 +442,13 @@ namespace AntdUI
                     }
                     else from.Show(config.Form);
                 }));
-                if (ishand) Add(config);
+                if (ishand)
+                {
+                    queue_cache.Enqueue(config);
+                    return true;
+                }
             }
+            return false;
         }
 
         static void Close(TAlignFrom align, string key)

@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace AntdUI
 {
@@ -50,10 +51,16 @@ namespace AntdUI
             {
                 if (_list == value) return;
                 _list = value;
-                ReadShowCaret = value;
-                if (value) ShowCaret = false;
+                CaretInfo.ReadShow = value;
+                if (value) CaretInfo.Show = false;
             }
         }
+
+        /// <summary>
+        /// 复选框模式
+        /// </summary>
+        [Description("复选框模式"), Category("行为"), DefaultValue(false)]
+        public bool CheckMode { get; set; }
 
         bool canDelete = true;
         /// <summary>
@@ -103,10 +110,10 @@ namespace AntdUI
         public bool DropDownArrow { get; set; } = false;
 
         /// <summary>
-        /// 焦点时展开下拉
+        /// 下拉边距
         /// </summary>
-        [Description("焦点时展开下拉"), Category("行为"), DefaultValue(true)]
-        public bool FocusExpandDropdown { get; set; } = true;
+        [Description("下拉边距"), Category("外观"), DefaultValue(typeof(Size), "12, 5")]
+        public Size DropDownPadding { get; set; } = new Size(12, 5);
 
         #region 数据
 
@@ -170,10 +177,7 @@ namespace AntdUI
             selectedValue = selecteds.ToArray();
             CalculateRect();
             SetCaretPostion();
-
-            if (subForm == null) return;
-            subForm.selectedValue = selecteds;
-            subForm.Print();
+            subForm?.SetValues(selecteds);
         }
 
         /// <summary>
@@ -183,14 +187,16 @@ namespace AntdUI
         public event ObjectsEventHandler? SelectedValueChanged = null;
 
         string filtertext = "";
+        bool TerminateExpand = false;
         protected override void OnTextChanged(EventArgs e)
         {
             base.OnTextChanged(e);
             if (HasFocus)
             {
+                if (TerminateExpand) { TerminateExpand = false; return; }
                 filtertext = Text;
-                TextFocus = true;
-                if (textFocus) subForm?.TextChange(Text);
+                ExpandDrop = true;
+                if (expandDrop) subForm?.TextChange(Text);
             }
         }
 
@@ -205,10 +211,7 @@ namespace AntdUI
             CalculateRect();
             SetCaretPostion();
             Invalidate();
-
-            if (subForm == null) return;
-            subForm.selectedValue = new List<object>(0);
-            subForm.Print();
+            subForm?.ClearValues();
         }
         protected override void IBackSpaceKey()
         {
@@ -218,11 +221,7 @@ namespace AntdUI
                 tmp.AddRange(selectedValue);
                 tmp.RemoveAt(tmp.Count - 1);
                 SelectedValue = tmp.ToArray();
-
-                if (subForm == null) return;
-                subForm.selectedValue = new List<object>(selectedValue.Length);
-                subForm.selectedValue.AddRange(selectedValue);
-                subForm.Print();
+                subForm?.SetValues(selectedValue);
             }
         }
 
@@ -447,11 +446,8 @@ namespace AntdUI
                     tmp.AddRange(selectedValue);
                     tmp.RemoveAt(select_del);
                     SelectedValue = tmp.ToArray();
-
                     if (subForm == null) return true;
-                    subForm.selectedValue = new List<object>(selectedValue.Length);
-                    subForm.selectedValue.AddRange(selectedValue);
-                    subForm.Print();
+                    subForm.SetValues(selectedValue);
                 }
                 select_del = -1;
                 return true;
@@ -464,7 +460,7 @@ namespace AntdUI
 
         #region 动画
 
-        LayeredFormSelectMultiple? subForm = null;
+        ISelectMultiple? subForm = null;
         public ILayeredForm? SubForm() => subForm;
 
         ITask? ThreadExpand = null;
@@ -512,44 +508,38 @@ namespace AntdUI
             }
         }
 
+        internal int select_x = 0;
+
         #endregion
 
         #region 焦点
 
-        bool textFocus = false;
-        bool TextFocus
+        bool expandDrop = false;
+        /// <summary>
+        /// 展开下拉菜单
+        /// </summary>
+        bool ExpandDrop
         {
-            get => textFocus;
+            get => expandDrop;
             set
             {
-                if (textFocus == value) return;
-                textFocus = value;
+                if (expandDrop == value) return;
+                expandDrop = value;
                 if (value)
                 {
-                    if (!ReadOnly && items != null && items.Count > 0)
+                    if (ReadOnly || items == null || items.Count == 0)
+                    {
+                        subForm?.IClose();
+                        expandDrop = false;
+                    }
+                    else
                     {
                         if (subForm == null)
                         {
                             var objs = new List<object>(items.Count);
-                            foreach (var it in items)
-                            {
-                                objs.Add(it);
-                            }
-                            Expand = true;
-                            subForm = new LayeredFormSelectMultiple(this, ReadRectangle, objs, filtertext);
-                            subForm.Disposed += (a, b) =>
-                            {
-                                subForm = null;
-                                Expand = false;
-                                TextFocus = false;
-                            };
-                            subForm.Show(this);
+                            foreach (var it in items) objs.Add(it);
+                            ShowLayeredForm(objs);
                         }
-                    }
-                    else
-                    {
-                        subForm?.IClose();
-                        textFocus = false;
                     }
                 }
                 else
@@ -560,17 +550,41 @@ namespace AntdUI
             }
         }
 
-        protected override void OnGotFocus(EventArgs e)
+        void ShowLayeredForm(IList<object> list)
         {
-            base.OnGotFocus(e);
-            if (ReadShowCaret) return;
-            if (FocusExpandDropdown) TextFocus = true;
+            if (InvokeRequired)
+            {
+                BeginInvoke(new Action(() => { ShowLayeredForm(list); }));
+                return;
+            }
+            Expand = true;
+            if (CheckMode) subForm = new LayeredFormSelectMultipleCheck(this, ReadRectangle, list, filtertext);
+            else subForm = new LayeredFormSelectMultiple(this, ReadRectangle, list, filtertext);
+            subForm.Disposed += (a, b) =>
+            {
+                select_x = 0;
+                subForm = null;
+                Expand = false;
+                ExpandDrop = false;
+            };
+            subForm.Show(this);
+        }
+
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Down:
+                    ExpandDrop = true;
+                    return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         protected override void OnLostFocus(EventArgs e)
         {
             base.OnLostFocus(e);
-            TextFocus = false;
+            ExpandDrop = false;
         }
 
         #endregion
@@ -579,18 +593,14 @@ namespace AntdUI
 
         protected override void OnClearValue()
         {
-            if (selectedValue.Length > 0) ClearSelect();
-        }
-
-        protected override void OnFocusClick(bool SetFocus)
-        {
-            if (_list) TextFocus = !textFocus;
-            else
+            if (selectedValue.Length > 0)
             {
-                if (SetFocus) return;
-                TextFocus = !textFocus;
+                TerminateExpand = true;
+                ClearSelect();
             }
         }
+
+        protected override void OnClickContent() => ExpandDrop = !expandDrop;
 
         #endregion
     }

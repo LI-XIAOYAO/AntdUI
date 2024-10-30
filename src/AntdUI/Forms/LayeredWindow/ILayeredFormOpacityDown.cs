@@ -28,11 +28,12 @@ namespace AntdUI
         ITask? task_start = null;
         bool run_end = false, ok_end = false;
 
-        public int EndHeight = 0;
         public bool Inverted = false;
 
         public override bool MessageEnable => true;
 
+        Bitmap? bmp_tmp = null;
+        public bool RunAnimation = true;
         protected override void OnLoad(EventArgs e)
         {
             if (Config.Animation)
@@ -40,41 +41,48 @@ namespace AntdUI
                 var t = Animation.TotalFrames(10, 100);
                 if (Inverted)
                 {
-                    int endY = TargetRect.Y;
+                    int _y = TargetRect.Y, _height = TargetRect.Height;
                     task_start = new ITask((i) =>
                     {
                         var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
-                        int height = (int)(EndHeight * val);
-                        SetAnimateValue(endY + (EndHeight - height), height, val);
+                        int height = (int)(_height * val);
+                        SetAnimateValue(_y + (_height - height), height, val);
                         return true;
                     }, 10, t, () =>
                     {
-                        SetAnimateValue(endY, EndHeight, 255);
+                        DisposeTmp();
+                        alpha = 255;
+                        AnimateHeight = -1;
+                        RunAnimation = false;
+                        Print();
                         LoadOK();
                     });
                 }
                 else
                 {
+                    int _height = TargetRect.Height;
                     task_start = new ITask((i) =>
                     {
                         var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
-                        SetAnimateValue((int)(EndHeight * val), val);
+                        int height = (int)(_height * val);
+                        SetAnimateValue((int)(_height * val), val);
                         return true;
                     }, 10, t, () =>
                     {
-                        SetAnimateValue(EndHeight, 255);
+                        DisposeTmp();
+                        alpha = 255;
+                        AnimateHeight = -1;
+                        RunAnimation = false;
+                        Print();
                         LoadOK();
                     });
                 }
             }
             else
             {
-                if (Inverted)
-                {
-                    int endY = TargetRect.Y;
-                    SetAnimateValue(endY, EndHeight, 255);
-                }
-                else SetAnimateValue(EndHeight, 255);
+                alpha = 255;
+                RunAnimation = false;
+                Print();
                 LoadOK();
             }
             base.OnLoad(e);
@@ -82,6 +90,11 @@ namespace AntdUI
 
         #region 设置动画参数
 
+        internal void DisposeTmp()
+        {
+            bmp_tmp?.Dispose();
+            bmp_tmp = null;
+        }
         void SetAnimateValue(int y, int height, float alpha)
         {
             SetAnimateValue(y, height, (byte)(255 * alpha));
@@ -90,23 +103,50 @@ namespace AntdUI
         {
             SetAnimateValue(height, (byte)(255 * alpha));
         }
+
         void SetAnimateValue(int y, int height, byte _alpha)
         {
-            if (TargetRect.Y != y || TargetRect.Height != height || alpha != _alpha)
+            if (AnimateY != y || AnimateHeight != height || alpha != _alpha)
             {
-                SetLocationY(y);
-                SetSizeH(height);
+                AnimateY = y;
+                AnimateHeight = height;
                 alpha = _alpha;
-                Print();
+                try
+                {
+                    if (bmp_tmp == null) bmp_tmp = PrintBit();
+                    if (bmp_tmp == null) return;
+                    var rect = new Rectangle(TargetRect.X, y, TargetRect.Width, height);
+                    var bmp = new Bitmap(rect.Width, rect.Height);
+                    using (var g = Graphics.FromImage(bmp))
+                    {
+                        g.DrawImage(bmp_tmp, 0, 0, rect.Width, rect.Height);
+                    }
+                    Print(bmp, rect);
+                }
+                catch { }
             }
         }
+
+        int AnimateY = -1, AnimateHeight = -1;
         void SetAnimateValue(int height, byte _alpha)
         {
-            if (TargetRect.Height != height || alpha != _alpha)
+            if (AnimateHeight != height || alpha != _alpha)
             {
-                SetSizeH(height);
+                AnimateHeight = height;
                 alpha = _alpha;
-                Print();
+                try
+                {
+                    if (bmp_tmp == null) bmp_tmp = PrintBit();
+                    if (bmp_tmp == null) return;
+                    var rect = new Rectangle(TargetRect.X, TargetRect.Y, TargetRect.Width, height);
+                    var bmp = new Bitmap(rect.Width, rect.Height);
+                    using (var g = Graphics.FromImage(bmp))
+                    {
+                        g.DrawImage(bmp_tmp, 0, 0, rect.Width, rect.Height);
+                    }
+                    Print(bmp, rect);
+                }
+                catch { }
             }
         }
 
@@ -126,31 +166,35 @@ namespace AntdUI
                     if (!run_end)
                     {
                         run_end = true;
+                        RunAnimation = true;
                         var t = Animation.TotalFrames(10, 100);
                         if (Inverted)
                         {
-                            int y = TargetRect.Y;
+                            int _y = TargetRect.Y, _height = TargetRect.Height;
                             new ITask(i =>
                             {
                                 var val = 1F - Animation.Animate(i, t, 1F, AnimationType.Ball);
-                                int height = (int)(EndHeight * val);
-                                SetAnimateValue(y + (EndHeight - height), height, val);
+                                int height = (int)(_height * val);
+                                SetAnimateValue(_y + (_height - height), height, val);
                                 return true;
                             }, 10, t, () =>
                             {
+                                DisposeTmp();
                                 ok_end = true;
                                 IClose(true);
                             });
                         }
                         else
                         {
+                            int _height = TargetRect.Height;
                             new ITask(i =>
                             {
                                 var val = 1F - Animation.Animate(i, t, 1F, AnimationType.Ball);
-                                SetAnimateValue((int)(EndHeight * val), val);
+                                SetAnimateValue((int)(_height * val), val);
                                 return true;
                             }, 10, t, () =>
                             {
+                                DisposeTmp();
                                 ok_end = true;
                                 IClose(true);
                             });

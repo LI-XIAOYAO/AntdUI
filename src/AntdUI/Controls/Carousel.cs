@@ -98,6 +98,7 @@ namespace AntdUI
                 if (dotPosition == value) return;
                 dotPosition = value;
                 dotPV = (value == TAlignMini.Left || value == TAlignMini.Right);
+                ChangeImg();
                 Invalidate();
             }
         }
@@ -432,12 +433,16 @@ namespace AntdUI
             {
                 if (Autodelay > 0) Thread.Sleep(Autodelay * 1000);
                 else Thread.Sleep(1000);
-                if (!down && !ExtraMouseHover && DateTime.Now > now)
+                try
                 {
-                    if (items == null) continue;
-                    if (selectIndex >= items.Count - 1) SetSelectIndex(0, true);
-                    else SetSelectIndex(selectIndex + 1, true);
+                    if (!down && !ExtraMouseHover && DateTime.Now > now)
+                    {
+                        if (items == null) continue;
+                        if (selectIndex >= items.Count - 1) SetSelectIndex(0, true);
+                        else SetSelectIndex(selectIndex + 1, true);
+                    }
                 }
+                catch { }
             }
         }
 
@@ -471,9 +476,9 @@ namespace AntdUI
                     list.Add(new CarouselDotItem
                     {
                         i = i,
-                        rect_fill = new RectangleF(temp_x, y2, DotSize.Width, DotMargin),
-                        rect_action = new RectangleF(temp_x + 2, y, DotSize.Width - 4, DotSize.Height),
-                        rect = new RectangleF(temp_x + 4, y, DotSize.Width - 8, DotSize.Height)
+                        rect_fill = new Rectangle(temp_x, y2, DotSize.Width, DotMargin),
+                        rect_action = new Rectangle(temp_x + 2, y, DotSize.Width - 4, DotSize.Height),
+                        rect = new Rectangle(temp_x + 4, y, DotSize.Width - 8, DotSize.Height)
                     });
                     temp_x += DotSize.Width;
                 }
@@ -488,9 +493,9 @@ namespace AntdUI
                     list.Add(new CarouselDotItem
                     {
                         i = i,
-                        rect_fill = new RectangleF(x2, temp_y, DotMargin, DotSize.Width),
-                        rect_action = new RectangleF(x, temp_y + 2, DotSize.Height, DotSize.Width - 4),
-                        rect = new RectangleF(x, temp_y + 4, DotSize.Height, DotSize.Width - 8)
+                        rect_fill = new Rectangle(x2, temp_y, DotMargin, DotSize.Width),
+                        rect_action = new Rectangle(x, temp_y + 2, DotSize.Height, DotSize.Width - 4),
+                        rect = new Rectangle(x, temp_y + 4, DotSize.Height, DotSize.Width - 8)
                     });
                     temp_y += DotSize.Width;
                 }
@@ -586,7 +591,7 @@ namespace AntdUI
                 {
                     PaintBmp(items, select_range, g2, radius);
                     var bmo = items[0].Img;
-                    if (bmo != null) g2.PaintImg(new RectangleF(AnimationChangeMax, 0, rect.Width, rect.Height), bmo, imageFit, radius, round);
+                    if (bmo != null) g2.PaintImg(new Rectangle(0, AnimationChangeMax, rect.Width, rect.Height), bmo, imageFit, radius, round);
                 }
             }
             else
@@ -611,7 +616,7 @@ namespace AntdUI
                 {
                     PaintBmp(items, select_range, g2, radius);
                     var bmo = items[0].Img;
-                    if (bmo != null) g2.PaintImg(new RectangleF(AnimationChangeMax, 0, rect.Width, rect.Height), bmo, imageFit, radius, round);
+                    if (bmo != null) g2.PaintImg(new Rectangle(AnimationChangeMax, 0, rect.Width, rect.Height), bmo, imageFit, radius, round);
                 }
             }
             else
@@ -645,20 +650,20 @@ namespace AntdUI
             int temp = 0;
             for (int i = 0; i < len; i++)
             {
-                var rect1 = new RectangleF(0, temp, rect.Width, rect.Height);
-                if (rect1.Contains(0, AnimationChangeValue))
+                var rect_cur = new Rectangle(0, temp, rect.Width, rect.Height);
+                if (rect_cur.Contains(0, (int)AnimationChangeValue))
                 {
                     indes.Add(i);
                     r.list.Add(new CarouselRect
                     {
                         i = i,
-                        rect = rect1,
+                        rect = rect_cur,
                     });
                 }
                 if (i < len - 1)
                 {
-                    var rect2 = new RectangleF(0, temp + rect.Height, rect.Width, rect.Height);
-                    if (rect2.Contains(0, AnimationChangeValue + rect.Height))
+                    var rect2 = new Rectangle(0, temp + rect.Height, rect.Width, rect.Height);
+                    if (rect2.Contains(0, (int)(AnimationChangeValue + rect.Height)))
                     {
                         indes.Add(i + 1);
                         r.list.Add(new CarouselRect
@@ -677,7 +682,7 @@ namespace AntdUI
                 r.list.Add(new CarouselRect
                 {
                     i = 0,
-                    rect = new RectangleF(0, 0, rect.Width, rect.Height),
+                    rect = new Rectangle(0, 0, rect.Width, rect.Height),
                 });
             }
             r.i = string.Join("", indes);
@@ -693,20 +698,20 @@ namespace AntdUI
             int temp = 0;
             for (int i = 0; i < len; i++)
             {
-                var rect1 = new RectangleF(temp, 0, rect.Width, rect.Height);
-                if (rect1.Contains(AnimationChangeValue, 0))
+                var rect_cur = new Rectangle(temp, 0, rect.Width, rect.Height);
+                if (rect_cur.Contains((int)AnimationChangeValue, 0))
                 {
                     indes.Add(i);
                     r.list.Add(new CarouselRect
                     {
                         i = i,
-                        rect = rect1,
+                        rect = rect_cur,
                     });
                 }
                 if (i < len - 1)
                 {
-                    var rect2 = new RectangleF(temp + rect.Width, 0, rect.Width, rect.Height);
-                    if (rect2.Contains(AnimationChangeValue + rect.Width, 0))
+                    var rect2 = new Rectangle(temp + rect.Width, 0, rect.Width, rect.Height);
+                    if (rect2.Contains((int)(AnimationChangeValue + rect.Width), 0))
                     {
                         indes.Add(i + 1);
                         r.list.Add(new CarouselRect
@@ -725,7 +730,7 @@ namespace AntdUI
                 r.list.Add(new CarouselRect
                 {
                     i = 0,
-                    rect = new RectangleF(0, 0, rect.Width, rect.Height),
+                    rect = new Rectangle(0, 0, rect.Width, rect.Height),
                 });
             }
             r.i = string.Join("", indes);
@@ -750,7 +755,7 @@ namespace AntdUI
                     {
                         p = prog,
                         i = i,
-                        rect = new RectangleF(0, temp, rect.Width, rect.Height),
+                        rect = new Rectangle(0, temp, rect.Width, rect.Height),
                     });
                 }
                 temp += rect.Height;
@@ -777,7 +782,7 @@ namespace AntdUI
                     {
                         p = prog,
                         i = i,
-                        rect = new RectangleF(temp, 0, rect.Width, rect.Height),
+                        rect = new Rectangle(temp, 0, rect.Width, rect.Height),
                     });
                 }
                 temp += rect.Width;
@@ -983,11 +988,11 @@ namespace AntdUI
     {
         public int i { get; set; }
         public float p { get; set; }
-        public RectangleF rect { get; set; }
+        public Rectangle rect { get; set; }
     }
     internal class CarouselDotItem : CarouselRect
     {
-        public RectangleF rect_action { get; set; }
-        public RectangleF rect_fill { get; set; }
+        public Rectangle rect_action { get; set; }
+        public Rectangle rect_fill { get; set; }
     }
 }

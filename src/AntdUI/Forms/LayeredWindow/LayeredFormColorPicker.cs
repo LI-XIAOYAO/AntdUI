@@ -119,10 +119,9 @@ namespace AntdUI
 
             h += panel_color + gap;
 
-            int r_w = w + 20;
-            SetSize(r_w, 0);
-            EndHeight = h + 20;
-            CLocation(control.PointToScreen(Point.Empty), control.Placement, control.DropDownArrow, ArrowSize, 10, r_w, EndHeight, rect_read, ref Inverted, ref ArrowAlign, true);
+            int r_w = w + 20, r_h = h + 20;
+            SetSize(r_w, r_h);
+            CLocation(control.PointToScreen(Point.Empty), control.Placement, control.DropDownArrow, ArrowSize, 10, r_w, r_h, rect_read, ref Inverted, ref ArrowAlign, true);
 
             Location = TargetRect.Location;
             Size = TargetRect.Size;
@@ -188,7 +187,8 @@ namespace AntdUI
 
                         input_r.TakePaint = input_g.TakePaint = input_b.TakePaint = () =>
                         {
-                            Print();
+                            if (RunAnimation) return;
+                            Print(true);
                         };
                         Controls.Add(input_r);
                         Controls.Add(input_g);
@@ -267,7 +267,8 @@ namespace AntdUI
 
                         input_r.TakePaint = input_g.TakePaint = input_b.TakePaint = input_a.TakePaint = () =>
                         {
-                            Print();
+                            if (RunAnimation) return;
+                            Print(true);
                         };
                         Controls.Add(input_r);
                         Controls.Add(input_g);
@@ -288,7 +289,8 @@ namespace AntdUI
                     };
                     input.TakePaint = () =>
                     {
-                        Print();
+                        if (RunAnimation) return;
+                        Print(true);
                     };
                     input.TextChanged += (a, b) =>
                     {
@@ -320,7 +322,7 @@ namespace AntdUI
                 bmp_alpha_read?.Dispose();
                 bmp_alpha_read = null;
             }
-            Print();
+            Print(true);
         }
 
         public override void LoadOK()
@@ -363,24 +365,22 @@ namespace AntdUI
         }
         protected override void OnMouseDown(MouseEventArgs e)
         {
+            if (RunAnimation) return;
             if (e.Button == MouseButtons.Left)
             {
                 if (rect_colors_big.Contains(e.Location))
                 {
                     //顶部渐变色卡
-                    if (bmp_colors != null)
+                    if (bmp_colors_mouse != null)
                     {
-                        point_colors = new Point(e.X - 10 - gap, e.Y - 10 - gap);
-                        if (point_colors.X < 0) point_colors.X = 0;
-                        else if (point_colors.X > bmp_colors.Width - 1) point_colors.X = bmp_colors.Width - 1;
-                        if (point_colors.Y < 0) point_colors.Y = 0;
-                        else if (point_colors.Y > bmp_colors.Height - 1) point_colors.Y = bmp_colors.Height - 1;
-                        color_alpha = Value = Color.FromArgb(Value.A, bmp_colors.GetPixel(point_colors.X, point_colors.Y));
+                        var value = GetColors(e.X, e.Y, bmp_colors_mouse);
+
+                        color_alpha = Value = Color.FromArgb(Value.A, value);
                         ValueNAlpha = Color.FromArgb(255, Value);
                         SetValue();
                         bmp_alpha?.Dispose();
                         bmp_alpha = null;
-                        Print();
+                        Print(true);
                         down_colors = true;
                     }
                 }
@@ -404,7 +404,7 @@ namespace AntdUI
                         bmp_colors = null;
                         bmp_alpha?.Dispose();
                         bmp_alpha = null;
-                        Print();
+                        Print(true);
                         down_hue = true;
                     }
                 }
@@ -418,7 +418,7 @@ namespace AntdUI
                         else if (point_alpha > bmp_alpha_read.Width - 1) point_alpha = bmp_alpha_read.Width - 1;
                         color_alpha = Value = Color.FromArgb(bmp_alpha_read.GetPixel(point_alpha, 1).A, ValueNAlpha);
                         SetValue();
-                        Print();
+                        Print(true);
                         down_alpha = true;
                     }
                 }
@@ -428,19 +428,17 @@ namespace AntdUI
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            if (down_colors && bmp_colors != null)
+            if (RunAnimation) return;
+            if (down_colors && bmp_colors_mouse != null)
             {
-                point_colors = new Point(e.X - 10 - gap, e.Y - 10 - gap);
-                if (point_colors.X < 0) point_colors.X = 0;
-                else if (point_colors.X > bmp_colors.Width - 1) point_colors.X = bmp_colors.Width - 1;
-                if (point_colors.Y < 0) point_colors.Y = 0;
-                else if (point_colors.Y > bmp_colors.Height - 1) point_colors.Y = bmp_colors.Height - 1;
-                color_alpha = Value = Color.FromArgb(Value.A, bmp_colors.GetPixel(point_colors.X, point_colors.Y));
+                var value = GetColors(e.X, e.Y, bmp_colors_mouse);
+
+                color_alpha = Value = Color.FromArgb(Value.A, value);
                 ValueNAlpha = Color.FromArgb(255, Value);
                 SetValue();
                 bmp_alpha?.Dispose();
                 bmp_alpha = null;
-                Print();
+                Print(true);
             }
             else if (down_hue && bmp_hue != null)
             {
@@ -459,7 +457,7 @@ namespace AntdUI
                 bmp_colors = null;
                 bmp_alpha?.Dispose();
                 bmp_alpha = null;
-                Print();
+                Print(true);
             }
             else if (down_alpha && bmp_alpha_read != null)
             {
@@ -468,13 +466,27 @@ namespace AntdUI
                 else if (point_alpha > bmp_alpha_read.Width - 1) point_alpha = bmp_alpha_read.Width - 1;
                 color_alpha = Value = Color.FromArgb(bmp_alpha_read.GetPixel(point_alpha, 1).A, ValueNAlpha);
                 SetValue();
-                Print();
+                Print(true);
             }
             base.OnMouseMove(e);
         }
 
+        Color GetColors(int x, int y, Dictionary<string, Color> dir)
+        {
+            point_colors = new Point(x - 10 - gap, y - 10 - gap);
+
+            int w = rect_colors.Width - 1, h = rect_colors.Height - 1;
+            if (point_colors.X < 0) point_colors.X = 0;
+            else if (point_colors.X > w) point_colors.X = w;
+            if (point_colors.Y < 0) point_colors.Y = 0;
+            else if (point_colors.Y > h) point_colors.Y = h;
+
+            return dir[point_colors.X + "_" + point_colors.Y];
+        }
+
         protected override void OnMouseUp(MouseEventArgs e)
         {
+            if (RunAnimation) return;
             if (down_colors) down_colors = false;
             if (down_hue) down_hue = false;
             if (down_alpha) down_alpha = false;
@@ -496,8 +508,7 @@ namespace AntdUI
                 {
                     using (var path = rect_read.RoundPath(Radius))
                     {
-                        DrawShadow(g, rect, rect.Width, EndHeight);
-
+                        DrawShadow(g, rect);
                         g.FillPath(brush_bg, path);
                         if (ArrowAlign != TAlign.None) g.FillPolygon(brush_bg, ArrowAlign.AlignLines(ArrowSize, rect, rect_read));
                     }
@@ -512,7 +523,7 @@ namespace AntdUI
                         {
                             PaintColors(g2, new Rectangle(0, 0, bmp_colors.Width, bmp_colors.Height));
                         }
-                        GetColorsPoint(bmp_colors);
+                        bmp_colors_mouse = GetColorsPoint(bmp_colors);
                     }
                     g.DrawImage(bmp_colors, rect_colors);
                     using (var path = rect_colors.RoundPath(Radius))
@@ -527,6 +538,7 @@ namespace AntdUI
 
                     if (bmp_hue == null)
                     {
+                        System.Diagnostics.Debug.WriteLine("G HUE");
                         bmp_hue = new Bitmap(rect_hue.Width, rect_hue.Height);
                         using (var g2 = Graphics.FromImage(bmp_hue).High())
                         {
@@ -655,6 +667,7 @@ namespace AntdUI
         Rectangle rect_colors_big;
         Rectangle rect_colors;
         Bitmap? bmp_colors = null;
+        Dictionary<string, Color>? bmp_colors_mouse = null;
         void PaintColors(Graphics g, Rectangle rect)
         {
             using (var brush = new SolidBrush(ValueHue))
@@ -675,19 +688,24 @@ namespace AntdUI
                 g.FillRectangle(brush, new RectangleF(rect.X, rect.Height - 2F, rect.Width, 2F));
             }
         }
-        void GetColorsPoint(Bitmap bmp_colors)
+        Dictionary<string, Color> GetColorsPoint(Bitmap bmp_colors)
         {
-            for (int x = 0; x < bmp_colors.Width; x++)
+            int w = bmp_colors.Width, h = bmp_colors.Height;
+            var list = new Dictionary<string, Color>(w * h);
+            for (int x = 0; x < w; x++)
             {
-                for (int y = 0; y < bmp_colors.Height; y++)
+                for (int y = 0; y < h; y++)
                 {
-                    if (bmp_colors.GetPixel(x, y) == ValueNAlpha)
+                    try
                     {
-                        point_colors = new Point(x, y);
-                        return;
+                        var value = bmp_colors.GetPixel(x, y);
+                        list.Add(x + "_" + y, value);
+                        if (value == ValueNAlpha) point_colors = new Point(x, y);
                     }
+                    catch { return list; }
                 }
             }
+            return list;
         }
 
         #endregion
@@ -835,22 +853,20 @@ namespace AntdUI
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
-        /// <param name="rect_client">客户区域</param>
-        /// <param name="shadow_width">最终阴影宽度</param>
-        /// <param name="shadow_height">最终阴影高度</param>
-        void DrawShadow(Graphics g, Rectangle rect_client, int shadow_width, int shadow_height)
+        /// <param name="rect">客户区域</param>
+        void DrawShadow(Graphics g, Rectangle rect)
         {
             if (Config.ShadowEnabled)
             {
-                if (shadow_temp == null || (shadow_temp.Width != shadow_width || shadow_temp.Height != shadow_height))
+                if (shadow_temp == null)
                 {
                     shadow_temp?.Dispose();
-                    using (var path = new Rectangle(10, 10, shadow_width - 20, shadow_height - 20).RoundPath(Radius))
+                    using (var path = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20).RoundPath(Radius))
                     {
-                        shadow_temp = path.PaintShadow(shadow_width, shadow_height);
+                        shadow_temp = path.PaintShadow(rect.Width, rect.Height);
                     }
                 }
-                g.DrawImage(shadow_temp, rect_client, 0.2F);
+                g.DrawImage(shadow_temp, rect, 0.2F);
             }
         }
 

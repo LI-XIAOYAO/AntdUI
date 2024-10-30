@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 
 namespace AntdUI
 {
@@ -50,8 +51,8 @@ namespace AntdUI
             {
                 if (_list == value) return;
                 _list = value;
-                ReadShowCaret = value;
-                if (value) ShowCaret = false;
+                CaretInfo.ReadShow = value;
+                if (value) CaretInfo.Show = false;
             }
         }
 
@@ -80,16 +81,16 @@ namespace AntdUI
         public bool DropDownArrow { get; set; } = false;
 
         /// <summary>
+        /// 下拉边距
+        /// </summary>
+        [Description("下拉边距"), Category("外观"), DefaultValue(typeof(Size), "12, 5")]
+        public Size DropDownPadding { get; set; } = new Size(12, 5);
+
+        /// <summary>
         /// 点击到最里层（无节点才能点击）
         /// </summary>
         [Description("点击到最里层（无节点才能点击）"), Category("行为"), DefaultValue(false)]
         public bool ClickEnd { get; set; } = false;
-
-        /// <summary>
-        /// 焦点时展开下拉
-        /// </summary>
-        [Description("焦点时展开下拉"), Category("行为"), DefaultValue(true)]
-        public bool FocusExpandDropdown { get; set; } = true;
 
         /// <summary>
         /// 点击切换下拉
@@ -242,7 +243,7 @@ namespace AntdUI
             selectedIndexX = 0;
             if (items == null || items.Count == 0) ChangeValueNULL();
             else ChangeValue(i, items[i]);
-            TextFocus = false;
+            ExpandDrop = false;
             select_x = 0;
             subForm = null;
         }
@@ -254,7 +255,7 @@ namespace AntdUI
         internal void DropDownChange(int x, int y, object value)
         {
             ChangeValue(x, y, value);
-            TextFocus = false;
+            ExpandDrop = false;
             select_x = 0;
             subForm = null;
         }
@@ -287,17 +288,19 @@ namespace AntdUI
         public event FilterEventHandler? FilterChanged = null;
 
         string filtertext = "";
+        bool TerminateExpand = false;
         protected override void OnTextChanged(EventArgs e)
         {
             base.OnTextChanged(e);
             if (HasFocus)
             {
+                if (TerminateExpand) { TerminateExpand = false; return; }
                 filtertext = Text;
 
                 if (FilterChanged == null)
                 {
-                    TextFocus = true;
-                    if (textFocus) subForm?.TextChange(Text);
+                    ExpandDrop = true;
+                    if (expandDrop) subForm?.TextChange(Text);
                 }
                 else
                 {
@@ -421,22 +424,27 @@ namespace AntdUI
 
         #endregion
 
-        #region 焦点
+        #region 下拉菜单
 
-        bool textFocus = false;
-        bool TextFocus
+        bool expandDrop = false;
+        /// <summary>
+        /// 展开下拉菜单
+        /// </summary>
+        bool ExpandDrop
         {
-            get => textFocus;
+            get => expandDrop;
             set
             {
-                if (textFocus != value)
-                {
-                    textFocus = value;
-                    subForm?.IClose();
-                }
+                if (expandDrop == value) return;
+                expandDrop = value;
                 if (value)
                 {
-                    if (!ReadOnly && items != null && items.Count > 0)
+                    if (ReadOnly || items == null || items.Count == 0)
+                    {
+                        subForm?.IClose();
+                        expandDrop = false;
+                    }
+                    else
                     {
                         if (subForm == null)
                         {
@@ -445,9 +453,12 @@ namespace AntdUI
                             ShowLayeredForm(objs);
                         }
                     }
-                    else { textFocus = false; return; }
                 }
-                else filtertext = "";
+                else
+                {
+                    subForm?.IClose();
+                    filtertext = "";
+                }
             }
         }
 
@@ -465,22 +476,25 @@ namespace AntdUI
                 select_x = 0;
                 subForm = null;
                 Expand = false;
-                TextFocus = false;
+                ExpandDrop = false;
             };
             subForm.Show(this);
         }
 
-        protected override void OnGotFocus(EventArgs e)
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            base.OnGotFocus(e);
-            if (ReadShowCaret) return;
-            if (FocusExpandDropdown) TextFocus = true;
+            switch (keyData)
+            {
+                case Keys.Down:
+                    ExpandDrop = true;
+                    return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
         }
-
         protected override void OnLostFocus(EventArgs e)
         {
             base.OnLostFocus(e);
-            TextFocus = false;
+            ExpandDrop = false;
         }
 
         #endregion
@@ -491,25 +505,21 @@ namespace AntdUI
         {
             if (selectedIndex > -1 || selectedValue != null || !isempty)
             {
+                TerminateExpand = true;
                 ChangeValueNULL();
                 Invalidate();
             }
         }
 
-        protected override void OnFocusClick(bool SetFocus)
+        protected override void OnClickContent()
         {
-            if (_list) TextFocus = !textFocus;
-            else if (ClickSwitchDropdown)
-            {
-                if (SetFocus) return;
-                TextFocus = !textFocus;
-            }
+            if (_list || ClickSwitchDropdown) ExpandDrop = !expandDrop;
             else
             {
                 if (HasFocus)
                 {
-                    if (textFocus) return;
-                    TextFocus = !textFocus;
+                    if (expandDrop) return;
+                    ExpandDrop = !expandDrop;
                 }
                 else Focus();
             }
@@ -740,7 +750,7 @@ namespace AntdUI
 
         internal bool ShowAndID => ID == -1 || !Show;
 
-        internal Rectangle arr_rect { get; set; }
+        internal Rectangle RectArrow { get; set; }
 
         public Rectangle Rect { get; set; }
 
@@ -769,7 +779,7 @@ namespace AntdUI
                     }
                 }
                 else RectText = rect_text;
-                arr_rect = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
+                RectArrow = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
             }
             else RectText = rect_text;
         }
@@ -810,5 +820,184 @@ namespace AntdUI
         }
 
         public RectangleF RectText { get; set; }
+    }
+
+    internal class ObjectItemCheck
+    {
+        public ObjectItemCheck(object _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        {
+            Show = true;
+            Val = _val;
+            Text = _val.ToString() ?? string.Empty;
+            PY = Pinyin.GetPinyin(Text).ToLower();
+            PYS = Pinyin.GetInitials(Text).ToLower();
+            ID = _i;
+            SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+        }
+
+        public ObjectItemCheck(GroupSelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        {
+            Show = Group = true;
+            Val = _val;
+            Text = _val.Title;
+            PY = Pinyin.GetPinyin(Text).ToLower();
+            PYS = Pinyin.GetInitials(Text).ToLower();
+            ID = _i;
+            SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+        }
+
+        public ObjectItemCheck(SelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        {
+            Sub = _val.Sub;
+            if (Sub != null && Sub.Count > 0) has_sub = true;
+            Show = true;
+            Val = _val;
+            Online = _val.Online;
+            OnlineCustom = _val.OnlineCustom;
+            Icon = _val.Icon;
+            IconSvg = _val.IconSvg;
+            Text = _val.Text;
+            SubText = _val.SubText;
+            Enable = _val.Enable;
+            PY = Pinyin.GetPinyin(_val.Text + _val.SubText).ToLower();
+            PYS = Pinyin.GetInitials(_val.Text + _val.SubText).ToLower();
+            ID = _i;
+            SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+        }
+
+        public ObjectItemCheck(Rectangle rect)
+        {
+            ID = -1;
+            Rect = rect;
+            Show = true;
+        }
+        public object Val { get; set; }
+
+        /// <summary>
+        /// 是否启用
+        /// </summary>
+        public bool Enable { get; set; } = true;
+
+        /// <summary>
+        /// 子选项
+        /// </summary>
+        public IList<object>? Sub { get; set; }
+        internal bool has_sub { get; set; }
+
+        /// <summary>
+        /// 在线状态
+        /// </summary>
+        public int? Online { get; set; }
+        /// <summary>
+        /// 在线自定义颜色
+        /// </summary>
+        public Color? OnlineCustom { get; set; }
+
+        public Image? Icon { get; set; }
+        public string? IconSvg { get; set; }
+
+        /// <summary>
+        /// 是否包含图标
+        /// </summary>
+        public bool HasIcon
+        {
+            get => IconSvg != null || Icon != null;
+        }
+
+        public Rectangle RectIcon { get; set; }
+        public Rectangle RectOnline { get; set; }
+        public Rectangle RectCheck { get; set; }
+
+        string PY { get; set; }
+        string PYS { get; set; }
+        public string? SubText { get; set; }
+        public string Text { get; set; }
+        public bool Contains(string val)
+        {
+            return Text.Contains(val) || PY.Contains(val) || PYS.Contains(val);
+        }
+
+        public int ID { get; set; }
+
+        public bool Hover { get; set; }
+        public bool Show { get; set; }
+        internal bool Group { get; set; }
+        internal bool NoIndex { get; set; }
+
+        internal bool ShowAndID => ID == -1 || !Show;
+
+        public Rectangle Rect { get; set; }
+
+        internal void SetRect(Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        {
+            Rect = rect;
+            if (Val is SelectItem)
+            {
+                if (Online > -1 || HasIcon)
+                {
+                    RectCheck = new Rectangle(rect.X + gap_x / 2, rect_text.Y, rect_text.Height, rect_text.Height);
+                    int x = rect.X + rect_text.Height + gap_x;
+                    if (Online > -1 && HasIcon)
+                    {
+                        RectOnline = new Rectangle(x + (rect_text.Height - gap_y) / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
+                        RectIcon = new Rectangle(x + rect_text.Height, rect_text.Y, rect_text.Height, rect_text.Height);
+                        RectText = new Rectangle(x + gap_x / 2 + rect_text.Height * 2, rect_text.Y, rect_text.Width - x - rect_text.Height, rect_text.Height);
+                    }
+                    else if (Online > -1)
+                    {
+                        RectOnline = new Rectangle(x + (rect_text.Height - gap_y) / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
+                        RectText = new Rectangle(x + gap_x / 2 + rect_text.Height, rect_text.Y, rect_text.Width - x, rect_text.Height);
+                    }
+                    else
+                    {
+                        RectIcon = new Rectangle(x, rect_text.Y, rect_text.Height, rect_text.Height);
+                        RectText = new Rectangle(x + gap_x / 2 + rect_text.Height, rect_text.Y, rect_text.Width - x, rect_text.Height);
+                    }
+                }
+                else
+                {
+                    RectCheck = new Rectangle(rect.X + gap_x / 2, rect_text.Y, rect_text.Height, rect_text.Height);
+                    RectText = new Rectangle(rect_text.X + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height, rect_text.Height);
+                }
+                RectArrow = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
+            }
+            else
+            {
+                RectCheck = new Rectangle(rect.X + gap_x / 2, rect_text.Y, rect_text.Height, rect_text.Height);
+                RectText = new Rectangle(rect_text.X + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height, rect_text.Height);
+            }
+        }
+
+        internal bool SetHover(bool val)
+        {
+            bool change = false;
+            if (val)
+            {
+                if (!Hover) change = true;
+                Hover = true;
+            }
+            else
+            {
+                if (Hover) change = true;
+                Hover = false;
+            }
+            return change;
+        }
+        internal bool Contains(Point point, int x, int y, out bool change)
+        {
+            if (ID > -1 && Rect.Contains(point.X + x, point.Y + y))
+            {
+                change = SetHover(true);
+                return true;
+            }
+            else
+            {
+                change = SetHover(false);
+                return false;
+            }
+        }
+
+        public RectangleF RectText { get; set; }
+        public Rectangle RectArrow { get; set; }
     }
 }

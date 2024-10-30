@@ -115,7 +115,7 @@ namespace AntdUI
                 }
             }
             if (close_list.Count == 0) return;
-            foreach (var it in close_list) it.CloseMe(false);
+            foreach (var it in close_list) it.CloseMe();
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace AntdUI
                 }
             }
             if (close_list.Count == 0) return;
-            foreach (var it in close_list) it.CloseMe(false);
+            foreach (var it in close_list) it.CloseMe();
         }
 
         /// <summary>
@@ -202,6 +202,11 @@ namespace AntdUI
             /// 自动关闭时间（秒）0等于不关闭
             /// </summary>
             public int AutoClose { get; set; } = 6;
+
+            /// <summary>
+            /// 是否可以点击关闭
+            /// </summary>
+            public bool ClickClose { get; set; } = true;
 
             /// <summary>
             /// 方向
@@ -321,7 +326,7 @@ namespace AntdUI
                 if (config.AutoClose > 0)
                 {
                     Thread.Sleep(config.AutoClose * 1000);
-                    CloseMe(true);
+                    CloseMe();
                 }
             });
             PlayAnimation();
@@ -346,7 +351,7 @@ namespace AntdUI
 
         protected override void OnMouseClick(MouseEventArgs e)
         {
-            if (loadingend) CloseMe(false);
+            if (loadingend && config.ClickClose) CloseMe();
             base.OnMouseClick(e);
         }
 
@@ -395,7 +400,7 @@ namespace AntdUI
         /// <param name="g">GDI</param>
         /// <param name="rect_client">客户区域</param>
         /// <param name="rect_read">真实区域</param>
-        GraphicsPath DrawShadow(Graphics g, Rectangle rect_client, RectangleF rect_read)
+        GraphicsPath DrawShadow(Graphics g, Rectangle rect_client, Rectangle rect_read)
         {
             var path = rect_read.RoundPath((int)(config.Radius * Config.Dpi));
             if (Config.ShadowEnabled)
