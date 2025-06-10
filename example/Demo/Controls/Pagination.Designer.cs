@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -61,6 +57,8 @@ namespace Demo.Controls
             header1.Description = "采用分页的形式分隔长列表，每次只加载一个页面。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Pagination.Description";
+            header1.LocalizationText = "Pagination.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -86,7 +84,7 @@ namespace Demo.Controls
             pagination2.Name = "pagination2";
             pagination2.Padding = new Padding(4);
             pagination2.ShowSizeChanger = true;
-            pagination2.Size = new Size(359, 46);
+            pagination2.Size = new Size(397, 46);
             pagination2.TabIndex = 12;
             pagination2.Total = 100;
             // 
@@ -104,7 +102,7 @@ namespace Demo.Controls
             // 
             Controls.Add(panel1);
             Controls.Add(header1);
-            Font = new Font("Microsoft YaHei UI", 10F);
+            Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Pagination";
             Size = new Size(1300, 676);
             panel1.ResumeLayout(false);
@@ -112,6 +110,7 @@ namespace Demo.Controls
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
         private System.Windows.Forms.Panel panel1;
         private AntdUI.Pagination pagination2;

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -28,14 +28,15 @@ namespace AntdUI
         /// <summary>
         /// 行数据
         /// </summary>
-        internal class RowTemplate
+        internal class RowTemplate : IROW
         {
             Table PARENT;
-            public RowTemplate(Table table, TCell[] cell, object? value)
+            public RowTemplate(Table table, CELL[] cell, int i, object? value)
             {
                 PARENT = table;
                 cells = cell;
                 RECORD = value;
+                INDEX_REAL = i;
             }
 
             /// <summary>
@@ -53,19 +54,32 @@ namespace AntdUI
             /// </summary>
             public object? RECORD { get; set; }
 
+            /// <summary>
+            /// 使能
+            /// </summary>
+            public bool ENABLE { get; set; } = true;
+
             public int INDEX { get; set; }
+
+            public int INDEX_REAL { get; set; }
 
             /// <summary>
             /// 列数据
             /// </summary>
-            public TCell[] cells { get; set; }
+            public CELL[] cells { get; set; }
 
             /// <summary>
             /// 行高度
             /// </summary>
             public int Height { get; set; }
 
-            internal bool IsColumn = false;
+            /// <summary>
+            /// 表类型
+            /// </summary>
+            public RowType Type { get; set; }
+
+            public bool IsColumn => Type == RowType.Column;
+            public bool IsOther => Type == RowType.None || Type == RowType.Summary;
 
             #region 悬浮状态
 
@@ -80,9 +94,9 @@ namespace AntdUI
                 {
                     if (hover == value) return;
                     hover = value;
-                    if (SHOW)
+                    if (SHOW && (PARENT.RowHoverBg ?? Colour.FillSecondary.Get("Table", PARENT.ColorScheme)).A > 0)
                     {
-                        if (Config.Animation)
+                        if (Config.HasAnimation(nameof(Table)))
                         {
                             ThreadHover?.Dispose();
                             AnimationHover = true;
@@ -121,23 +135,28 @@ namespace AntdUI
                 }
             }
 
-            internal bool Contains(int x, int y)
+            internal bool Contains(int x, int y, bool sethover)
             {
-                if (CONTAINS(x, y))
+                if (ENABLE)
                 {
-                    Hover = true;
-                    return true;
+                    if (sethover)
+                    {
+                        if (CONTAINS(x, y))
+                        {
+                            Hover = true;
+                            return true;
+                        }
+                        else
+                        {
+                            Hover = false;
+                            return false;
+                        }
+                    }
+                    return CONTAINS(x, y);
                 }
-                else
-                {
-                    Hover = false;
-                    return false;
-                }
+                return false;
             }
-            internal bool CONTAINS(int x, int y)
-            {
-                return RECT.Contains(x, y);
-            }
+            internal bool CONTAINS(int x, int y) => ENABLE && RECT.Contains(x, y);
 
             internal float AnimationHoverValue = 0;
             internal bool AnimationHover = false;
@@ -157,12 +176,71 @@ namespace AntdUI
             internal Rectangle RectExpand;
         }
 
+        public interface IROW
+        {
+            /// <summary>
+            /// 行区域
+            /// </summary>
+            Rectangle RECT { get; }
+
+            /// <summary>
+            /// 原始行数据
+            /// </summary>
+            object? RECORD { get; }
+
+            /// <summary>
+            /// 使能
+            /// </summary>
+            bool ENABLE { get; }
+
+            int INDEX { get; }
+
+            int INDEX_REAL { get; }
+
+            /// <summary>
+            /// 列数据
+            /// </summary>
+            CELL[] cells { get; }
+
+            /// <summary>
+            /// 行高度
+            /// </summary>
+            int Height { get; }
+
+            /// <summary>
+            /// 表类型
+            /// </summary>
+            RowType Type { get; }
+
+            bool IsColumn { get; }
+            bool IsOther { get; }
+
+            bool Select { get; }
+
+            bool CanExpand { get; }
+
+            bool Expand { get; }
+        }
+
+        public enum RowType
+        {
+            None,
+            /// <summary>
+            /// 表头
+            /// </summary>
+            Column,
+            /// <summary>
+            /// 总结栏
+            /// </summary>
+            Summary
+        }
+
         #region 单元格
 
         /// <summary>
         /// 复选框
         /// </summary>
-        class TCellCheck : TCell
+        class TCellCheck : CELL
         {
             /// <summary>
             /// 复选框
@@ -205,7 +283,7 @@ namespace AntdUI
                 ThreadCheck?.Dispose();
                 if (ROW.SHOW && PARENT.IsHandleCreated)
                 {
-                    if (Config.Animation)
+                    if (Config.HasAnimation(nameof(Table)))
                     {
                         AnimationCheck = true;
                         if (_checked)
@@ -247,7 +325,7 @@ namespace AntdUI
 
             #endregion
 
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
             }
             public void SetSize(Rectangle _rect, int check_size)
@@ -256,9 +334,9 @@ namespace AntdUI
                 RECT_REAL = new Rectangle(_rect.X + (_rect.Width - check_size) / 2, _rect.Y + (_rect.Height - check_size) / 2, check_size, check_size);
             }
 
-            public override Size GetSize(Graphics g, Font font, int width, int gap, int gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
-                var size = g.MeasureString(Config.NullText, font).Size();
+                var size = g.MeasureString(Config.NullText, font, 0, PARENT.sf);
                 MinWidth = size.Width;
                 return size;
             }
@@ -271,7 +349,7 @@ namespace AntdUI
         /// <summary>
         /// 单选框
         /// </summary>
-        class TCellRadio : TCell
+        class TCellRadio : CELL
         {
             /// <summary>
             /// 单选框
@@ -313,7 +391,7 @@ namespace AntdUI
                 ThreadCheck?.Dispose();
                 if (ROW.SHOW && PARENT.IsHandleCreated)
                 {
-                    if (Config.Animation)
+                    if (Config.HasAnimation(nameof(Table)))
                     {
                         AnimationCheck = true;
                         if (_checked)
@@ -355,7 +433,7 @@ namespace AntdUI
 
             #endregion
 
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
             }
             public void SetSize(Rectangle _rect, int check_size)
@@ -364,9 +442,9 @@ namespace AntdUI
                 RECT_REAL = new Rectangle(_rect.X + (_rect.Width - check_size) / 2, _rect.Y + (_rect.Height - check_size) / 2, check_size, check_size);
             }
 
-            public override Size GetSize(Graphics g, Font font, int width, int gap, int gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
-                var size = g.MeasureString(Config.NullText, font).Size();
+                var size = g.MeasureString(Config.NullText, font, 0, PARENT.sf);
                 MinWidth = size.Width;
                 return size;
             }
@@ -378,7 +456,7 @@ namespace AntdUI
         /// <summary>
         /// 开关
         /// </summary>
-        class TCellSwitch : TCell
+        class TCellSwitch : CELL
         {
             /// <summary>
             /// 开关
@@ -420,7 +498,7 @@ namespace AntdUI
                 ThreadCheck?.Dispose();
                 if (ROW.SHOW && PARENT.IsHandleCreated)
                 {
-                    if (Config.Animation)
+                    if (Config.HasAnimation(nameof(Table)))
                     {
                         AnimationCheck = true;
                         if (_checked)
@@ -475,7 +553,7 @@ namespace AntdUI
                 {
                     if (_mouseHover == value) return;
                     _mouseHover = value;
-                    if (ROW.SHOW && PARENT.IsHandleCreated && Config.Animation)
+                    if (ROW.SHOW && PARENT.IsHandleCreated && Config.HasAnimation(nameof(Table)))
                     {
                         ThreadHover?.Dispose();
                         AnimationHover = true;
@@ -560,7 +638,7 @@ namespace AntdUI
 
             #endregion
 
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
             }
 
@@ -571,9 +649,9 @@ namespace AntdUI
                 RECT_REAL = new Rectangle(_rect.X + (_rect.Width - check_size2) / 2, _rect.Y + (_rect.Height - check_size) / 2, check_size2, check_size);
             }
 
-            public override Size GetSize(Graphics g, Font font, int width, int gap, int gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
-                var size = g.MeasureString(Config.NullText, font).Size();
+                var size = g.MeasureString(Config.NullText, font, 0, PARENT.sf);
                 MinWidth = size.Width;
                 return size;
             }
@@ -583,9 +661,114 @@ namespace AntdUI
         }
 
         /// <summary>
+        /// 拖拽手柄
+        /// </summary>
+        class TCellSort : CELL
+        {
+            /// <summary>
+            /// 拖拽手柄
+            /// </summary>
+            /// <param name="table">表格</param>
+            /// <param name="column">表头</param>
+            public TCellSort(Table table, ColumnSort column) : base(table, column, null, null)
+            { }
+
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            {
+            }
+            public void SetSize(Rectangle _rect, int sort_size, int sort_ico_size)
+            {
+                RECT = _rect;
+                RECT_REAL = new Rectangle(_rect.X + (_rect.Width - sort_size) / 2, _rect.Y + (_rect.Height - sort_size) / 2, sort_size, sort_size);
+                RECT_ICO = new Rectangle(_rect.X + (_rect.Width - sort_ico_size) / 2, _rect.Y + (_rect.Height - sort_ico_size) / 2, sort_ico_size, sort_ico_size);
+            }
+            public Rectangle RECT_ICO { get; set; }
+
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
+            {
+                var size = g.MeasureString(Config.NullText, font, 0, PARENT.sf);
+                MinWidth = size.Width;
+                return size;
+            }
+
+
+            #region 悬浮状态
+
+            bool hover = false;
+            /// <summary>
+            /// 是否移动
+            /// </summary>
+            public bool Hover
+            {
+                get => hover;
+                set
+                {
+                    if (hover == value) return;
+                    hover = value;
+
+                    if (Config.HasAnimation(nameof(Table)))
+                    {
+                        ThreadHover?.Dispose();
+                        AnimationHover = true;
+                        var t = Animation.TotalFrames(20, 200);
+                        if (value)
+                        {
+                            ThreadHover = new ITask((i) =>
+                            {
+                                AnimationHoverValue = Animation.Animate(i, t, 1F, AnimationType.Ball);
+                                PARENT.Invalidate();
+                                return true;
+                            }, 20, t, () =>
+                            {
+                                AnimationHover = false;
+                                AnimationHoverValue = 1;
+                                PARENT.Invalidate();
+                            });
+                        }
+                        else
+                        {
+                            ThreadHover = new ITask((i) =>
+                            {
+                                AnimationHoverValue = 1F - Animation.Animate(i, t, 1F, AnimationType.Ball);
+                                PARENT.Invalidate();
+                                return true;
+                            }, 20, t, () =>
+                            {
+                                AnimationHover = false;
+                                AnimationHoverValue = 0;
+                                PARENT.Invalidate();
+                            });
+                        }
+                    }
+                    else PARENT.Invalidate();
+                }
+            }
+
+            public bool Contains(int x, int y)
+            {
+                if (RECT_REAL.Contains(x, y))
+                {
+                    Hover = true;
+                    return true;
+                }
+                else
+                {
+                    Hover = false;
+                    return false;
+                }
+            }
+
+            internal float AnimationHoverValue = 0;
+            internal bool AnimationHover = false;
+            internal ITask? ThreadHover = null;
+
+            #endregion
+        }
+
+        /// <summary>
         /// 普通文本
         /// </summary>
-        class TCellText : TCell
+        class TCellText : CELL
         {
             /// <summary>
             /// 普通文本
@@ -605,13 +788,13 @@ namespace AntdUI
             /// </summary>
             public string? value { get; set; }
 
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
                 RECT = _rect;
                 RECT_REAL = new Rectangle(_rect.X + gap + ox, _rect.Y + gap, _rect.Width - gap2, _rect.Height - gap2);
             }
 
-            public override Size GetSize(Graphics g, Font font, int width, int gap, int gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
                 if (COLUMN.LineBreak)
                 {
@@ -619,19 +802,19 @@ namespace AntdUI
                     {
                         if (COLUMN.Width.EndsWith("%") && float.TryParse(COLUMN.Width.TrimEnd('%'), out var f))
                         {
-                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(width * (f / 100F))).Size();
+                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(width * (f / 100F)));
                             MinWidth = size2.Width;
                             return new Size(size2.Width + gap2, size2.Height);
                         }
                         else if (int.TryParse(COLUMN.Width, out var i))
                         {
-                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(i * Config.Dpi)).Size();
+                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(i * Config.Dpi));
                             MinWidth = size2.Width;
                             return new Size(size2.Width + gap2, size2.Height);
                         }
                     }
                 }
-                var size = g.MeasureString(value, font).Size();
+                var size = g.MeasureString(value, font, 0, PARENT.sf);
                 MinWidth = size.Width;
                 return new Size(size.Width + gap2, size.Height);
             }
@@ -642,7 +825,7 @@ namespace AntdUI
         /// <summary>
         /// 表头
         /// </summary>
-        internal class TCellColumn : TCell
+        internal class TCellColumn : CELL
         {
             public TCellColumn(Table table, Column column) : base(table, column)
             {
@@ -656,22 +839,44 @@ namespace AntdUI
 
             public Rectangle rect_up { get; set; }
             public Rectangle rect_down { get; set; }
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
                 RECT = _rect;
                 if (COLUMN.SortOrder)
                 {
-                    int icon_sp = (int)(gap * 0.34F), y = _rect.Y + (_rect.Height - (gap * 2) + icon_sp) / 2;
-                    rect_up = new Rectangle(_rect.Right - gap2, y, gap, gap);
-                    rect_down = new Rectangle(rect_up.X, rect_up.Bottom - icon_sp, gap, gap);
+                    int size;
+                    if (PARENT.SortOrderSize.HasValue) size = (int)(PARENT.SortOrderSize.Value * Config.Dpi);
+                    else size = (int)(_rect.Height * .27F);
+                    int size2 = size * 2, icon_sp = (int)(size * .34F), y = _rect.Y + (_rect.Height - size2 + icon_sp) / 2;
+                    rect_up = new Rectangle(_rect.Right - size2, y, size, size);
+                    rect_down = new Rectangle(rect_up.X, rect_up.Bottom - icon_sp, size, size);
                 }
             }
 
-            public override Size GetSize(Graphics g, Font font, int width, int gap, int gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
-                var size = g.MeasureString(value, font).Size();
+                if (COLUMN.ColBreak)
+                {
+                    if (COLUMN.Width != null)
+                    {
+                        if (COLUMN.Width.EndsWith("%") && float.TryParse(COLUMN.Width.TrimEnd('%'), out var f))
+                        {
+                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(width * (f / 100F)));
+                            MinWidth = size2.Width;
+                            return new Size(size2.Width + gap2, size2.Height);
+                        }
+                        else if (int.TryParse(COLUMN.Width, out var i))
+                        {
+                            var size2 = g.MeasureString(value, font, (int)Math.Ceiling(i * Config.Dpi));
+                            MinWidth = size2.Width;
+                            return new Size(size2.Width + gap2, size2.Height);
+                        }
+                    }
+                }
+                var size = g.MeasureString(value, font, 0, PARENT.sf);
                 SortWidth = COLUMN.SortOrder ? (int)(size.Height * 0.8F) : 0;
                 MinWidth = size.Width + gap2 + SortWidth;
+
                 return new Size(size.Width + gap2 + SortWidth, size.Height);
             }
 
@@ -682,15 +887,15 @@ namespace AntdUI
         /// <summary>
         /// 单元格
         /// </summary>
-        internal abstract class TCell
+        public abstract class CELL
         {
-            public TCell(Table table, Column column)
+            public CELL(Table table, Column column)
             {
                 COLUMN = column;
                 PARENT = table;
             }
 
-            public TCell(Table table, Column column, PropertyDescriptor? prop, object? ov)
+            public CELL(Table table, Column column, PropertyDescriptor? prop, object? ov)
             {
                 COLUMN = column;
                 PARENT = table;
@@ -704,6 +909,7 @@ namespace AntdUI
             public Table PARENT { get; set; }
 
             public Column COLUMN { get; set; }
+
             /// <summary>
             /// 列对象
             /// </summary>
@@ -716,7 +922,7 @@ namespace AntdUI
             /// <summary>
             /// 行对象
             /// </summary>
-            public RowTemplate ROW
+            internal RowTemplate ROW
             {
                 get
                 {
@@ -725,10 +931,12 @@ namespace AntdUI
                 }
             }
 
-            public void SetROW(RowTemplate row)
-            {
-                _ROW = row;
-            }
+            /// <summary>
+            /// 行
+            /// </summary>
+            public IROW Row => ROW;
+
+            internal void SetROW(RowTemplate row) => _ROW = row;
 
             #region 区域
 
@@ -747,16 +955,12 @@ namespace AntdUI
             /// </summary>
             public int MinWidth { get; set; }
 
-            /// <summary>
-            /// 鼠标按下
-            /// </summary>
-            public int MouseDown { get; set; }
+            internal int offsetx = 0, offsety = 0;
+            public bool CONTAIN(int x, int y) => RECT.Contains(x - offsetx, y - offsety);
+            public bool CONTAIN_REAL(int x, int y) => RECT_REAL.Contains(x - offsetx, y - offsety);
 
-            public bool CONTAIN(int x, int y) => RECT.Contains(x, y);
-            public bool CONTAIN_REAL(int x, int y) => RECT_REAL.Contains(x, y);
-
-            public abstract void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int gap, int gap2);
-            public abstract Size GetSize(Graphics g, Font font, int width, int gap, int gap2);
+            public abstract void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2);
+            public abstract Size GetSize(Canvas g, Font font, int width, int gap, int gap2);
 
             #endregion
         }
@@ -766,123 +970,80 @@ namespace AntdUI
         /// <summary>
         /// 包裹容器
         /// </summary>
-        internal class Template : TCell
+        internal class Template : CELL
         {
             public Template(Table table, Column column, PropertyDescriptor? prop, object? ov, ref int processing, IList<ICell> cels) : base(table, column, prop, ov)
             {
-                var list = new List<ITemplate>(cels.Count);
+                Value = cels;
                 foreach (var it in cels)
                 {
-                    if (it is CellBadge badge)
-                    {
-                        if (badge.State == TState.Processing) processing++;
-                    }
-                    list.Add(new ITemplate(it, this));
+                    it.SetCELL(this);
+                    if (it is CellBadge badge && badge.State == TState.Processing) processing++;
                 }
-                value = list;
             }
 
             /// <summary>
             /// 值
             /// </summary>
-            internal IList<ITemplate> value { get; set; }
+            public IList<ICell> Value { get; set; }
 
-            public override void SetSize(Graphics g, Font font, Rectangle _rect, int ox, int _gap, int _gap2)
+            public override void SetSize(Canvas g, Font font, Rectangle _rect, int ox, int gap, int gap2)
             {
                 RECT = RECT_REAL = _rect;
-                int rx = _rect.X + ox;
-                int gap = _gap / 2, gap2 = _gap;
-                if (value.Count == 1 && (value[0].Value is CellText || value[0].Value is CellProgress))
+                int rx = _rect.X + ox, sp = gap / 2;
+                int use_x;
+                switch (COLUMN.Align)
                 {
-                    var it = value[0];
-                    var size = SIZES[0];
-                    it.RECT = new Rectangle(rx, _rect.Y, _rect.Width, _rect.Height);
-                    it.SetRect(g, font, new Rectangle(rx, _rect.Y, _rect.Width, _rect.Height), size, gap, gap2);
+                    case ColumnAlign.Center:
+                        use_x = rx + (_rect.Width - MinWidth + gap2) / 2;
+                        break;
+                    case ColumnAlign.Right:
+                        use_x = _rect.Right - MinWidth + gap;
+                        break;
+                    case ColumnAlign.Left:
+                    default:
+                        use_x = rx + gap;
+                        break;
                 }
-                else
+                int maxwidth = _rect.Width - gap2;
+                for (int i = 0; i < Value.Count; i++)
                 {
-                    int use_x;
-                    switch (COLUMN.Align)
-                    {
-                        case ColumnAlign.Center: use_x = rx + (_rect.Width - MinWidth) / 2; break;
-                        case ColumnAlign.Right: use_x = _rect.Right - MinWidth; break;
-                        case ColumnAlign.Left:
-                        default: use_x = rx + gap2; break;
-                    }
-                    for (int i = 0; i < value.Count; i++)
-                    {
-                        var it = value[i];
-                        var size = SIZES[i];
-                        it.SetRect(g, font, new Rectangle(use_x, _rect.Y, size.Width, _rect.Height), size, gap, gap2);
-                        use_x += size.Width;
-                    }
+                    var it = Value[i];
+                    var size = SIZES[i];
+                    it.SetRect(g, font, new Rectangle(use_x, _rect.Y, size.Width, _rect.Height), size, maxwidth, gap, gap2);
+                    int w = size.Width + sp;
+                    use_x += w;
+                    maxwidth -= w;
                 }
             }
 
             Size[] SIZES = new Size[0];
-            public override Size GetSize(Graphics g, Font font, int width, int _gap, int _gap2)
+            public override Size GetSize(Canvas g, Font font, int width, int gap, int gap2)
             {
-                int gap = _gap / 2, gap2 = _gap;
-                int w = 0, h = 0;
-                var sizes = new List<Size>(value.Count);
-                foreach (var it in value)
+                int w = 0, h = 0, sp = gap / 2;
+                var sizes = new List<Size>(Value.Count);
+                foreach (var it in Value)
                 {
-                    var size = it.Value.GetSize(g, font, gap, gap2);
+                    var size = it.GetSize(g, font, gap, gap2);
                     sizes.Add(size);
-                    w += size.Width;
-                    if (h < size.Height) h = size.Height;
+                    w += size.Width + sp;
+                    if ((PARENT.CellImpactHeight ?? it.ImpactHeight) && h < size.Height) h = size.Height;
                 }
-                MinWidth = w;
+                MinWidth = w + gap + sp;
                 SIZES = sizes.ToArray();
-                return new Size(MinWidth + _gap2, h);
+                return new Size(MinWidth, h);
             }
 
             public override string? ToString()
             {
-                var vals = new List<string>(value.Count);
-                foreach (var cell in value)
+                var vals = new List<string>(Value.Count);
+                foreach (var cell in Value)
                 {
                     var str = cell.ToString();
                     if (str != null && !string.IsNullOrEmpty(str)) vals.Add(str);
                 }
                 return string.Join(" ", vals);
             }
-        }
-
-        internal class ITemplate
-        {
-            public ITemplate(ICell value, Template template)
-            {
-                value.PARENT = template;
-                Value = value;
-            }
-
-            public ICell Value { get; set; }
-
-            /// <summary>
-            /// 真实区域
-            /// </summary>
-            public Rectangle RECT { get; set; }
-
-            public bool CONTAINS(int x, int y) => RECT.Contains(x, y);
-
-            public void SetRect(Graphics g, Font font, Rectangle rect, Size size, int gap, int gap2)
-            {
-                RECT = rect;
-                Value.SetRect(g, font, rect, size, gap, gap2);
-            }
-
-            public bool SValue(object obj)
-            {
-                if (obj is ICell value)
-                {
-                    Value = value;
-                    return true;
-                }
-                return false;
-            }
-
-            public override string? ToString() => Value.ToString();
         }
 
         #endregion

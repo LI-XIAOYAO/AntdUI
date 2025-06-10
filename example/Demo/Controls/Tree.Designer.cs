@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -59,6 +55,8 @@ namespace Demo.Controls
             header1.Description = "多层次的结构列表。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Tree.Description";
+            header1.LocalizationText = "Tree.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -76,7 +74,6 @@ namespace Demo.Controls
             tree1.Name = "tree1";
             tree1.Size = new Size(328, 328);
             tree1.TabIndex = 18;
-            tree1.Text = "menu1";
             // 
             // tree2
             // 
@@ -87,7 +84,6 @@ namespace Demo.Controls
             tree2.Name = "tree2";
             tree2.Size = new Size(412, 328);
             tree2.TabIndex = 19;
-            tree2.Text = "menu1";
             // 
             // Tree
             // 

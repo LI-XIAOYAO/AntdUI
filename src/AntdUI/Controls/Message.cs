@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -31,16 +31,18 @@ namespace AntdUI
     public static class Message
     {
         /// <summary>
+        /// 最大显示数量
+        /// </summary>
+        public static int? MaxCount { get; set; }
+
+        /// <summary>
         /// 成功提示
         /// </summary>
         /// <param name="form">窗口</param>
         /// <param name="text">提示内容</param>
         /// <param name="font">字体</param>
         /// <param name="autoClose">自动关闭时间（秒）0等于不关闭</param>
-        public static void success(Form form, string text, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.Success, font, autoClose));
-        }
+        public static void success(Form form, string text, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.Success, font, autoClose));
 
         /// <summary>
         /// 信息提示
@@ -49,10 +51,7 @@ namespace AntdUI
         /// <param name="text">提示内容</param>
         /// <param name="font">字体</param>
         /// <param name="autoClose">自动关闭时间（秒）0等于不关闭</param>
-        public static void info(Form form, string text, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.Info, font, autoClose));
-        }
+        public static void info(Form form, string text, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.Info, font, autoClose));
 
         /// <summary>
         /// 警告提示
@@ -61,10 +60,7 @@ namespace AntdUI
         /// <param name="text">提示内容</param>
         /// <param name="font">字体</param>
         /// <param name="autoClose">自动关闭时间（秒）0等于不关闭</param>
-        public static void warn(Form form, string text, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.Warn, font, autoClose));
-        }
+        public static void warn(Form form, string text, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.Warn, font, autoClose));
 
         /// <summary>
         /// 失败提示
@@ -73,10 +69,7 @@ namespace AntdUI
         /// <param name="text">提示内容</param>
         /// <param name="font">字体</param>
         /// <param name="autoClose">自动关闭时间（秒）0等于不关闭</param>
-        public static void error(Form form, string text, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.Error, font, autoClose));
-        }
+        public static void error(Form form, string text, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.Error, font, autoClose));
 
         /// <summary>
         /// 加载提示
@@ -86,14 +79,9 @@ namespace AntdUI
         /// <param name="call">耗时任务</param>
         /// <param name="font">字体</param>
         /// <param name="autoClose">自动关闭时间（秒）0等于不关闭</param>
-        public static void loading(Form form, string text, Action<Config> call, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.None, font, autoClose) { Call = call });
-        }
-        public static void open(Form form, string text, Font? font = null, int? autoClose = null)
-        {
-            open(new Config(form, text, TType.None, font, autoClose));
-        }
+        public static void loading(Form form, string text, Action<Config> call, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.None, font, autoClose) { Call = call });
+
+        public static void open(Form form, string text, Font? font = null, int? autoClose = null) => open(new Config(form, text, TType.None, font, autoClose));
 
         /// <summary>
         /// Message 全局提示
@@ -123,17 +111,25 @@ namespace AntdUI
         /// </summary>
         public static void close_id(string id)
         {
-            MsgQueue.volley.Add("M" + id);
-            var close_list = new System.Collections.Generic.List<MessageFrm>();
-            foreach (var it in ILayeredFormAnimate.list)
+            if (ILayeredFormAnimate.list.Count > 0 || MsgQueue.queue.Count > 0)
             {
-                foreach (var item in it.Value)
+                bool isadd = true;
+                var close_list = new System.Collections.Generic.List<MessageFrm>();
+                foreach (var it in ILayeredFormAnimate.list)
                 {
-                    if (item is MessageFrm message && message.config.ID == id) close_list.Add(message);
+                    foreach (var item in it.Value)
+                    {
+                        if (item is MessageFrm message && message.config.ID == id)
+                        {
+                            close_list.Add(message);
+                            isadd = false;
+                        }
+                    }
                 }
+                if (isadd) MsgQueue.volley.Add("M" + id);
+                if (close_list.Count == 0) return;
+                foreach (var it in close_list) it.CloseMe();
             }
-            if (close_list.Count == 0) return;
-            foreach (var it in close_list) it.CloseMe();
         }
 
         /// <summary>
@@ -173,15 +169,47 @@ namespace AntdUI
             /// </summary>
             public Form Form { get; set; }
 
+            string? text = null;
             /// <summary>
             /// 文本
             /// </summary>
-            public string Text { get; set; }
+            public string? Text
+            {
+                get => Localization.GetLangI(LocalizationText, text, new string?[] { "{id}", ID });
+                set => text = value;
+            }
+
+            /// <summary>
+            /// 国际化（文本）
+            /// </summary>
+            public string? LocalizationText { get; set; }
 
             /// <summary>
             /// 图标
             /// </summary>
             public TType Icon { get; set; }
+
+            public IconInfo? IconCustom { get; set; }
+
+            public Config SetIcon(TType icon = TType.Success)
+            {
+                IconCustom = null;
+                Icon = icon;
+                return this;
+            }
+
+            public Config SetIcon(string svg) => SetIcon(new IconInfo(svg));
+            public Config SetIcon(string svg, Color? fill) => SetIcon(new IconInfo(svg, fill));
+            public Config SetIcon(string svg, Color back, bool round) => SetIcon(new IconInfo(svg) { Back = back, Round = round });
+            public Config SetIcon(string svg, Color back, int radius) => SetIcon(new IconInfo(svg) { Back = back, Radius = radius });
+            public Config SetIcon(string svg, Color? fill, Color back, bool round) => SetIcon(new IconInfo(svg, fill) { Back = back, Round = round });
+            public Config SetIcon(string svg, Color? fill, Color back, int radius) => SetIcon(new IconInfo(svg, fill) { Back = back, Radius = radius });
+
+            public Config SetIcon(IconInfo iconInfo)
+            {
+                IconCustom = iconInfo;
+                return this;
+            }
 
             /// <summary>
             /// 加载回调
@@ -209,6 +237,11 @@ namespace AntdUI
             public bool ClickClose { get; set; } = true;
 
             /// <summary>
+            /// 是否置顶
+            /// </summary>
+            public bool TopMost { get; set; }
+
+            /// <summary>
             /// 方向
             /// </summary>
             public TAlignFrom Align { get; set; } = TAlignFrom.Top;
@@ -221,7 +254,7 @@ namespace AntdUI
             /// <summary>
             /// 弹出在窗口
             /// </summary>
-            public bool ShowInWindow { get; set; } = false;
+            public bool? ShowInWindow { get; set; }
 
             public void OK(string text)
             {
@@ -249,11 +282,47 @@ namespace AntdUI
             }
 
             internal Action? refresh;
-            public void Refresh()
-            {
-                refresh?.Invoke();
-            }
+            public void Refresh() => refresh?.Invoke();
         }
+    }
+
+    public class IconInfo
+    {
+        public IconInfo(string svg) { Svg = svg; }
+        public IconInfo(string svg, Color? fill)
+        {
+            Svg = svg;
+            Fill = fill;
+        }
+
+        /// <summary>
+        /// SVG
+        /// </summary>
+        public string Svg { get; set; }
+
+        /// <summary>
+        /// 填充颜色
+        /// </summary>
+        public Color? Fill { get; set; }
+        /// <summary>
+        /// 背景颜色
+        /// </summary>
+        public Color? Back { get; set; }
+
+        /// <summary>
+        /// 背景圆角
+        /// </summary>
+        public float Radius { get; set; }
+
+        /// <summary>
+        /// 背景是否圆角
+        /// </summary>
+        public bool Round { get; set; }
+
+        /// <summary>
+        /// 与背景偏移量
+        /// </summary>
+        public int Offset { get; set; } = 1;
     }
 
     internal class MessageFrm : ILayeredFormAnimate
@@ -263,19 +332,18 @@ namespace AntdUI
         public MessageFrm(Message.Config _config)
         {
             config = _config;
-            config.Form.SetTopMost(Handle);
+            if (config.TopMost) Helper.SetTopMost(Handle);
+            else config.Form.SetTopMost(Handle);
             shadow_size = (int)(shadow_size * Config.Dpi);
             loading = _config.Call != null;
             if (config.Font != null) Font = config.Font;
             else if (Config.Font != null) Font = Config.Font;
             else Font = config.Form.Font;
             Icon = config.Form.Icon;
-            Helper.GDI(g =>
-            {
-                SetSize(RenderMeasure(g, shadow_size));
-            });
+            Helper.GDI(g => SetSize(RenderMeasure(g, shadow_size)));
         }
 
+        public override string name => nameof(Message);
         internal override TAlignFrom Align => config.Align;
         internal override bool ActiveAnimation => false;
 
@@ -284,7 +352,7 @@ namespace AntdUI
         ITask? ThreadLoading = null;
         public bool IInit()
         {
-            if (SetPosition(config.Form, config.ShowInWindow || Config.ShowInWindowByMessage)) return true;
+            if (SetPosition(config.Form, config.ShowInWindow ?? Config.ShowInWindowByMessage)) return true;
             if (loading)
             {
                 ThreadLoading = new ITask(this, i =>
@@ -307,11 +375,14 @@ namespace AntdUI
                             return;
                         }
                     };
+                    var tmp = DateTime.Now;
                     try
                     {
                         config.Call(config);
                     }
                     catch { }
+                    var time = DateTime.Now - tmp;
+                    if (time.TotalSeconds < 1) Thread.Sleep(1000 - (int)(time.TotalMilliseconds));
                     loading = false;
                     ThreadLoading?.Dispose();
                     if (IRefresh())
@@ -338,11 +409,8 @@ namespace AntdUI
             var oldw = TargetRect.Width;
             if (IsHandleCreated)
             {
-                Helper.GDI(g =>
-                {
-                    SetSize(RenderMeasure(g, shadow_size));
-                });
                 DisposeAnimation();
+                Helper.GDI(g => SetSize(RenderMeasure(g, shadow_size)));
                 SetPositionCenter(oldw);
                 return false;
             }
@@ -367,40 +435,36 @@ namespace AntdUI
             {
                 using (var path = DrawShadow(g, rect, rect_read))
                 {
-                    using (var brush = new SolidBrush(Style.Db.BgElevated))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Colour.BgElevated.Get("Message"), path);
                 }
                 if (loading)
                 {
-                    using (var brush = new Pen(Style.Db.Fill, 3F))
+                    var bor3 = 3F * Config.Dpi;
+                    g.DrawEllipse(Colour.Fill.Get("Message"), bor3, rect_loading);
+                    using (var pen = new Pen(Colour.Primary.Get("Message"), bor3))
                     {
-                        g.DrawEllipse(brush, rect_loading);
-                    }
-                    using (var brush = new Pen(Style.Db.Primary, 3F))
-                    {
-                        brush.StartCap = brush.EndCap = LineCap.Round;
-                        g.DrawArc(brush, rect_loading, AnimationLoadingValue, 100);
+                        pen.StartCap = pen.EndCap = LineCap.Round;
+                        g.DrawArc(pen, rect_loading, AnimationLoadingValue, 100);
                     }
                 }
-                else if (config.Icon != TType.None) g.PaintIcons(config.Icon, rect_icon);
-                using (var brush = new SolidBrush(Style.Db.TextBase))
+                else if (config.IconCustom != null) g.PaintIcons(config.IconCustom, rect_icon);
+                else if (config.Icon != TType.None) g.PaintIcons(config.Icon, rect_icon, "Message", TAMode.Auto);
+                using (var brush = new SolidBrush(Colour.TextBase.Get("Message")))
                 {
-                    g.DrawStr(config.Text, Font, brush, rect_txt, s_f_left);
+                    g.DrawText(config.Text, Font, brush, rect_txt, s_f_left);
                 }
             }
             return original_bmp;
         }
 
-        Bitmap? shadow_temp = null;
+        SafeBitmap? shadow_temp = null;
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
         /// <param name="rect_client">客户区域</param>
         /// <param name="rect_read">真实区域</param>
-        GraphicsPath DrawShadow(Graphics g, Rectangle rect_client, Rectangle rect_read)
+        GraphicsPath DrawShadow(Canvas g, Rectangle rect_client, Rectangle rect_read)
         {
             var path = rect_read.RoundPath((int)(config.Radius * Config.Dpi));
             if (Config.ShadowEnabled)
@@ -410,19 +474,18 @@ namespace AntdUI
                     shadow_temp?.Dispose();
                     shadow_temp = path.PaintShadow(rect_client.Width, rect_client.Height);
                 }
-                g.DrawImage(shadow_temp, rect_client, 0.2F);
+                g.Image(shadow_temp.Bitmap, rect_client, .2F);
             }
             return path;
         }
 
         Rectangle rect_icon, rect_loading, rect_txt;
-        Size RenderMeasure(Graphics g, int shadow)
+        Size RenderMeasure(Canvas g, int shadow)
         {
             int shadow2 = shadow * 2;
             float dpi = Config.Dpi;
-            var size = g.MeasureString(config.Text, Font, 10000, s_f_left).Size();
-            int paddingx = (int)(config.Padding.Width * dpi), paddingy = (int)(config.Padding.Height * dpi),
-                sp = (int)(8 * dpi), height = size.Height + paddingy * 2;
+            var size = g.MeasureText(config.Text, Font, 10000, s_f_left);
+            int paddingx = (int)(config.Padding.Width * dpi), paddingy = (int)(config.Padding.Height * dpi), sp = (int)(8 * dpi), height = size.Height + paddingy * 2;
             if (loading)
             {
                 int icon_size = (int)(size.Height * .86F);
@@ -434,7 +497,7 @@ namespace AntdUI
 
                 return new Size(size.Width + icon_size + sp + paddingx * 2 + shadow2, height + shadow2);
             }
-            else if (config.Icon == TType.None)
+            else if (config.Icon == TType.None && config.IconCustom == null)
             {
                 rect_txt = new Rectangle(shadow + paddingx, shadow, size.Width, height);
                 return new Size(size.Width + paddingx * 2 + shadow2, height + shadow2);

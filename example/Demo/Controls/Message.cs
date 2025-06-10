@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -59,7 +59,7 @@ namespace Demo.Controls
                 for (int i = 0; i < 100; i++)
                 {
                     Thread.Sleep(10);
-                    config.Text = "加载中 " + (i + 1) + "%";
+                    config.Text = AntdUI.Localization.Get("Loading", "加载中") + " " + (i + 1) + "%";
                     config.Refresh();
                 }
                 Thread.Sleep(1000);

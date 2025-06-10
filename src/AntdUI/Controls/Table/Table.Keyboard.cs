@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -28,71 +28,77 @@ namespace AntdUI
             switch (keyData)
             {
                 case Keys.Control | Keys.C:
-                    if (ClipboardCopy && rows != null && selectedIndex > -1) return CopyData(selectedIndex);
-                    return base.ProcessCmdKey(ref msg, keyData);
+                    if (ClipboardCopy && rows != null && !inEditMode && selectedIndex.Length > 0)
+                    {
+                        CopyData(selectedIndex);
+                        if (HandShortcutKeys) return true;
+                    }
+                    break;
                 case Keys.Down:
                     if (rows != null)
                     {
-                        if (selectedIndex == -1) ScrollBar.ValueY += 50;
-                        else if (selectedIndex < rows.Length - 1)
+                        if (selectedIndex.Length == 0) ScrollBar.ValueY += 50;
+                        else if (selectedIndex[selectedIndex.Length - 1] < rows.Length - 1)
                         {
-                            SelectedIndex++;
-                            var selectRow = rows[selectedIndex];
-                            int sy = ScrollBar.ValueY;
-                            if (selectRow.RECT.Y < sy || selectRow.RECT.Bottom > sy + rect_read.Height) ScrollLine(selectedIndex, rows);
+                            int value = selectedIndex[selectedIndex.Length - 1] + 1;
+                            SelectedIndex = value;
+                            ScrollLine(value, rows);
                         }
-                        return true;
+                        else if (selectedIndex.Length > 1)
+                        {
+                            int value = selectedIndex[selectedIndex.Length - 1];
+                            SelectedIndex = value;
+                            ScrollLine(value, rows);
+                        }
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.Up:
                     if (rows != null)
                     {
-                        if (selectedIndex == -1) ScrollBar.ValueY -= 50;
-                        else if (selectedIndex > 1)
+                        if (selectedIndex.Length == 0) ScrollBar.ValueY -= 50;
+                        else if (selectedIndex[0] > 1)
                         {
                             SelectedIndex--;
-                            var selectRow = rows[selectedIndex];
-                            int sy = ScrollBar.ValueY;
-                            if (selectRow.RECT.Y < sy || selectRow.RECT.Bottom > sy + rect_read.Height) ScrollLine(selectedIndex, rows);
+                            ScrollLine(selectedIndex[0], rows);
                         }
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.PageUp:
                     if (ScrollBar.ShowY)
                     {
                         ScrollBar.ValueY -= rect_read.Height;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.PageDown:
                     if (ScrollBar.ShowY)
                     {
                         ScrollBar.ValueY += rect_read.Height;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.Left:
                     if (ScrollBar.ShowX)
                     {
                         ScrollBar.ValueX -= 50;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.Right:
                     if (ScrollBar.ShowX)
                     {
                         ScrollBar.ValueX += 50;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 case Keys.Enter:
                 case Keys.Space:
-                    if (rows != null && selectedIndex > -1)
+                    if (rows != null && selectedIndex.Length > 0)
                     {
-                        var it = rows[selectedIndex];
-                        CellClick?.Invoke(this, new TableClickEventArgs(it.RECORD, selectedIndex, 0, new Rectangle(it.RECT.X - ScrollBar.ValueX, it.RECT.Y - ScrollBar.ValueY, it.RECT.Width, it.RECT.Height), new MouseEventArgs(MouseButtons.Left, 0, 0, 0, 0)));
-                        return true;
+                        var it = rows[selectedIndex[0]];
+                        CellClick?.Invoke(this, new TableClickEventArgs(it.RECORD, selectedIndex[0], 0, null, new Rectangle(it.RECT.X - ScrollBar.ValueX, it.RECT.Y - ScrollBar.ValueY, it.RECT.Width, it.RECT.Height), new MouseEventArgs(MouseButtons.None, 0, 0, 0, 0)));
                     }
                     break;
             }

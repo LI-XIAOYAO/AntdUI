@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -65,6 +61,8 @@ namespace Demo.Controls
             header1.Description = "页头位于页容器中，页容器顶部，起到了内容概览和引导页级操作的作用。包括由面包屑、标题、页面内容简介、页面级操作等、页面级导航组成。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "PageHeader.Description";
+            header1.LocalizationText = "PageHeader.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -77,7 +75,7 @@ namespace Demo.Controls
             // 
             pageHeader1.Controls.Add(button1);
             pageHeader1.Dock = DockStyle.Top;
-            pageHeader1.Location = new Point(0, 96);
+            pageHeader1.Location = new Point(0, 102);
             pageHeader1.Name = "pageHeader1";
             pageHeader1.Padding = new Padding(0, 0, 8, 0);
             pageHeader1.Size = new Size(740, 36);
@@ -88,6 +86,7 @@ namespace Demo.Controls
             // button1
             // 
             button1.Dock = DockStyle.Right;
+            button1.LocalizationText = "PageHeader.Type";
             button1.Location = new Point(657, 0);
             button1.Name = "button1";
             button1.Size = new Size(75, 36);
@@ -100,10 +99,11 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "PageHeader.{id}";
             divider1.Location = new Point(0, 74);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(740, 22);
+            divider1.Size = new Size(740, 28);
             divider1.TabIndex = 0;
             divider1.Text = "标准样式";
             // 
@@ -111,7 +111,7 @@ namespace Demo.Controls
             // 
             pageHeader2.Description = "This is a description";
             pageHeader2.Dock = DockStyle.Top;
-            pageHeader2.Location = new Point(0, 132);
+            pageHeader2.Location = new Point(0, 138);
             pageHeader2.Name = "pageHeader2";
             pageHeader2.Padding = new Padding(0, 0, 0, 6);
             pageHeader2.Size = new Size(740, 60);
@@ -122,7 +122,7 @@ namespace Demo.Controls
             // pageHeader3
             // 
             pageHeader3.Dock = DockStyle.Top;
-            pageHeader3.Location = new Point(0, 214);
+            pageHeader3.Location = new Point(0, 226);
             pageHeader3.Name = "pageHeader3";
             pageHeader3.Padding = new Padding(0, 0, 8, 0);
             pageHeader3.ShowButton = true;
@@ -136,17 +136,18 @@ namespace Demo.Controls
             // 
             divider2.Dock = DockStyle.Top;
             divider2.Font = new Font("Microsoft YaHei UI", 10F);
-            divider2.Location = new Point(0, 192);
+            divider2.LocalizationText = "PageHeader.{id}";
+            divider2.Location = new Point(0, 198);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(740, 22);
+            divider2.Size = new Size(740, 28);
             divider2.TabIndex = 4;
             divider2.Text = "关闭按钮";
             // 
             // pageHeader4
             // 
             pageHeader4.Dock = DockStyle.Top;
-            pageHeader4.Location = new Point(0, 250);
+            pageHeader4.Location = new Point(0, 262);
             pageHeader4.MaximizeBox = false;
             pageHeader4.Name = "pageHeader4";
             pageHeader4.Padding = new Padding(0, 0, 8, 0);
@@ -166,7 +167,7 @@ namespace Demo.Controls
             Controls.Add(pageHeader1);
             Controls.Add(divider1);
             Controls.Add(header1);
-            Font = new Font("Microsoft YaHei UI", 11F);
+            Font = new Font("Microsoft YaHei UI", 12F);
             Name = "PageHeader";
             Size = new Size(740, 402);
             pageHeader1.ResumeLayout(false);

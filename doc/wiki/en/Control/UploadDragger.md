@@ -1,39 +1,50 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## UploadDragger
+👚
 
-UploadDragger 拖拽上传 👚
+> Drag the file to a specific area for uploading. Alternatively, by selecting upload.
 
-> 文件选择上传和拖拽上传控件。
+- DefaultProperty：Text
+- DefaultEvent：Click
 
-- 默认属性：Text
-- 默认事件：Click
+### Property
 
-### 属性
-
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**Text** | 文本 | string`?` | `null` |
-**TextDesc** | 文本描述 | string`?` | `null` |
-**Radius** | 圆角 | int | 8 |
+**Text** | Text | string`?` | `null` |
+🌏 **LocalizationText** | International Text | string`?` | `null` |
+**TextDesc** | Text description | string`?` | `null` |
+**Radius** | Rounded corners | int | 8 |
 ||||
-**ForeColor** | 文字颜色 | Color`?` | `null` ||
-**Back** | 背景颜色 | Color`?` | `null` |
+**ForeColor** | Text color | Color`?` | `null` ||
+**Back** | Background color | Color`?` | `null` |
 ||||
-**BackgroundImage** | 背景图片 | Image`?` | `null` |
-**BackgroundImageLayout** | 背景图片布局 | [TFit](Enum#tfit) | Fill |
+**BackgroundImage** | Background image | Image`?` | `null` |
+**BackgroundImageLayout** | Background image layout | [TFit](Enum.md#tfit) | Fill |
 ||||
-**IconRatio** | 图标比例 | float | 1.92F |
-**Icon** | 图标 | Image`?` | `null` |
-**IconSvg** | 图标SVG | string`?` | `null` |
+**IconRatio** | Icon Scale | float | 1.92F |
+**Icon** | Icon | Image`?` | `null` |
+**IconSvg** | Icon SVG | string`?` | `null` |
 ||||
-**BorderWidth** | 边框宽度 | float | 1F |
-**BorderColor** | 边框颜色 | Color`?` | `null` |
-**BorderStyle** | 边框样式 | DashStyle | Solid |
+**BorderWidth** | Border width | float | 1F |
+**BorderColor** | Border color | Color`?` | `null` |
+**BorderStyle** | Border Style | DashStyle | Solid |
+||||
+**ClickHand** 🔴 | Click to upload | bool | true |
+**Multiselect** 🔴 | Multiple files | bool | true |
+**Filter** 🔴 | Filename filter string | string`?` | `null` Refer to OpenFileDialog format |
 
+### Method
 
-### 事件
-
-名称 | 描述 | 返回值 | 参数 |
+Name | Description | Return Value | Parameters |
 :--|:--|:--|:--|
-**DragChanged** | 文件拖拽后时发生 | void | string[] files `文件列表` |
+**ManualSelection** | Manually trigger file selection | void | |
+**SetFilter** | Set commonly used filters | void | FilterType filterType [Flags] |
+
+
+### Event
+
+Name | Description | Return Value | Parameters |
+:--|:--|:--|:--|
+**DragChanged** | Occurrence when dragging files | void | string[] files `file list` |

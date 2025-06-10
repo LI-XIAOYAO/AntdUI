@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             AntdUI.CarouselItem carouselItem1 = new AntdUI.CarouselItem();
@@ -152,7 +148,6 @@ namespace Demo
             // 
             // radio1
             // 
-            radio1.AutoCheck = true;
             radio1.AutoSizeMode = AntdUI.TAutoSize.Auto;
             radio1.Location = new Point(40, 168);
             radio1.Name = "radio1";
@@ -162,7 +157,6 @@ namespace Demo
             // 
             // radio2
             // 
-            radio2.AutoCheck = true;
             radio2.AutoSizeMode = AntdUI.TAutoSize.Auto;
             radio2.Location = new Point(210, 168);
             radio2.Name = "radio2";
@@ -172,7 +166,6 @@ namespace Demo
             // 
             // radio3
             // 
-            radio3.AutoCheck = true;
             radio3.AutoSizeMode = AntdUI.TAutoSize.Auto;
             radio3.Checked = true;
             radio3.Location = new Point(380, 168);
@@ -183,7 +176,6 @@ namespace Demo
             // 
             // radio4
             // 
-            radio4.AutoCheck = true;
             radio4.AutoSizeMode = AntdUI.TAutoSize.Auto;
             radio4.Enabled = false;
             radio4.Location = new Point(550, 168);
@@ -194,7 +186,6 @@ namespace Demo
             // 
             // radio5
             // 
-            radio5.AutoCheck = true;
             radio5.AutoSizeMode = AntdUI.TAutoSize.Auto;
             radio5.Enabled = false;
             radio5.Location = new Point(720, 168);
@@ -205,7 +196,6 @@ namespace Demo
             // 
             // checkbox1
             // 
-            checkbox1.AutoCheck = true;
             checkbox1.AutoSizeMode = AntdUI.TAutoSize.Auto;
             checkbox1.Location = new Point(40, 239);
             checkbox1.Name = "checkbox1";
@@ -215,7 +205,6 @@ namespace Demo
             // 
             // checkbox2
             // 
-            checkbox2.AutoCheck = true;
             checkbox2.AutoSizeMode = AntdUI.TAutoSize.Auto;
             checkbox2.Location = new Point(210, 239);
             checkbox2.Name = "checkbox2";
@@ -225,7 +214,6 @@ namespace Demo
             // 
             // checkbox3
             // 
-            checkbox3.AutoCheck = true;
             checkbox3.AutoSizeMode = AntdUI.TAutoSize.Auto;
             checkbox3.Checked = true;
             checkbox3.Location = new Point(380, 239);
@@ -236,7 +224,6 @@ namespace Demo
             // 
             // checkbox4
             // 
-            checkbox4.AutoCheck = true;
             checkbox4.AutoSizeMode = AntdUI.TAutoSize.Auto;
             checkbox4.Enabled = false;
             checkbox4.Location = new Point(550, 239);
@@ -247,7 +234,6 @@ namespace Demo
             // 
             // checkbox5
             // 
-            checkbox5.AutoCheck = true;
             checkbox5.AutoSizeMode = AntdUI.TAutoSize.Auto;
             checkbox5.Enabled = false;
             checkbox5.Location = new Point(720, 239);
@@ -258,7 +244,6 @@ namespace Demo
             // 
             // switch1
             // 
-            switch1.AutoCheck = true;
             switch1.Checked = true;
             switch1.Location = new Point(907, 170);
             switch1.Name = "switch1";
@@ -267,7 +252,6 @@ namespace Demo
             // 
             // switch2
             // 
-            switch2.AutoCheck = true;
             switch2.Checked = true;
             switch2.Location = new Point(907, 241);
             switch2.Name = "switch2";
@@ -276,7 +260,6 @@ namespace Demo
             // 
             // switch3
             // 
-            switch3.AutoCheck = true;
             switch3.Location = new Point(999, 170);
             switch3.Name = "switch3";
             switch3.Size = new Size(60, 38);
@@ -284,7 +267,6 @@ namespace Demo
             // 
             // switch4
             // 
-            switch4.AutoCheck = true;
             switch4.Location = new Point(999, 241);
             switch4.Name = "switch4";
             switch4.Size = new Size(60, 38);
@@ -292,7 +274,6 @@ namespace Demo
             // 
             // switch5
             // 
-            switch5.AutoCheck = true;
             switch5.Checked = true;
             switch5.Enabled = false;
             switch5.Location = new Point(1091, 170);
@@ -302,7 +283,6 @@ namespace Demo
             // 
             // switch6
             // 
-            switch6.AutoCheck = true;
             switch6.Enabled = false;
             switch6.Location = new Point(1183, 170);
             switch6.Name = "switch6";
@@ -311,7 +291,6 @@ namespace Demo
             // 
             // switch7
             // 
-            switch7.AutoCheck = true;
             switch7.Checked = true;
             switch7.Enabled = false;
             switch7.Location = new Point(1091, 241);
@@ -321,7 +300,6 @@ namespace Demo
             // 
             // switch8
             // 
-            switch8.AutoCheck = true;
             switch8.Enabled = false;
             switch8.Location = new Point(1183, 241);
             switch8.Name = "switch8";
@@ -373,7 +351,6 @@ namespace Demo
             // 
             // progress1
             // 
-            progress1.ContainerControl = this;
             progress1.Loading = true;
             progress1.Location = new Point(40, 332);
             progress1.Name = "progress1";
@@ -384,7 +361,6 @@ namespace Demo
             // 
             // progress2
             // 
-            progress2.ContainerControl = this;
             progress2.Location = new Point(40, 378);
             progress2.Name = "progress2";
             progress2.Size = new Size(480, 30);
@@ -394,7 +370,6 @@ namespace Demo
             // 
             // progress3
             // 
-            progress3.ContainerControl = this;
             progress3.Location = new Point(40, 424);
             progress3.Name = "progress3";
             progress3.Size = new Size(480, 30);
@@ -405,7 +380,6 @@ namespace Demo
             // 
             // progress4
             // 
-            progress4.ContainerControl = this;
             progress4.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress4.Loading = true;
             progress4.Location = new Point(42, 488);
@@ -419,7 +393,6 @@ namespace Demo
             // 
             // progress5
             // 
-            progress5.ContainerControl = this;
             progress5.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress5.Location = new Point(201, 488);
             progress5.Name = "progress5";
@@ -432,7 +405,6 @@ namespace Demo
             // 
             // progress6
             // 
-            progress6.ContainerControl = this;
             progress6.Font = new Font("Microsoft YaHei UI Light", 16F);
             progress6.Location = new Point(360, 488);
             progress6.Name = "progress6";
@@ -447,7 +419,6 @@ namespace Demo
             // progress7
             // 
             progress7.Back = Color.FromArgb(40, 22, 119, 255);
-            progress7.ContainerControl = this;
             progress7.Location = new Point(42, 622);
             progress7.Name = "progress7";
             progress7.Radius = 4;
@@ -462,7 +433,6 @@ namespace Demo
             // progress8
             // 
             progress8.Back = Color.FromArgb(40, 0, 204, 0);
-            progress8.ContainerControl = this;
             progress8.Location = new Point(201, 622);
             progress8.Name = "progress8";
             progress8.Radius = 4;
@@ -477,7 +447,6 @@ namespace Demo
             // progress9
             // 
             progress9.Back = Color.FromArgb(40, 255, 79, 87);
-            progress9.ContainerControl = this;
             progress9.Location = new Point(360, 622);
             progress9.Name = "progress9";
             progress9.Radius = 4;

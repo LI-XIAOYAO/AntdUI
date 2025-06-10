@@ -11,71 +11,88 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace AntdUI
 {
     partial class Table
     {
-        internal static StringFormat stringLeft = Helper.SF_NoWrap(lr: StringAlignment.Near), stringCenter = Helper.SF_NoWrap(), stringRight = Helper.SF_NoWrap(lr: StringAlignment.Far);
-        static StringFormat stringLeftEllipsis = Helper.SF_ALL(lr: StringAlignment.Near), stringCenterEllipsis = Helper.SF_ALL(), stringRightEllipsis = Helper.SF_ALL(lr: StringAlignment.Far);
-        static StringFormat stringLeftN = Helper.SF(lr: StringAlignment.Near), stringCenterN = Helper.SF(), stringRightN = Helper.SF(lr: StringAlignment.Far);
-
+        internal StringFormat sf = Helper.SF_MEASURE_FONT();
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics.High();
             var rect = ClientRectangle;
             if (rows == null)
             {
-                if (Empty) PaintEmpty(g, rect);
+                if (Empty) PaintEmpty(g, rect, 0);
                 base.OnPaint(e);
                 return;
             }
-            if (columnfont == null)
+            try
             {
-                using (var column_font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
+                if (columnfont == null)
                 {
-                    PaintTable(g, rows, rect, column_font);
+                    using (var column_font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
+                    {
+                        PaintTable(g, rows, rect, column_font);
+                    }
                 }
+                else PaintTable(g, rows, rect, columnfont);
+                if (emptyHeader && Empty && rows.Length == 1) PaintEmpty(g, rect, rows[0].RECT.Height);
             }
-            else PaintTable(g, rows, rect, columnfont);
-            if (emptyHeader && Empty && rows.Length == 1) PaintEmpty(g, rect);
+            catch { }
             ScrollBar.Paint(g);
+            this.PaintBadge(g);
             base.OnPaint(e);
         }
 
-        void PaintTable(Graphics g, RowTemplate[] rows, Rectangle rect, Font column_font)
+        void PaintTable(Canvas g, RowTemplate[] rows, Rectangle rect, Font column_font)
         {
             float _radius = radius * Config.Dpi;
             int sx = ScrollBar.ValueX, sy = ScrollBar.ValueY;
-            using (var fore = new SolidBrush(Style.Db.Text))
-            using (var forecolumn = new SolidBrush(columnfore ?? Style.Db.Text))
-            using (var brush_split = new SolidBrush(borderColor ?? Style.Db.BorderColor))
+            using (var brush_fore = new SolidBrush(fore ?? Colour.Text.Get("Table", ColorScheme)))
+            using (var brush_foreEnable = new SolidBrush(fore ?? Colour.TextQuaternary.Get("Table", ColorScheme)))
+            using (var brush_forecolumn = new SolidBrush(columnfore ?? fore ?? Colour.Text.Get("Table", ColorScheme)))
+            using (var brush_split = new SolidBrush(borderColor ?? Colour.BorderColor.Get("Table", ColorScheme)))
             {
-                var shows = new List<StyleRow>(rows.Length);
+                List<StyleRow> shows = new List<StyleRow>(rows.Length), summarys = new List<StyleRow>(1);
+                GraphicsPath? clipath = null;
                 if (visibleHeader)
                 {
                     if (_radius > 0)
                     {
-                        using (var path = Helper.RoundPath(rect_divider, _radius, true, true, false, false))
-                        {
-                            g.SetClip(path);
-                        }
+                        clipath = Helper.RoundPath(rect_divider, _radius, true, true, false, false);
+                        g.SetClip(clipath);
                     }
                     if (fixedHeader)
                     {
+                        int showIndex = 0;
                         foreach (var it in rows)
                         {
-                            it.SHOW = it.ShowExpand && !it.IsColumn && (rect_read.Contains(rect_read.X, it.RECT.Y - sy) || rect_read.Contains(rect_read.X, it.RECT.Bottom - sy));
-                            if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX))));
+                            if (it.Type == RowType.Summary)
+                            {
+                                it.SHOW = true;
+                                var item = new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex)));
+                                shows.Add(item);
+                                summarys.Add(item);
+                            }
+                            else
+                            {
+                                int y = it.RECT.Y - sy, b = it.RECT.Bottom - sy;
+                                it.SHOW = it.ShowExpand && it.Type == RowType.None && (rect_read.Contains(rect_read.X, y) || rect_read.Contains(rect_read.X, b) || (it.RECT.Height > rect_read.Height && rect_read.Y > y && rect_read.Bottom < b));
+                                if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex))));
+                            }
+                            showIndex++;
                         }
 
                         g.TranslateTransform(0, -sy);
@@ -83,87 +100,113 @@ namespace AntdUI
 
                         g.ResetTransform();
                         g.TranslateTransform(-sx, -sy);
+                        foreach (var it in shows) PaintBgRowFrontStyle(g, it);
                         foreach (var it in shows) PaintBgRowItem(g, it.row);
 
                         g.ResetTransform();
                         g.TranslateTransform(0, -sy);
                         foreach (var it in shows) PaintBg(g, it.row);
 
-                        if (dividers.Length > 0) foreach (var divider in dividers) g.FillRectangle(brush_split, divider);
+                        if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
 
                         g.ResetTransform();
                         g.TranslateTransform(-sx, -sy);
-                        foreach (var it in shows) PaintForeItem(g, it, fore);
+                        foreach (var it in shows) PaintForeItem(g, it, brush_fore, brush_foreEnable);
                         g.ResetTransform();
 
                         g.ResetClip();
 
-                        PaintTableBgHeader(g, rows[0], _radius);
+                        PaintTableBgHeader(g, rows[0], _radius, sx);
 
                         g.TranslateTransform(-sx, 0);
 
-                        PaintTableHeader(g, rows[0], forecolumn, column_font, _radius);
+                        PaintTableHeader(g, rows[0], brush_forecolumn, column_font, _radius);
 
-                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.FillRectangle(brush_split, divider);
+                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
                     }
                     else
                     {
+                        int showIndex = 0;
                         foreach (var it in rows)
                         {
-                            it.SHOW = it.ShowExpand && it.RECT.Y > sy - it.RECT.Height && it.RECT.Bottom < sy + rect_read.Height + it.RECT.Height;
-                            if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX))));
+                            if (it.Type == RowType.Summary)
+                            {
+                                it.SHOW = true;
+                                var item = new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex)));
+                                shows.Add(item);
+                                summarys.Add(item);
+                            }
+                            else
+                            {
+                                it.SHOW = it.ShowExpand && it.RECT.Y > sy - it.RECT.Height && it.RECT.Bottom < sy + rect_read.Height + it.RECT.Height;
+                                if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex))));
+                            }
+                            showIndex++;
                         }
                         g.TranslateTransform(0, -sy);
+                        var showsNoColumn = new List<StyleRow>(shows.Count);
                         foreach (var it in shows)
                         {
-                            if (!it.row.IsColumn) PaintBgRowFront(g, it);
+                            if (it.row.IsOther)
+                            {
+                                showsNoColumn.Add(it);
+                                PaintBgRowFront(g, it);
+                            }
                         }
                         g.TranslateTransform(-sx, 0);
-                        foreach (var it in shows)
-                        {
-                            if (!it.row.IsColumn) PaintBgRowItem(g, it.row);
-                        }
+                        foreach (var it in showsNoColumn) PaintBgRowFrontStyle(g, it);
+                        foreach (var it in showsNoColumn) PaintBgRowItem(g, it.row);
 
                         g.ResetTransform();
                         g.TranslateTransform(0, -sy);
                         foreach (var it in shows)
                         {
-                            if (it.row.IsColumn) PaintTableBgHeader(g, it.row, _radius);
+                            if (it.row.IsColumn) PaintTableBgHeader(g, it.row, _radius, sx);
                             else PaintBg(g, it.row);
                         }
 
-                        if (dividers.Length > 0) foreach (var divider in dividers) g.FillRectangle(brush_split, divider);
+                        if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
 
                         g.ResetTransform();
                         g.TranslateTransform(-sx, -sy);
                         foreach (var it in shows)
                         {
-                            if (it.row.IsColumn) PaintTableHeader(g, it.row, forecolumn, column_font, _radius);
-                            else PaintForeItem(g, it, fore);
+                            if (it.row.IsColumn) PaintTableHeader(g, it.row, brush_forecolumn, column_font, _radius);
+                            else PaintForeItem(g, it, brush_fore, brush_foreEnable);
                         }
                         if (bordered)
                         {
                             g.ResetTransform();
                             g.TranslateTransform(-sx, 0);
                         }
-                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.FillRectangle(brush_split, divider);
+                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
                     }
                 }
                 else
                 {
                     if (_radius > 0)
                     {
-                        using (var path = Helper.RoundPath(rect_divider, _radius))
-                        {
-                            g.SetClip(path);
-                        }
+                        clipath = Helper.RoundPath(rect_divider, _radius);
+                        g.SetClip(clipath);
                     }
                     rows[0].SHOW = false;
+                    int showIndex = 0;
                     for (int index_r = 1; index_r < rows.Length; index_r++)
                     {
                         var it = rows[index_r];
-                        it.SHOW = it.RECT.Y > sy - it.RECT.Height && it.RECT.Bottom < sy + rect_read.Height + it.RECT.Height;
-                        if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX))));
+                        if (it.Type == RowType.Summary)
+                        {
+                            it.SHOW = true;
+                            var item = new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex)));
+                            shows.Add(item);
+                            summarys.Add(item);
+                        }
+                        else
+                        {
+                            it.SHOW = it.RECT.Y > sy - it.RECT.Height && it.RECT.Bottom < sy + rect_read.Height + it.RECT.Height;
+                            if (it.SHOW) shows.Add(new StyleRow(it, SetRowStyle?.Invoke(this, new TableSetRowStyleEventArgs(it.RECORD, it.INDEX, showIndex))));
+                        }
+                        showIndex++;
                     }
 
                     g.TranslateTransform(0, -sy);
@@ -177,153 +220,298 @@ namespace AntdUI
                     g.TranslateTransform(0, -sy);
                     foreach (var it in shows) PaintBg(g, it.row);
 
-                    if (dividers.Length > 0) foreach (var divider in dividers) g.FillRectangle(brush_split, divider);
+                    if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
 
                     g.ResetTransform();
                     g.TranslateTransform(-sx, -sy);
-                    foreach (var it in shows) PaintForeItem(g, it, fore);
+                    foreach (var it in shows) PaintForeItem(g, it, brush_fore, brush_foreEnable);
                     if (bordered)
                     {
                         g.ResetTransform();
                         g.TranslateTransform(-sx, 0);
                     }
-                    if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.FillRectangle(brush_split, divider);
+                    if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
                 }
 
                 g.ResetClip();
                 g.ResetTransform();
 
+                var splitsize = (int)(borderWidth * Config.Dpi);
+
+                PaintMergeCells(g, rows, sx, sy, brush_split.Color, brush_fore, brush_foreEnable, splitsize);
+
                 #region 渲染浮动列
 
                 if (shows.Count > 0 && (fixedColumnL != null || fixedColumnR != null))
                 {
-                    PaintFixedColumnL(g, rect, rows, shows, fore, forecolumn, column_font, brush_split, sx, sy, _radius);
-                    PaintFixedColumnR(g, rect, rows, shows, fore, forecolumn, column_font, brush_split, sx, sy, _radius);
+                    PaintFixedColumnL(g, rect, rows, shows, brush_fore, brush_foreEnable, brush_forecolumn, column_font, brush_split, sx, sy, _radius, splitsize);
+                    PaintFixedColumnR(g, rect, rows, shows, brush_fore, brush_foreEnable, brush_forecolumn, column_font, brush_split, sx, sy, _radius, splitsize);
                 }
                 else showFixedColumnL = showFixedColumnR = false;
+
+                if (summarys.Count > 0) PaintFixedSummary(g, rect, summarys, brush_fore, brush_foreEnable, brush_forecolumn, column_font, brush_split, sx, sy, _radius);
 
                 #endregion
 
                 if (bordered)
                 {
-                    var splitsize = dividerHs.Length > 0 ? dividerHs[0].Width : (int)(1F * Config.Dpi);
-                    if (_radius > 0)
-                    {
-                        using (var pen = new Pen(brush_split.Color, splitsize))
-                        {
-                            if (visibleHeader)
-                            {
-                                using (var path = Helper.RoundPath(rect_divider, _radius, true, true, false, false))
-                                {
-                                    g.DrawPath(pen, path);
-                                }
-                            }
-                            else
-                            {
-                                using (var path = Helper.RoundPath(rect_divider, _radius))
-                                {
-                                    g.DrawPath(pen, path);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        using (var pen = new Pen(brush_split.Color, splitsize))
-                        {
-                            g.DrawRectangle(pen, rect_divider);
-                        }
-                    }
+                    if (clipath == null) g.Draw(brush_split.Color, splitsize, rect_divider);
+                    else g.Draw(brush_split.Color, splitsize, clipath);
                 }
+
+                clipath?.Dispose();
             }
         }
 
         #region 表头
 
-        void PaintTableBgHeader(Graphics g, RowTemplate row, float radius)
+        void PaintTableBgHeader(Canvas g, RowTemplate row, float radius, int sx)
         {
-            using (var brush = new SolidBrush(columnback ?? Style.Db.TagDefaultBg))
+            var save = g.Save();
+            using (var brush = new SolidBrush(columnback ?? Colour.TagDefaultBg.Get("Table", ColorScheme)))
             {
                 if (radius > 0)
                 {
                     using (var path = Helper.RoundPath(row.RECT, radius, true, true, false, false))
                     {
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
+                        g.SetClip(path, CombineMode.Intersect);
+                        g.TranslateTransform(-sx, 0);
+                        foreach (var cel in row.cells)
+                        {
+                            if (cel.COLUMN.ColStyle != null && cel.COLUMN.ColStyle.BackColor.HasValue) g.Fill(cel.COLUMN.ColStyle.BackColor.Value, cel.RECT);
+                        }
                     }
                 }
-                else g.FillRectangle(brush, row.RECT);
-            }
-            foreach (var cel in row.cells)
-            {
-                if (cel.COLUMN.ColStyle != null && cel.COLUMN.ColStyle.BackColor.HasValue)
+                else
                 {
-                    using (var brush = new SolidBrush(cel.COLUMN.ColStyle.BackColor.Value))
+                    g.Fill(brush, row.RECT);
+                    g.TranslateTransform(-sx, 0);
+                    foreach (var cel in row.cells)
                     {
-                        g.FillRectangle(brush, cel.RECT);
+                        if (cel.COLUMN.ColStyle != null && cel.COLUMN.ColStyle.BackColor.HasValue) g.Fill(cel.COLUMN.ColStyle.BackColor.Value, cel.RECT);
+                    }
+                }
+            }
+            g.Restore(save);
+        }
+        void PaintTableHeader(Canvas g, RowTemplate row, SolidBrush fore, Font column_font, float radius)
+        {
+            if (StackedHeaderRows == null)
+            {
+                foreach (TCellColumn column in row.cells)
+                {
+                    if (column.COLUMN.SortOrder)
+                    {
+                        g.GetImgExtend("CaretUpFilled", column.rect_up, column.COLUMN.SortMode == SortMode.ASC ? Colour.Primary.Get("Table", ColorScheme) : Colour.TextQuaternary.Get("Table", ColorScheme));
+                        g.GetImgExtend("CaretDownFilled", column.rect_down, column.COLUMN.SortMode == SortMode.DESC ? Colour.Primary.Get("Table", ColorScheme) : Colour.TextQuaternary.Get("Table", ColorScheme));
+                    }
+                    if (column.COLUMN is ColumnCheck columnCheck && columnCheck.NoTitle) PaintCheck(g, column, columnCheck);
+                    else
+                    {
+                        if (column.COLUMN.ColStyle != null && column.COLUMN.ColStyle.ForeColor.HasValue)
+                        {
+                            using (var brush = new SolidBrush(column.COLUMN.ColStyle.ForeColor.Value))
+                            {
+                                g.String(column.value, column_font, brush, column.RECT_REAL, StringFormat(column.COLUMN, true));
+                            }
+                        }
+                        else g.String(column.value, column_font, fore, column.RECT_REAL, StringFormat(column.COLUMN, true));
+                    }
+                }
+                if (dragHeader == null) return;
+                foreach (var column in row.cells)
+                {
+                    if (dragHeader.i == column.INDEX)
+                    {
+                        using (var brush = new SolidBrush(Colour.FillSecondary.Get("Table", ColorScheme)))
+                        {
+                            if (radius > 0)
+                            {
+                                if (column.INDEX == 0)
+                                {
+                                    using (var path = Helper.RoundPath(column.RECT, radius, true, false, false, false))
+                                    {
+                                        g.Fill(brush, path);
+                                    }
+                                }
+                                else if (column.INDEX == row.cells.Length - 1)
+                                {
+                                    using (var path = Helper.RoundPath(column.RECT, radius, false, true, false, false))
+                                    {
+                                        g.Fill(brush, path);
+                                    }
+                                }
+                                else g.Fill(brush, column.RECT);
+                            }
+                            else g.Fill(brush, column.RECT);
+                        }
+                    }
+                    if (dragHeader.im == column.INDEX)
+                    {
+                        using (var brush_split = new SolidBrush(Colour.BorderColor.Get("Table", ColorScheme)))
+                        {
+                            int sp = (int)(2 * Config.Dpi);
+                            if (dragHeader.last) g.Fill(brush_split, new Rectangle(column.RECT.Right - sp, column.RECT.Y, sp * 2, column.RECT.Height));
+                            else g.Fill(brush_split, new Rectangle(column.RECT.X - sp, column.RECT.Y, sp * 2, column.RECT.Height));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                int len = StackedHeaderRows.Length + 1;
+                List<int> handkey = new List<int>(len), dskey = new List<int>(len);
+                var state = g.Save();
+                int rY = row.RECT.Y, rHeight = row.Height / len;
+                int i = 0, gap = (int)(_gap * Config.Dpi), gap2 = gap * 2;
+                foreach (var it in StackedHeaderRows)
+                {
+                    //if (it.StackedColumns == null || it.StackedColumns.Length == 0) continue;
+                    foreach (var item in it.StackedColumns) PaintTableHeaderStacked(g, row, fore, column_font, ref handkey, ref dskey, rY, rHeight, item);
+                    rY += rHeight;
+                }
+                int sy = row.RECT.Y + (rHeight / 2 * (len - 1));
+                foreach (TCellColumn column in row.cells)
+                {
+                    if (dskey.Contains(i))
+                    {
+                        dividerHs[i].Y = rY + gap;
+                        dividerHs[i].Height = rHeight - gap2;
+                    }
+                    if (handkey.Contains(column.INDEX))
+                    {
+                        column.offsety = sy;
+                        g.TranslateTransform(0, sy);
+                    }
+                    if (column.COLUMN.SortOrder)
+                    {
+                        g.GetImgExtend("CaretUpFilled", column.rect_up, column.COLUMN.SortMode == SortMode.ASC ? Colour.Primary.Get("Table", ColorScheme) : Colour.TextQuaternary.Get("Table", ColorScheme));
+                        g.GetImgExtend("CaretDownFilled", column.rect_down, column.COLUMN.SortMode == SortMode.DESC ? Colour.Primary.Get("Table", ColorScheme) : Colour.TextQuaternary.Get("Table", ColorScheme));
+                    }
+                    if (column.COLUMN is ColumnCheck columnCheck && columnCheck.NoTitle) PaintCheck(g, column, columnCheck);
+                    else
+                    {
+                        if (column.COLUMN.ColStyle != null && column.COLUMN.ColStyle.ForeColor.HasValue)
+                        {
+                            using (var brush = new SolidBrush(column.COLUMN.ColStyle.ForeColor.Value))
+                            {
+                                g.String(column.value, column_font, brush, column.RECT_REAL, StringFormat(column.COLUMN, true));
+                            }
+                        }
+                        else g.String(column.value, column_font, fore, column.RECT_REAL, StringFormat(column.COLUMN, true));
+                    }
+                    g.Restore(state);
+                    state = g.Save();
+                    i++;
+                }
+                g.Restore(state);
+                if (dragHeader == null) return;
+                foreach (var column in row.cells)
+                {
+                    if (dragHeader.i == column.INDEX)
+                    {
+                        using (var brush = new SolidBrush(Colour.FillSecondary.Get("Table", ColorScheme)))
+                        {
+                            if (radius > 0)
+                            {
+                                if (column.INDEX == 0)
+                                {
+                                    using (var path = Helper.RoundPath(column.RECT, radius, true, false, false, false))
+                                    {
+                                        g.Fill(brush, path);
+                                    }
+                                }
+                                else if (column.INDEX == row.cells.Length - 1)
+                                {
+                                    using (var path = Helper.RoundPath(column.RECT, radius, false, true, false, false))
+                                    {
+                                        g.Fill(brush, path);
+                                    }
+                                }
+                                else g.Fill(brush, column.RECT);
+                            }
+                            else g.Fill(brush, column.RECT);
+                        }
+                    }
+                    if (dragHeader.im == column.INDEX)
+                    {
+                        using (var brush_split = new SolidBrush(Colour.BorderColor.Get("Table", ColorScheme)))
+                        {
+                            int sp = (int)(2 * Config.Dpi);
+                            if (dragHeader.last) g.Fill(brush_split, new Rectangle(column.RECT.Right - sp, column.RECT.Y, sp * 2, column.RECT.Height));
+                            else g.Fill(brush_split, new Rectangle(column.RECT.X - sp, column.RECT.Y, sp * 2, column.RECT.Height));
+                        }
                     }
                 }
             }
         }
-        void PaintTableHeader(Graphics g, RowTemplate row, SolidBrush fore, Font column_font, float radius)
+        void PaintTableHeaderStacked(Canvas g, RowTemplate row, SolidBrush fore, Font column_font, ref List<int> handkey, ref List<int> dskey, int rY, int rHeight, StackedColumn item)
         {
-            foreach (TCellColumn column in row.cells)
+            if (item.ChildColumns.Length > 1)
             {
-                if (column.COLUMN.SortOrder)
+                CELL? first = null, last = null;
+                int i = 0;
+                foreach (var column in row.cells)
                 {
-                    g.GetImgExtend(SvgDb.IcoArrowUp, column.rect_up, column.COLUMN.SortMode == 1 ? Style.Db.Primary : Style.Db.TextQuaternary);
-                    g.GetImgExtend(SvgDb.IcoArrowDown, column.rect_down, column.COLUMN.SortMode == 2 ? Style.Db.Primary : Style.Db.TextQuaternary);
-                }
-                if (column.COLUMN is ColumnCheck columnCheck && columnCheck.NoTitle) PaintCheck(g, column, columnCheck);
-                else
-                {
-                    if (column.COLUMN.ColStyle != null && column.COLUMN.ColStyle.ForeColor.HasValue)
+                    if (column.COLUMN.Key == item.ChildColumns[0])
                     {
-                        using (var brush = new SolidBrush(column.COLUMN.ColStyle.ForeColor.Value))
-                        {
-                            g.DrawStr(column.value, column_font, brush, column.RECT_REAL, StringF(column.COLUMN.ColAlign ?? column.COLUMN.Align));
-                        }
+                        first = column;
+                        dskey.Add(i);
+                        handkey.Add(first.INDEX);
+                        if (last == null) continue;
+                        PaintTableHeaderStacked(g, fore, column_font, rY, rHeight, item, first, last);
                     }
-                    else g.DrawStr(column.value, column_font, fore, column.RECT_REAL, StringF(column.COLUMN.ColAlign ?? column.COLUMN.Align));
+                    else if (column.COLUMN.Key == item.ChildColumns[item.ChildColumns.Length - 1])
+                    {
+                        last = column;
+                        if (first == null) return;
+                        dskey.Add(i);
+                        handkey.Add(last.INDEX);
+                        PaintTableHeaderStacked(g, fore, column_font, rY, rHeight, item, first, last);
+                        return;
+                    }
+                    else if (first != null)
+                    {
+                        dskey.Add(i);
+                        handkey.Add(column.INDEX);
+                    }
+                    i++;
                 }
             }
-            if (dragHeader == null) return;
-            foreach (var column in row.cells)
+            else
             {
-                if (dragHeader.i == column.INDEX)
+                string key = item.ChildColumns[0];
+                int i = 0;
+                foreach (var column in row.cells)
                 {
-                    using (var brush = new SolidBrush(Style.Db.FillSecondary))
+                    if (column.COLUMN.Key == key)
                     {
-                        if (radius > 0)
-                        {
-                            if (column.INDEX == 0)
-                            {
-                                using (var path = Helper.RoundPath(column.RECT, radius, true, false, false, false))
-                                {
-                                    g.FillPath(brush, path);
-                                }
-                            }
-                            else if (column.INDEX == row.cells.Length - 1)
-                            {
-                                using (var path = Helper.RoundPath(column.RECT, radius, false, true, false, false))
-                                {
-                                    g.FillPath(brush, path);
-                                }
-                            }
-                            else g.FillRectangle(brush, column.RECT);
-                        }
-                        else g.FillRectangle(brush, column.RECT);
+                        handkey.Add(column.INDEX);
+                        PaintTableHeaderStacked(g, fore, column_font, rY, rHeight, item, column);
+                        return;
                     }
-                }
-                if (dragHeader.im == column.INDEX)
-                {
-                    using (var brush_split = new SolidBrush(Style.Db.BorderColor))
-                    {
-                        int sp = (int)(2 * Config.Dpi);
-                        if (dragHeader.last) g.FillRectangle(brush_split, new Rectangle(column.RECT.Right - sp, column.RECT.Y, sp * 2, column.RECT.Height));
-                        else g.FillRectangle(brush_split, new Rectangle(column.RECT.X - sp, column.RECT.Y, sp * 2, column.RECT.Height));
-                    }
+                    i++;
                 }
             }
+        }
+
+        void PaintTableHeaderStacked(Canvas g, SolidBrush fore, Font column_font, int rY, int rHeight, StackedColumn item, CELL column)
+        {
+            var state = g.Save();
+            var rect = new Rectangle(column.RECT_REAL.X, rY, column.RECT_REAL.Width, rHeight);
+            if (item.ForeColor.HasValue) g.String(item.HeaderText, column_font, item.ForeColor.Value, rect, StringFormat(column.COLUMN, true));
+            else g.String(item.HeaderText, column_font, fore, rect, StringFormat(column.COLUMN, true));
+            g.Restore(state);
+        }
+
+        void PaintTableHeaderStacked(Canvas g, SolidBrush fore, Font column_font, int rY, int rHeight, StackedColumn item, CELL first, CELL last)
+        {
+            var state = g.Save();
+            var rect = new Rectangle(first.RECT.X, rY, last.RECT.Right - first.RECT.X, rHeight);
+            if (item.ForeColor.HasValue) g.String(item.HeaderText, column_font, item.ForeColor.Value, rect, StringFormat(ColumnAlign.Center));
+            else g.String(item.HeaderText, column_font, fore, rect, StringFormat(ColumnAlign.Center));
+            g.Restore(state);
         }
 
         #endregion
@@ -333,60 +521,45 @@ namespace AntdUI
         /// <summary>
         /// 渲染背景行（前置）
         /// </summary>
-        void PaintBgRowFront(Graphics g, StyleRow row)
+        void PaintBgRowFront(Canvas g, StyleRow row)
         {
-            if (row.style != null && row.style.BackColor.HasValue)
+            if (row.style != null && row.style.BackColor.HasValue) g.Fill(row.style.BackColor.Value, row.row.RECT);
+            if (selectedIndex.Contains(row.row.INDEX) || row.row.Select)
             {
-                using (var brush = new SolidBrush(row.style.BackColor.Value))
-                {
-                    g.FillRectangle(brush, row.row.RECT);
-                }
+                g.Fill(rowSelectedBg ?? Colour.PrimaryBg.Get("Table", ColorScheme), row.row.RECT);
+                if (selectedIndex.Contains(row.row.INDEX) && row.row.Select) g.Fill(Color.FromArgb(40, Colour.PrimaryActive.Get("Table", ColorScheme)), row.row.RECT);
             }
-            if (selectedIndex == row.row.INDEX || row.row.Select)
-            {
-                using (var brush = rowSelectedBg.Brush(Style.Db.PrimaryBg))
-                {
-                    g.FillRectangle(brush, row.row.RECT);
-                }
-                if (selectedIndex == row.row.INDEX && row.row.Select)
-                {
-                    using (var brush = new SolidBrush(Color.FromArgb(40, Style.Db.PrimaryActive)))
-                    {
-                        g.FillRectangle(brush, row.row.RECT);
-                    }
-                }
-            }
-
+        }
+        void PaintBgRowFrontStyle(Canvas g, StyleRow row)
+        {
             foreach (var cel in row.row.cells)
             {
-                if (cel.COLUMN.Style != null && cel.COLUMN.Style.BackColor.HasValue)
-                {
-                    using (var brush = new SolidBrush(cel.COLUMN.Style.BackColor.Value))
-                    {
-                        g.FillRectangle(brush, cel.RECT);
-                    }
-                }
+                if (cel.COLUMN.Style != null && cel.COLUMN.Style.BackColor.HasValue) g.Fill(cel.COLUMN.Style.BackColor.Value, cel.RECT);
             }
         }
 
         /// <summary>
         /// 渲染背景行
         /// </summary>
-        void PaintBg(Graphics g, RowTemplate row)
+        void PaintBg(Canvas g, RowTemplate row)
         {
-            if (row.AnimationHover)
+            if (dragBody != null)
             {
-                using (var brush = new SolidBrush(Helper.ToColorN(row.AnimationHoverValue, Style.Db.FillSecondary)))
+                if (dragBody.i == row.INDEX) g.Fill(Colour.FillSecondary.Get("Table", ColorScheme), row.RECT);
+                else if (dragBody.im == row.INDEX)
                 {
-                    g.FillRectangle(brush, row.RECT);
+                    using (var brush_split = new SolidBrush(Colour.BorderColor.Get("Table", ColorScheme)))
+                    {
+                        int sp = (int)(2 * Config.Dpi);
+                        if (dragBody.last) g.Fill(brush_split, new Rectangle(row.RECT.X, row.RECT.Bottom - sp, row.RECT.Width, sp * 2));
+                        else g.Fill(brush_split, new Rectangle(row.RECT.X, row.RECT.Y - sp, row.RECT.Width, sp * 2));
+                    }
                 }
             }
-            else if (row.Hover)
+            else
             {
-                using (var brush = new SolidBrush(Style.Db.FillSecondary))
-                {
-                    g.FillRectangle(brush, row.RECT);
-                }
+                if (row.AnimationHover) g.Fill(Helper.ToColorN(row.AnimationHoverValue, Colour.FillSecondary.Get("Table", ColorScheme)), row.RECT);
+                else if (row.Hover) g.Fill(rowHoverBg ?? Colour.FillSecondary.Get("Table", ColorScheme), row.RECT);
             }
         }
 
@@ -395,7 +568,7 @@ namespace AntdUI
         /// <summary>
         /// 渲染背景行
         /// </summary>
-        void PaintBgRowItem(Graphics g, RowTemplate row)
+        void PaintBgRowItem(Canvas g, RowTemplate row)
         {
             foreach (var cel in row.cells) PaintItemBg(g, cel);
         }
@@ -403,46 +576,46 @@ namespace AntdUI
         /// <summary>
         /// 渲染单元格背景
         /// </summary>
-        void PaintItemBg(Graphics g, TCell it)
+        void PaintItemBg(Canvas g, CELL it)
         {
             if (it is Template obj)
             {
-                foreach (var o in obj.value) o.Value.PaintBack(g);
+                foreach (var o in obj.Value) o.PaintBack(g);
             }
         }
 
         /// <summary>
         /// 渲染前景行
         /// </summary>
-        void PaintForeItem(Graphics g, StyleRow row, SolidBrush fore)
+        void PaintForeItem(Canvas g, StyleRow row, SolidBrush fore, SolidBrush foreEnable)
         {
-            if (selectedIndex == row.row.INDEX && rowSelectedFore.HasValue)
+            if (selectedIndex.Contains(row.row.INDEX) && rowSelectedFore.HasValue)
             {
                 using (var brush = new SolidBrush(rowSelectedFore.Value))
                 {
-                    for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], brush);
+                    for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], row.row.ENABLE, brush);
                 }
             }
             else if (row.style != null && row.style.ForeColor.HasValue)
             {
                 using (var brush = new SolidBrush(row.style.ForeColor.Value))
                 {
-                    for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], brush);
+                    for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], row.row.ENABLE, brush);
                 }
             }
-            else for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], fore);
+            else for (int i = 0; i < row.row.cells.Length; i++) PaintItem(g, row.row.cells[i], row.row.ENABLE, row.row.ENABLE ? fore : foreEnable);
         }
 
         #region 渲染单元格
 
-        void PaintItem(Graphics g, TCell it, SolidBrush fore)
+        void PaintItem(Canvas g, CELL it, bool enable, SolidBrush fore)
         {
-            if (it.COLUMN.Style == null || it.COLUMN.Style.ForeColor == null) PaintItem(g, it.INDEX, it, fore);
+            if (it.COLUMN.Style == null || it.COLUMN.Style.ForeColor == null) PaintItem(g, it.INDEX, it, enable, fore);
             else
             {
                 using (var brush = new SolidBrush(it.COLUMN.Style.ForeColor.Value))
                 {
-                    PaintItem(g, it.INDEX, it, brush);
+                    PaintItem(g, it.INDEX, it, enable, brush);
                 }
             }
         }
@@ -450,67 +623,93 @@ namespace AntdUI
         /// <summary>
         /// 渲染单元格（浮动）
         /// </summary>
-        void PaintItemFixed(Graphics g, TCell it, SolidBrush fore, CellStyleInfo? style)
+        void PaintItemFixed(Canvas g, CELL it, bool enable, SolidBrush fore, CellStyleInfo? style)
         {
-            if (selectedIndex == it.ROW.INDEX && rowSelectedFore.HasValue)
+            if (selectedIndex.Contains(it.ROW.INDEX) && rowSelectedFore.HasValue)
             {
                 using (var brush = new SolidBrush(rowSelectedFore.Value))
                 {
-                    PaintItem(g, it.INDEX, it, brush);
+                    PaintItem(g, it.INDEX, it, enable, brush);
                 }
             }
             else if (style != null && style.ForeColor.HasValue)
             {
                 using (var brush = new SolidBrush(style.ForeColor.Value))
                 {
-                    PaintItem(g, it.INDEX, it, brush);
+                    PaintItem(g, it.INDEX, it, enable, brush);
                 }
             }
-            else if (it.COLUMN.Style == null || it.COLUMN.Style.ForeColor == null) PaintItem(g, it.INDEX, it, fore);
+            else if (it.COLUMN.Style == null || it.COLUMN.Style.ForeColor == null) PaintItem(g, it.INDEX, it, enable, fore);
             else
             {
                 using (var brush = new SolidBrush(it.COLUMN.Style.ForeColor.Value))
                 {
-                    PaintItem(g, it.INDEX, it, brush);
+                    PaintItem(g, it.INDEX, it, enable, brush);
                 }
             }
         }
 
-        void PaintItem(Graphics g, int columnIndex, TCell it, SolidBrush fore)
+        void PaintItem(Canvas g, int columnIndex, CELL it, bool enable, SolidBrush fore)
         {
-            if (it is TCellCheck check) PaintCheck(g, check);
-            else if (it is TCellRadio radio) PaintRadio(g, radio);
-            else if (it is TCellSwitch _switch) PaintSwitch(g, _switch);
-            else if (it is Template obj)
+            var state = g.Save();
+            try
             {
-                foreach (var o in obj.value) o.Value.Paint(g, Font, fore);
+                if (CellPaintBegin == null) PaintItemCore(g, columnIndex, it, enable, fore);
+                else
+                {
+                    var arge = new TablePaintBeginEventArgs(g, it.RECT, it.RECT_REAL, it.ROW.RECORD, it.ROW.INDEX, columnIndex);
+                    CellPaintBegin(this, arge);
+                    if (!arge.Handled) PaintItemCore(g, columnIndex, it, enable, fore);
+                }
+                CellPaint?.Invoke(this, new TablePaintEventArgs(g, it.RECT, it.RECT_REAL, it.ROW.RECORD, it.ROW.INDEX, columnIndex));
+            }
+            catch { }
+            g.Restore(state);
+        }
+
+        void PaintItemCore(Canvas g, int columnIndex, CELL it, bool enable, SolidBrush fore)
+        {
+            if (it is TCellCheck check) PaintCheck(g, check, enable);
+            else if (it is TCellRadio radio) PaintRadio(g, radio, enable);
+            else if (it is TCellSwitch _switch) PaintSwitch(g, _switch, enable);
+            else if (it is TCellSort sort)
+            {
+                if (sort.AnimationHover)
+                {
+                    using (var brush = new SolidBrush(Helper.ToColorN(sort.AnimationHoverValue, Colour.FillTertiary.Get("Table", ColorScheme))))
+                    {
+                        using (var path_sort = Helper.RoundPath(sort.RECT_REAL, check_radius))
+                        {
+                            g.Fill(brush, path_sort);
+                        }
+                    }
+                }
+                else if (sort.Hover)
+                {
+                    using (var path_sort = Helper.RoundPath(sort.RECT_REAL, check_radius))
+                    {
+                        g.Fill(Colour.FillTertiary.Get("Table", ColorScheme), path_sort);
+                    }
+                }
+                SvgExtend.GetImgExtend(g, "HolderOutlined", sort.RECT_ICO, fore.Color);
+            }
+            else if (it is Template template)
+            {
+                g.SetClip(it.RECT, CombineMode.Intersect);
+                foreach (var item in template.Value) item.Paint(g, Font, enable, fore);
             }
             else if (it is TCellText text)
             {
-                var state = g.Save();
-                g.SetClip(it.RECT);
-                g.DrawStr(text.value, Font, fore, text.RECT_REAL, StringF(text.COLUMN));
-                g.Restore(state);
+                g.SetClip(it.RECT, CombineMode.Intersect);
+                g.String(text.value, Font, fore, text.RECT_REAL, StringFormat(text.COLUMN));
             }
-            if (dragHeader != null && dragHeader.i == it.INDEX)
-            {
-                using (var brush = new SolidBrush(Style.Db.FillSecondary))
-                {
-                    g.FillRectangle(brush, it.RECT);
-                }
-            }
+            if (dragHeader != null && dragHeader.i == it.INDEX) g.Fill(Colour.FillSecondary.Get("Table", ColorScheme), it.RECT);
             if (it.ROW.CanExpand && it.ROW.KeyTreeINDEX == columnIndex)
             {
                 using (var path_check = Helper.RoundPath(it.ROW.RectExpand, check_radius, false))
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillPath(brush_bg, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BorderColor, check_border))
-                    {
-                        g.DrawPath(brush, path_check);
-                    }
+                    g.Fill(Colour.BgBase.Get("Table", ColorScheme), path_check);
+                    g.Draw(Colour.BorderColor.Get("Table", ColorScheme), check_border, path_check);
                     PaintArrow(g, it.ROW, fore, it.ROW.Expand ? 90 : 0);
                 }
             }
@@ -518,7 +717,7 @@ namespace AntdUI
 
         #endregion
 
-        void PaintArrow(Graphics g, RowTemplate item, SolidBrush color, int ArrowProg)
+        void PaintArrow(Canvas g, RowTemplate item, SolidBrush color, int ArrowProg)
         {
             int size = item.RectExpand.Width, size_arrow = size / 2;
             var state = g.Save();
@@ -536,144 +735,485 @@ namespace AntdUI
 
         #region 浮动列
 
-        void PaintFixedColumnL(Graphics g, Rectangle rect, RowTemplate[] rows, List<StyleRow> shows, SolidBrush fore, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius)
+        void PaintFixedColumnL(Canvas g, Rectangle rect, RowTemplate[] rows, List<StyleRow> shows, SolidBrush fore, SolidBrush foreEnable, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius, int borsize)
         {
             if (fixedColumnL != null && sx > 0)
             {
                 showFixedColumnL = true;
                 var last = shows[shows.Count - 1].row.cells[fixedColumnL[fixedColumnL.Count - 1]];
-                var rect_Fixed = new Rectangle(rect.X, rect.Y, last.RECT.Right, last.RECT.Bottom);
+                var rect_Fixed = new Rectangle(rect.X, rect.Y, last.RECT.Right, rect.Height);
+
+                GraphicsPath? clipath = null;
 
                 #region 绘制阴影
 
-                var rect_show = new Rectangle(rect.X + last.RECT.Right - _gap, rect.Y, _gap * 2, last.RECT.Bottom);
-                using (var brush = new LinearGradientBrush(rect_show, Style.Db.FillSecondary, Color.Transparent, 0F))
+                if (_gap > 0)
                 {
-                    g.FillRectangle(brush, rect_show);
+                    int gap = (int)(_gap * Config.Dpi);
+                    var rect_show = new Rectangle(rect.X + last.RECT.Right - gap, rect_Fixed.Y, gap * 2, rect_Fixed.Height);
+                    using (var brush = new LinearGradientBrush(rect_show, Colour.FillSecondary.Get("Table", ColorScheme), Color.Transparent, 0F))
+                    {
+                        g.Fill(brush, rect_show);
+                    }
                 }
-
-                using (var brush = new SolidBrush(Style.Db.BgBase))
+                if (radius > 0)
                 {
-                    g.FillRectangle(brush, rect_Fixed);
+                    clipath = Helper.RoundPath(rect_Fixed, radius, true, false, false, !visibleHeader);
+                    g.Fill(Colour.BgBase.Get("Table", ColorScheme), clipath);
+                    g.SetClip(clipath);
+                }
+                else
+                {
+                    g.Fill(Colour.BgBase.Get("Table", ColorScheme), rect_Fixed);
+                    g.SetClip(rect_Fixed);
                 }
 
                 #endregion
 
-                g.SetClip(rect_Fixed);
                 g.TranslateTransform(0, -sy);
                 foreach (var row in shows)
                 {
-                    if (row.row.IsColumn) { PaintTableBgHeader(g, row.row, radius); PaintTableHeader(g, row.row, forecolumn, column_font, radius); }
+                    if (row.row.IsColumn)
+                    {
+                        PaintTableBgHeader(g, row.row, radius, 0);
+                        PaintTableHeader(g, row.row, forecolumn, column_font, radius);
+                    }
                     else
                     {
                         PaintBgRowFront(g, row);
+                        PaintBgRowFrontStyle(g, row);
                         PaintBgRowItem(g, row.row);
                         PaintBg(g, row.row);
                     }
                 }
+
                 foreach (var row in shows)
                 {
                     foreach (int fixedIndex in fixedColumnL)
                     {
-                        if (!row.row.IsColumn) PaintItemFixed(g, row.row.cells[fixedIndex], fore, row.style);
+                        if (row.row.IsOther) PaintItemFixed(g, row.row.cells[fixedIndex], row.row.ENABLE, row.row.ENABLE ? fore : foreEnable, row.style);
                     }
                 }
-                if (dividers.Length > 0) foreach (var divider in dividers) g.FillRectangle(brush_split, divider);
+                if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
                 g.ResetTransform();
                 if (fixedHeader)
                 {
-                    PaintTableBgHeader(g, rows[0], radius);
+                    PaintTableBgHeader(g, rows[0], radius, 0);
                     PaintTableHeader(g, rows[0], forecolumn, column_font, radius);
                 }
-                if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.FillRectangle(brush_split, divider);
+                else g.TranslateTransform(0, bordered ? 0 : -sy);
+                if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
+                g.ResetTransform();
                 g.ResetClip();
+                clipath?.Dispose();
             }
             else showFixedColumnL = false;
         }
-        void PaintFixedColumnR(Graphics g, Rectangle rect, RowTemplate[] rows, List<StyleRow> shows, SolidBrush fore, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius)
+        void PaintFixedColumnR(Canvas g, Rectangle rect, RowTemplate[] rows, List<StyleRow> shows, SolidBrush fore, SolidBrush foreEnable, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius, int borsize)
         {
             if (fixedColumnR != null && ScrollBar.ShowX)
             {
-                var lastrow = shows[shows.Count - 1];
-                TCell first = lastrow.row.cells[fixedColumnR[fixedColumnR.Count - 1]], last = lastrow.row.cells[fixedColumnR[0]];
-                if (sx + rect.Width < last.RECT.Right)
+                try
                 {
-                    sFixedR = last.RECT.Right - rect.Width;
-                    showFixedColumnR = true;
-                    int w = last.RECT.Right - first.RECT.Left;
-
-                    var rect_Fixed = new Rectangle(rect.Right - w, rect.Y, last.RECT.Right, last.RECT.Bottom);
-
-                    #region 绘制阴影
-
-                    var rect_show = new Rectangle(rect.Right - w - _gap, rect.Y, _gap * 2, last.RECT.Bottom);
-                    using (var brush = new LinearGradientBrush(rect_show, Color.Transparent, Style.Db.FillSecondary, 0F))
+                    var lastrow = shows[shows.Count - 1];
+                    CELL first = lastrow.row.cells[fixedColumnR[fixedColumnR.Count - 1]], last = lastrow.row.cells[fixedColumnR[0]];
+                    if (sx + rect.Width < last.RECT.Right)
                     {
-                        g.FillRectangle(brush, rect_show);
-                    }
+                        sFixedR = last.RECT.Right - rect.Width;
+                        showFixedColumnR = true;
+                        int w = last.RECT.Right - first.RECT.Left;
 
-                    using (var brush = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillRectangle(brush, rect_Fixed);
-                    }
+                        var rect_Fixed = new Rectangle(rect.Right - w, rect.Y, w - (bordered ? borsize : 0), rect.Height);
 
-                    #endregion
+                        GraphicsPath? clipath = null;
 
-                    g.SetClip(rect_Fixed);
-                    g.TranslateTransform(0, -sy);
-                    foreach (var row in shows)
-                    {
-                        if (row.row.IsColumn)
+                        #region 绘制阴影
+
+                        if (_gap > 0)
                         {
-                            PaintTableBgHeader(g, row.row, radius);
-                            g.ResetTransform();
-                            g.TranslateTransform(-sFixedR, -sy);
-                            PaintTableHeader(g, row.row, forecolumn, column_font, radius);
-                            g.ResetTransform();
-                            g.TranslateTransform(0, -sy);
+                            int gap = (int)(_gap * Config.Dpi);
+                            var rect_show = new Rectangle(rect.Right - w - gap, rect_Fixed.Y, gap * 2, rect_Fixed.Height);
+                            using (var brush = new LinearGradientBrush(rect_show, Color.Transparent, Colour.FillSecondary.Get("Table", ColorScheme), 0F))
+                            {
+                                g.Fill(brush, rect_show);
+                            }
+                        }
+                        if (radius > 0)
+                        {
+                            clipath = Helper.RoundPath(rect_Fixed, radius + 1, false, true, !visibleHeader, false);
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), clipath);
+                            g.SetClip(clipath);
                         }
                         else
                         {
-                            PaintBgRowFront(g, row);
-                            PaintBg(g, row.row);
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), rect_Fixed);
+                            g.SetClip(rect_Fixed);
                         }
-                    }
-                    g.ResetTransform();
-                    g.TranslateTransform(-sFixedR, -sy);
-                    foreach (var row in shows)
-                    {
-                        foreach (int fixedIndex in fixedColumnR)
+
+                        #endregion
+
+                        foreach (var row in shows)
                         {
-                            if (!row.row.IsColumn)
+                            g.ResetTransform();
+                            g.TranslateTransform(0, -sy);
+                            if (row.row.IsColumn)
                             {
-                                PaintItemBg(g, row.row.cells[fixedIndex]);
-                                PaintItemFixed(g, row.row.cells[fixedIndex], fore, row.style);
+                                PaintTableBgHeader(g, row.row, radius, sFixedR);
+
+                                g.ResetTransform();
+                                g.TranslateTransform(-sFixedR, -sy);
+                                PaintTableHeader(g, row.row, forecolumn, column_font, radius);
+                            }
+                            else
+                            {
+                                PaintBgRowFront(g, row);
+
+                                g.ResetTransform();
+                                g.TranslateTransform(-sFixedR, -sy);
+
+                                PaintBgRowFrontStyle(g, row);
+                                PaintBgRowItem(g, row.row);
+
+                                g.ResetTransform();
+                                g.TranslateTransform(0, -sy);
+                                PaintBg(g, row.row);
                             }
                         }
+                        g.ResetTransform();
+                        g.TranslateTransform(-sFixedR, -sy);
+                        foreach (var row in shows)
+                        {
+                            foreach (int fixedIndex in fixedColumnR)
+                            {
+                                if (row.row.IsOther)
+                                {
+                                    PaintItemBg(g, row.row.cells[fixedIndex]);
+                                    PaintItemFixed(g, row.row.cells[fixedIndex], row.row.ENABLE, row.row.ENABLE ? fore : foreEnable, row.style);
+                                }
+                            }
+                        }
+                        g.ResetTransform();
+                        g.TranslateTransform(0, -sy);
+                        if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
+                        g.ResetTransform();
+                        if (fixedHeader)
+                        {
+                            PaintTableBgHeader(g, rows[0], radius, sFixedR);
+                            g.TranslateTransform(-sFixedR, 0);
+                            PaintTableHeader(g, rows[0], forecolumn, column_font, radius);
+                            g.ResetTransform();
+                            g.TranslateTransform(-sFixedR, 0);
+                        }
+                        else
+                        {
+                            g.ResetTransform();
+                            g.TranslateTransform(-sFixedR, bordered ? 0 : -sy);
+                        }
+                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
+                        g.ResetTransform();
+                        g.ResetClip();
+                        clipath?.Dispose();
                     }
-                    g.ResetTransform();
-                    g.TranslateTransform(0, -sy);
-                    if (dividers.Length > 0) foreach (var divider in dividers) g.FillRectangle(brush_split, divider);
-                    g.ResetTransform();
-                    if (fixedHeader)
-                    {
-                        PaintTableBgHeader(g, rows[0], radius);
-                        g.TranslateTransform(-sFixedR, 0);
-                        PaintTableHeader(g, rows[0], forecolumn, column_font, radius);
-                    }
-                    g.ResetTransform();
-                    g.TranslateTransform(-sFixedR, 0);
-                    if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.FillRectangle(brush_split, divider);
-
-                    g.ResetTransform();
-                    g.ResetClip();
+                    else showFixedColumnR = false;
                 }
-                else showFixedColumnR = false;
+                catch { }
             }
             else showFixedColumnR = false;
         }
 
+        void PaintFixedSummary(Canvas g, Rectangle rect, List<StyleRow> shows, SolidBrush fore, SolidBrush foreEnable, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius)
+        {
+            if (ScrollBar.ShowY)
+            {
+                try
+                {
+                    var lastrow = shows[shows.Count - 1];
+                    if (sy + rect.Height < lastrow.row.RECT.Bottom)
+                    {
+                        int scrollBar = ScrollBar.ShowX ? ScrollBar.SIZE : 0, h = lastrow.row.RECT.Bottom - shows[0].row.RECT.Y, sFixedB = lastrow.row.RECT.Bottom - rect.Height + scrollBar;
+
+                        var rect_Fixed = new Rectangle(rect.X, rect.Bottom - h - scrollBar, rect.Width, h + scrollBar);
+
+                        GraphicsPath? clipath = null;
+
+                        #region 绘制阴影
+
+                        if (_gap > 0)
+                        {
+                            int gap = (int)(_gap * Config.Dpi);
+                            var rect_show = new Rectangle(rect_Fixed.X, rect.Bottom - h - gap - scrollBar, rect_Fixed.Width, gap * 2);
+                            using (var brush = new LinearGradientBrush(rect_show, Color.Transparent, Colour.FillSecondary.Get("Table", ColorScheme), 90F))
+                            {
+                                g.Fill(brush, rect_show);
+                            }
+                        }
+                        if (radius > 0 && !visibleHeader)
+                        {
+                            clipath = Helper.RoundPath(rect_Fixed, radius, false, false, true, true);
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), clipath);
+                            g.SetClip(clipath);
+                        }
+                        else
+                        {
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), rect_Fixed);
+                            g.SetClip(rect_Fixed);
+                        }
+
+                        #endregion
+
+                        g.TranslateTransform(0, -sFixedB);
+                        foreach (var row in shows) PaintBgRowFront(g, row);
+
+                        g.ResetTransform();
+                        g.TranslateTransform(-sx, -sFixedB);
+                        foreach (var row in shows)
+                        {
+                            PaintBgRowFrontStyle(g, row);
+                            PaintBgRowItem(g, row.row);
+                        }
+
+                        g.ResetTransform();
+                        g.TranslateTransform(0, -sFixedB);
+
+                        //if (dividers.Length > 0) foreach (var divider in dividers) g.Fill(brush_split, divider);
+
+                        g.ResetTransform();
+                        g.TranslateTransform(-sx, -sFixedB);
+                        foreach (var row in shows) PaintForeItem(g, row, fore, foreEnable);
+
+                        g.ResetTransform();
+
+                        g.TranslateTransform(-sx, 0);
+                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
+
+                        g.ResetTransform();
+                        if (fixedColumnL != null || fixedColumnR != null)
+                        {
+                            PaintFixedSummaryL(g, rect, shows, fore, foreEnable, forecolumn, column_font, brush_split, sx, sFixedB, radius);
+                            PaintFixedSummaryR(g, rect, shows, fore, foreEnable, forecolumn, column_font, brush_split, sx, sFixedB, radius);
+                        }
+                        g.ResetClip();
+                        clipath?.Dispose();
+                    }
+                }
+                catch { }
+            }
+        }
+
+        void PaintFixedSummaryL(Canvas g, Rectangle rect, List<StyleRow> shows, SolidBrush fore, SolidBrush foreEnable, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius)
+        {
+            if (fixedColumnL != null && sx > 0)
+            {
+                var save = g.Save();
+                try
+                {
+                    var last = shows[shows.Count - 1].row.cells[fixedColumnL[fixedColumnL.Count - 1]];
+                    var rect_Fixed = new Rectangle(rect.X, rect.Y, last.RECT.Right, rect.Height);
+
+                    GraphicsPath? clipath = null;
+
+                    #region 绘制阴影
+
+                    if (_gap > 0)
+                    {
+                        int gap = (int)(_gap * Config.Dpi);
+                        var rect_show = new Rectangle(rect.X + last.RECT.Right - gap, rect_Fixed.Y, gap * 2, rect_Fixed.Height);
+                        using (var brush = new LinearGradientBrush(rect_show, Colour.FillSecondary.Get("Table", ColorScheme), Color.Transparent, 0F))
+                        {
+                            g.Fill(brush, rect_show);
+                        }
+                    }
+                    if (radius > 0)
+                    {
+                        clipath = Helper.RoundPath(rect_Fixed, radius, true, false, false, !visibleHeader);
+                        g.SetClip(clipath, CombineMode.Intersect);
+                        g.Fill(Colour.BgBase.Get("Table", ColorScheme), clipath);
+                    }
+                    else
+                    {
+                        g.SetClip(rect_Fixed, CombineMode.Intersect);
+                        g.Fill(Colour.BgBase.Get("Table", ColorScheme), rect_Fixed);
+                    }
+
+                    #endregion
+
+                    g.TranslateTransform(0, -sy);
+                    foreach (var row in shows)
+                    {
+                        PaintBgRowFront(g, row);
+                        PaintBgRowItem(g, row.row);
+                        foreach (int fixedIndex in fixedColumnL) PaintItemFixed(g, row.row.cells[fixedIndex], row.row.ENABLE, row.row.ENABLE ? fore : foreEnable, row.style);
+                    }
+                    g.ResetTransform();
+                    if (!fixedHeader) g.TranslateTransform(0, bordered ? 0 : -sy);
+                    if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
+
+                    clipath?.Dispose();
+                }
+                catch { }
+                g.Restore(save);
+            }
+        }
+        void PaintFixedSummaryR(Canvas g, Rectangle rect, List<StyleRow> shows, SolidBrush fore, SolidBrush foreEnable, SolidBrush forecolumn, Font column_font, SolidBrush brush_split, int sx, int sy, float radius)
+        {
+            if (fixedColumnR != null && ScrollBar.ShowX)
+            {
+                var save = g.Save();
+                try
+                {
+                    var lastrow = shows[shows.Count - 1];
+                    CELL first = lastrow.row.cells[fixedColumnR[fixedColumnR.Count - 1]], last = lastrow.row.cells[fixedColumnR[0]];
+                    if (sx + rect.Width < last.RECT.Right)
+                    {
+                        int sFixedR = last.RECT.Right - rect.Width;
+                        int w = last.RECT.Right - first.RECT.Left;
+
+                        var rect_Fixed = new Rectangle(rect.Right - w, rect.Y, w, rect.Height);
+
+                        GraphicsPath? clipath = null;
+
+                        #region 绘制阴影
+
+                        if (_gap > 0)
+                        {
+                            int gap = (int)(_gap * Config.Dpi);
+                            var rect_show = new Rectangle(rect.Right - w - gap, rect_Fixed.Y, gap * 2, rect_Fixed.Height);
+                            using (var brush = new LinearGradientBrush(rect_show, Color.Transparent, Colour.FillSecondary.Get("Table", ColorScheme), 0F))
+                            {
+                                g.Fill(brush, rect_show);
+                            }
+                        }
+                        if (radius > 0)
+                        {
+                            clipath = Helper.RoundPath(rect_Fixed, radius, false, true, !visibleHeader, false);
+                            g.SetClip(clipath, CombineMode.Intersect);
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), clipath);
+                        }
+                        else
+                        {
+                            g.SetClip(rect_Fixed, CombineMode.Intersect);
+                            g.Fill(Colour.BgBase.Get("Table", ColorScheme), rect_Fixed);
+                        }
+
+                        #endregion
+
+                        g.TranslateTransform(0, -sy);
+                        foreach (var row in shows) PaintBgRowFront(g, row);
+                        g.ResetTransform();
+                        g.TranslateTransform(-sFixedR, -sy);
+                        foreach (var row in shows)
+                        {
+                            foreach (int fixedIndex in fixedColumnR)
+                            {
+                                PaintItemBg(g, row.row.cells[fixedIndex]);
+                                PaintItemFixed(g, row.row.cells[fixedIndex], row.row.ENABLE, row.row.ENABLE ? fore : foreEnable, row.style);
+                            }
+                        }
+                        g.ResetTransform();
+                        g.TranslateTransform(0, -sy);
+                        g.ResetTransform();
+
+                        g.TranslateTransform(-sFixedR, 0);
+                        if (dividerHs.Length > 0) foreach (var divider in dividerHs) g.Fill(brush_split, divider);
+
+                        clipath?.Dispose();
+                    }
+                }
+                catch { }
+
+                g.Restore(save);
+            }
+        }
+
+
         #endregion
+
+        #endregion
+
+        #region 合并
+
+        void PaintMergeCells(Canvas g, RowTemplate[] rows, int sx, int sy, Color split_color, SolidBrush fore, SolidBrush foreEnable, int sps)
+        {
+            if (CellRanges == null || CellRanges.Length == 0) return;
+            var state = g.Save();
+            if (visibleHeader && fixedHeader) g.SetClip(new Rectangle(rect_read.X, rect_read.Y + rows[0].Height, rect_read.Width, rect_read.Height));
+            g.TranslateTransform(-sx, -sy);
+            var sps2 = sps / 2F;
+            using (var bg = new SolidBrush(Colour.BgBase.Get("Table", ColorScheme)))
+            {
+                foreach (var it in CellRanges) PaintMergeCells(g, rows, bg, split_color, fore, foreEnable, sps, sps2, it);
+            }
+            g.Restore(state);
+        }
+
+        void PaintMergeCells(Canvas g, RowTemplate[] rows, SolidBrush bg, Color split_color, SolidBrush fore, SolidBrush foreEnable, int sps, float sps2, CellRange range)
+        {
+            if (range.FirstRow == range.LastRow)
+            {
+                foreach (var item in rows)
+                {
+                    if (item.INDEX_REAL == range.FirstRow)
+                    {
+                        PaintMergeCells(g, bg, split_color, fore, foreEnable, sps, sps2, item.cells[range.FirstColumn], item.cells[range.LastColumn]);
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                CELL? first = null, last = null;
+                foreach (var item in rows)
+                {
+                    if (item.INDEX_REAL == range.FirstRow)
+                    {
+                        first = item.cells[range.FirstColumn];
+                        if (last == null) continue;
+                        PaintMergeCells(g, bg, split_color, fore, foreEnable, sps, sps2, first, last);
+                        return;
+                    }
+                    else if (item.INDEX_REAL == range.LastRow)
+                    {
+                        last = item.cells[range.LastColumn];
+                        if (first == null) continue;
+                        PaintMergeCells(g, bg, split_color, fore, foreEnable, sps, sps2, first, last);
+                        return;
+                    }
+                }
+            }
+        }
+
+        void PaintMergeCells(Canvas g, SolidBrush bg, Color split_color, SolidBrush fore, SolidBrush foreEnable, int sps, float sps2, CELL first, CELL last)
+        {
+            var state = g.Save();
+            var rect = RectMergeCells(first, last, out bool fz);
+            g.Fill(bg, rect);
+            if (first.ROW.AnimationHover) g.Fill(Helper.ToColorN(first.ROW.AnimationHoverValue, Colour.FillSecondary.Get("Table", ColorScheme)), rect);
+            else if (first.ROW.Hover) g.Fill(rowHoverBg ?? Colour.FillSecondary.Get("Table", ColorScheme), rect);
+            g.Draw(split_color, sps, new RectangleF(rect.X + sps2, rect.Y + sps2, rect.Width, rect.Height));
+
+            #region 绘制内容
+
+            if (fz) g.TranslateTransform((rect.Width - first.RECT.Width) / 2, -(rect.Height - first.RECT.Height) / 2);
+            else g.TranslateTransform((rect.Width - first.RECT.Width) / 2, (rect.Height - first.RECT.Height) / 2);
+
+            PaintItem(g, first, first.ROW.ENABLE, first.ROW.ENABLE ? fore : foreEnable);
+
+            #endregion
+
+            g.Restore(state);
+        }
+
+        Rectangle RectMergeCells(CELL first, CELL last, out bool fz)
+        {
+            fz = false;
+            if (last.RECT.X >= first.RECT.X && last.RECT.Y >= first.RECT.Y) return new Rectangle(first.RECT.X, first.RECT.Y, last.RECT.Right - first.RECT.X, last.RECT.Bottom - first.RECT.Y);
+            else if (last.RECT.X >= first.RECT.X)
+            {
+                fz = true;
+                return new Rectangle(first.RECT.X, last.RECT.Y, last.RECT.Right - first.RECT.X, first.RECT.Bottom - last.RECT.Y);
+            }
+            else return new Rectangle(last.RECT.X, last.RECT.Y, first.RECT.Right - last.RECT.X, first.RECT.Bottom - last.RECT.Y);
+        }
 
         #endregion
 
@@ -681,147 +1221,105 @@ namespace AntdUI
 
         #region 复选框
 
-        void PaintCheck(Graphics g, TCellColumn check, ColumnCheck columnCheck)
+        void PaintCheck(Canvas g, TCellColumn check, ColumnCheck columnCheck)
         {
             using (var path_check = Helper.RoundPath(check.RECT_REAL, check_radius, false))
             {
                 if (columnCheck.AnimationCheck)
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillPath(brush_bg, path_check);
-                    }
+                    g.Fill(Colour.BgBase.Get("Checkbox", ColorScheme), path_check);
                     var alpha = 255 * columnCheck.AnimationCheckValue;
                     if (columnCheck.CheckState == CheckState.Indeterminate || (columnCheck.checkStateOld == CheckState.Indeterminate && !columnCheck.Checked))
                     {
-                        using (var brush = new Pen(Style.Db.BorderColor, check_border))
-                        {
-                            g.DrawPath(brush, path_check);
-                        }
-                        using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.Primary)))
-                        {
-                            g.FillRectangle(brush, PaintBlock(check.RECT_REAL));
-                        }
+                        g.Draw(Colour.BorderColor.Get("Checkbox", ColorScheme), check_border, path_check);
+                        g.Fill(Helper.ToColor(alpha, Colour.Primary.Get("Checkbox", ColorScheme)), PaintBlock(check.RECT_REAL));
                     }
                     else
                     {
-                        using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.Primary)))
-                        {
-                            g.FillPath(brush, path_check);
-                        }
-                        using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), check_border * 2))
+                        g.Fill(Helper.ToColor(alpha, Colour.Primary.Get("Checkbox", ColorScheme)), path_check);
+                        using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Checkbox", ColorScheme)), check_border * 2))
                         {
                             g.DrawLines(brush, PaintArrow(check.RECT_REAL));
                         }
                         if (columnCheck.Checked)
                         {
                             float max = check.RECT_REAL.Height + check.RECT_REAL.Height * columnCheck.AnimationCheckValue, alpha2 = 100 * (1F - columnCheck.AnimationCheckValue);
-                            using (var brush = new SolidBrush(Helper.ToColor(alpha2, Style.Db.Primary)))
+                            using (var brush = new SolidBrush(Helper.ToColor(alpha2, Colour.Primary.Get("Checkbox", ColorScheme))))
                             {
                                 g.FillEllipse(brush, new RectangleF(check.RECT_REAL.X + (check.RECT_REAL.Width - max) / 2F, check.RECT_REAL.Y + (check.RECT_REAL.Height - max) / 2F, max, max));
                             }
                         }
-                        using (var brush = new Pen(Style.Db.Primary, check_border))
-                        {
-                            g.DrawPath(brush, path_check);
-                        }
+                        g.Draw(Colour.Primary.Get("Checkbox", ColorScheme), check_border, path_check);
                     }
                 }
                 else if (columnCheck.CheckState == CheckState.Indeterminate)
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillPath(brush_bg, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BorderColor, check_border))
-                    {
-                        g.DrawPath(brush, path_check);
-                    }
-                    using (var brush = new SolidBrush(Style.Db.Primary))
-                    {
-                        g.FillRectangle(brush, PaintBlock(check.RECT_REAL));
-                    }
+                    g.Fill(Colour.BgBase.Get("Checkbox", ColorScheme), path_check);
+                    g.Draw(Colour.BorderColor.Get("Checkbox", ColorScheme), check_border, path_check);
+                    g.Fill(Colour.Primary.Get("Checkbox", ColorScheme), PaintBlock(check.RECT_REAL));
                 }
                 else if (columnCheck.Checked)
                 {
-                    using (var brush = new SolidBrush(Style.Db.Primary))
-                    {
-                        g.FillPath(brush, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BgBase, check_border * 2))
+                    g.Fill(Colour.Primary.Get("Checkbox", ColorScheme), path_check);
+                    using (var brush = new Pen(Colour.BgBase.Get("Checkbox", ColorScheme), check_border * 2))
                     {
                         g.DrawLines(brush, PaintArrow(check.RECT_REAL));
                     }
                 }
                 else
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillPath(brush_bg, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BorderColor, check_border))
-                    {
-                        g.DrawPath(brush, path_check);
-                    }
+                    g.Fill(Colour.BgBase.Get("Checkbox", ColorScheme), path_check);
+                    g.Draw(Colour.BorderColor.Get("Checkbox", ColorScheme), check_border, path_check);
                 }
             }
         }
-        void PaintCheck(Graphics g, TCellCheck check)
+        void PaintCheck(Canvas g, TCellCheck check, bool enable)
         {
-            using (var path_check = Helper.RoundPath(check.RECT_REAL, check_radius, false))
+            using (var path = Helper.RoundPath(check.RECT_REAL, check_radius, false))
             {
-                if (check.AnimationCheck)
+                if (enable)
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
+                    if (check.AnimationCheck)
                     {
-                        g.FillPath(brush_bg, path_check);
-                    }
+                        g.Fill(Colour.BgBase.Get("Checkbox", ColorScheme), path);
 
-                    var alpha = 255 * check.AnimationCheckValue;
+                        var alpha = 255 * check.AnimationCheckValue;
 
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.Primary)))
-                    {
-                        g.FillPath(brush, path_check);
-                    }
-                    using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), check_border * 2))
-                    {
-                        g.DrawLines(brush, PaintArrow(check.RECT_REAL));
-                    }
-
-                    if (check.Checked)
-                    {
-                        float max = check.RECT_REAL.Height + check.RECT_REAL.Height * check.AnimationCheckValue, alpha2 = 100 * (1F - check.AnimationCheckValue);
-                        using (var brush = new SolidBrush(Helper.ToColor(alpha2, Style.Db.Primary)))
+                        g.Fill(Helper.ToColor(alpha, Colour.Primary.Get("Checkbox", ColorScheme)), path);
+                        using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Checkbox", ColorScheme)), check_border * 2))
                         {
-                            g.FillEllipse(brush, new RectangleF(check.RECT_REAL.X + (check.RECT_REAL.Width - max) / 2F, check.RECT_REAL.Y + (check.RECT_REAL.Height - max) / 2F, max, max));
+                            g.DrawLines(brush, PaintArrow(check.RECT_REAL));
+                        }
+
+                        if (check.Checked)
+                        {
+                            float max = check.RECT_REAL.Height + check.RECT_REAL.Height * check.AnimationCheckValue, alpha2 = 100 * (1F - check.AnimationCheckValue);
+                            using (var brush = new SolidBrush(Helper.ToColor(alpha2, Colour.Primary.Get("Checkbox", ColorScheme))))
+                            {
+                                g.FillEllipse(brush, new RectangleF(check.RECT_REAL.X + (check.RECT_REAL.Width - max) / 2F, check.RECT_REAL.Y + (check.RECT_REAL.Height - max) / 2F, max, max));
+                            }
+                        }
+                        g.Draw(Colour.Primary.Get("Checkbox", ColorScheme), check_border, path);
+                    }
+                    else if (check.Checked)
+                    {
+                        g.Fill(Colour.Primary.Get("Checkbox", ColorScheme), path);
+                        using (var brush = new Pen(Colour.BgBase.Get("Checkbox", ColorScheme), check_border * 2))
+                        {
+                            g.DrawLines(brush, PaintArrow(check.RECT_REAL));
                         }
                     }
-                    using (var brush = new Pen(Style.Db.Primary, check_border))
+                    else
                     {
-                        g.DrawPath(brush, path_check);
-                    }
-                }
-                else if (check.Checked)
-                {
-                    using (var brush = new SolidBrush(Style.Db.Primary))
-                    {
-                        g.FillPath(brush, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BgBase, check_border * 2))
-                    {
-                        g.DrawLines(brush, PaintArrow(check.RECT_REAL));
+                        g.Fill(Colour.BgBase.Get("Checkbox", ColorScheme), path);
+                        g.Draw(Colour.BorderColor.Get("Checkbox", ColorScheme), check_border, path);
                     }
                 }
                 else
                 {
-                    using (var brush_bg = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillPath(brush_bg, path_check);
-                    }
-                    using (var brush = new Pen(Style.Db.BorderColor, check_border))
-                    {
-                        g.DrawPath(brush, path_check);
-                    }
+                    g.Fill(Colour.FillQuaternary.Get("Checkbox", ColorScheme), path);
+                    if (check.Checked) g.DrawLines(Colour.TextQuaternary.Get("Checkbox", ColorScheme), check_border * 2, PaintArrow(check.RECT_REAL));
+                    g.Draw(Colour.BorderColorDisable.Get("Checkbox", ColorScheme), check_border, path);
                 }
             }
         }
@@ -830,57 +1328,46 @@ namespace AntdUI
 
         #region 单选框
 
-        void PaintRadio(Graphics g, TCellRadio radio)
+        void PaintRadio(Canvas g, TCellRadio radio, bool enable)
         {
             var dot_size = radio.RECT_REAL.Height;
-            using (var brush_bg = new SolidBrush(Style.Db.BgBase))
+            if (enable)
             {
-                g.FillEllipse(brush_bg, radio.RECT_REAL);
-            }
-            if (radio.AnimationCheck)
-            {
-                float dot = dot_size * 0.3F;
-                using (var path = new GraphicsPath())
+                g.FillEllipse(Colour.BgBase.Get("Radio", ColorScheme), radio.RECT_REAL);
+                if (radio.AnimationCheck)
                 {
-                    float dot_ant = dot_size - dot * radio.AnimationCheckValue, dot_ant2 = dot_ant / 2F, alpha = 255 * radio.AnimationCheckValue;
-                    path.AddEllipse(radio.RECT_REAL);
-                    path.AddEllipse(new RectangleF(radio.RECT_REAL.X + dot_ant2, radio.RECT_REAL.Y + dot_ant2, radio.RECT_REAL.Width - dot_ant, radio.RECT_REAL.Height - dot_ant));
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.Primary)))
+                    float dot = dot_size * 0.3F;
+                    using (var path = new GraphicsPath())
                     {
-                        g.FillPath(brush, path);
+                        float dot_ant = dot_size - dot * radio.AnimationCheckValue, dot_ant2 = dot_ant / 2F, alpha = 255 * radio.AnimationCheckValue;
+                        path.AddEllipse(radio.RECT_REAL);
+                        path.AddEllipse(new RectangleF(radio.RECT_REAL.X + dot_ant2, radio.RECT_REAL.Y + dot_ant2, radio.RECT_REAL.Width - dot_ant, radio.RECT_REAL.Height - dot_ant));
+                        g.Fill(Helper.ToColor(alpha, Colour.Primary.Get("Radio", ColorScheme)), path);
                     }
-                }
-                if (radio.Checked)
-                {
-                    float max = radio.RECT_REAL.Height + radio.RECT_REAL.Height * radio.AnimationCheckValue, alpha2 = 100 * (1F - radio.AnimationCheckValue);
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha2, Style.Db.Primary)))
+                    if (radio.Checked)
                     {
-                        g.FillEllipse(brush, new RectangleF(radio.RECT_REAL.X + (radio.RECT_REAL.Width - max) / 2F, radio.RECT_REAL.Y + (radio.RECT_REAL.Height - max) / 2F, max, max));
+                        float max = radio.RECT_REAL.Height + radio.RECT_REAL.Height * radio.AnimationCheckValue, alpha2 = 100 * (1F - radio.AnimationCheckValue);
+                        g.FillEllipse(Helper.ToColor(alpha2, Colour.Primary.Get("Radio", ColorScheme)), new RectangleF(radio.RECT_REAL.X + (radio.RECT_REAL.Width - max) / 2F, radio.RECT_REAL.Y + (radio.RECT_REAL.Height - max) / 2F, max, max));
                     }
+                    g.DrawEllipse(Colour.Primary.Get("Radio", ColorScheme), check_border, radio.RECT_REAL);
                 }
-                using (var brush = new Pen(Style.Db.Primary, check_border))
+                else if (radio.Checked)
                 {
-                    g.DrawEllipse(brush, radio.RECT_REAL);
+                    float dot = dot_size * 0.3F, dot2 = dot / 2F;
+                    g.DrawEllipse(Color.FromArgb(250, Colour.Primary.Get("Radio", ColorScheme)), dot, new RectangleF(radio.RECT_REAL.X + dot2, radio.RECT_REAL.Y + dot2, radio.RECT_REAL.Width - dot, radio.RECT_REAL.Height - dot));
+                    g.DrawEllipse(Colour.Primary.Get("Radio", ColorScheme), check_border, radio.RECT_REAL);
                 }
-            }
-            else if (radio.Checked)
-            {
-                float dot = dot_size * 0.3F, dot2 = dot / 2F;
-                using (var brush = new Pen(Color.FromArgb(250, Style.Db.Primary), dot))
-                {
-                    g.DrawEllipse(brush, new RectangleF(radio.RECT_REAL.X + dot2, radio.RECT_REAL.Y + dot2, radio.RECT_REAL.Width - dot, radio.RECT_REAL.Height - dot));
-                }
-                using (var brush = new Pen(Style.Db.Primary, check_border))
-                {
-                    g.DrawEllipse(brush, radio.RECT_REAL);
-                }
+                else g.DrawEllipse(Colour.BorderColor.Get("Radio", ColorScheme), check_border, radio.RECT_REAL);
             }
             else
             {
-                using (var brush = new Pen(Style.Db.BorderColor, check_border))
+                g.FillEllipse(Colour.FillQuaternary.Get("Radio", ColorScheme), radio.RECT_REAL);
+                if (radio.Checked)
                 {
-                    g.DrawEllipse(brush, radio.RECT_REAL);
+                    float dot = dot_size / 2F, dot2 = dot / 2F;
+                    g.FillEllipse(Colour.TextQuaternary.Get("Radio", ColorScheme), new RectangleF(radio.RECT_REAL.X + dot2, radio.RECT_REAL.Y + dot2, radio.RECT_REAL.Width - dot, radio.RECT_REAL.Height - dot));
                 }
+                g.DrawEllipse(Colour.BorderColorDisable.Get("Radio", ColorScheme), check_border, radio.RECT_REAL);
             }
         }
 
@@ -888,63 +1375,33 @@ namespace AntdUI
 
         #region 开关
 
-        void PaintSwitch(Graphics g, TCellSwitch _switch)
+        void PaintSwitch(Canvas g, TCellSwitch _switch, bool enable)
         {
-            var color = Style.Db.Primary;
+            var color = Colour.Primary.Get("Switch", ColorScheme);
             using (var path = _switch.RECT_REAL.RoundPath(_switch.RECT_REAL.Height))
             {
-                using (var brush = new SolidBrush(Style.Db.TextQuaternary))
+                using (var brush = new SolidBrush(Colour.TextQuaternary.Get("Switch", ColorScheme)))
                 {
-                    g.FillPath(brush, path);
-                    if (_switch.AnimationHover)
-                    {
-                        using (var brush2 = new SolidBrush(Helper.ToColorN(_switch.AnimationHoverValue, brush.Color)))
-                        {
-                            g.FillPath(brush2, path);
-                        }
-                    }
-                    else if (_switch.ExtraMouseHover) g.FillPath(brush, path);
+                    g.Fill(brush, path);
+                    if (_switch.AnimationHover) g.Fill(Helper.ToColorN(_switch.AnimationHoverValue, brush.Color), path);
+                    else if (_switch.ExtraMouseHover) g.Fill(brush, path);
                 }
                 float gap = (int)(2 * Config.Dpi), gap2 = gap * 2F;
                 if (_switch.AnimationCheck)
                 {
                     var alpha = 255 * _switch.AnimationCheckValue;
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha, color)))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Helper.ToColor(alpha, color), path);
                     var dot_rect = new RectangleF(_switch.RECT_REAL.X + gap + (_switch.RECT_REAL.Width - _switch.RECT_REAL.Height) * _switch.AnimationCheckValue, _switch.RECT_REAL.Y + gap, _switch.RECT_REAL.Height - gap2, _switch.RECT_REAL.Height - gap2);
-                    using (var brush = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillEllipse(brush, dot_rect);
-                    }
+                    g.FillEllipse(enable ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
                 }
                 else if (_switch.Checked)
                 {
-                    var colorhover = Style.Db.PrimaryHover;
-                    using (var brush = new SolidBrush(color))
-                    {
-                        g.FillPath(brush, path);
-                    }
-                    if (_switch.AnimationHover)
-                    {
-                        using (var brush2 = new SolidBrush(Helper.ToColorN(_switch.AnimationHoverValue, colorhover)))
-                        {
-                            g.FillPath(brush2, path);
-                        }
-                    }
-                    else if (_switch.ExtraMouseHover)
-                    {
-                        using (var brush = new SolidBrush(colorhover))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
+                    var colorhover = Colour.PrimaryHover.Get("Switch", ColorScheme);
+                    g.Fill(color, path);
+                    if (_switch.AnimationHover) g.Fill(Helper.ToColorN(_switch.AnimationHoverValue, colorhover), path);
+                    else if (_switch.ExtraMouseHover) g.Fill(colorhover, path);
                     var dot_rect = new RectangleF(_switch.RECT_REAL.X + gap + _switch.RECT_REAL.Width - _switch.RECT_REAL.Height, _switch.RECT_REAL.Y + gap, _switch.RECT_REAL.Height - gap2, _switch.RECT_REAL.Height - gap2);
-                    using (var brush = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillEllipse(brush, dot_rect);
-                    }
+                    g.FillEllipse(enable ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
                     if (_switch.Loading)
                     {
                         var dot_rect2 = new RectangleF(dot_rect.X + gap, dot_rect.Y + gap, dot_rect.Height - gap2, dot_rect.Height - gap2);
@@ -952,21 +1409,14 @@ namespace AntdUI
                         using (var brush = new Pen(color, size))
                         {
                             brush.StartCap = brush.EndCap = LineCap.Round;
-                            try
-                            {
-                                g.DrawArc(brush, dot_rect2, _switch.LineAngle, _switch.LineWidth * 3.6F);
-                            }
-                            catch { }
+                            g.DrawArc(brush, dot_rect2, _switch.LineAngle, _switch.LineWidth * 3.6F);
                         }
                     }
                 }
                 else
                 {
                     var dot_rect = new RectangleF(_switch.RECT_REAL.X + gap, _switch.RECT_REAL.Y + gap, _switch.RECT_REAL.Height - gap2, _switch.RECT_REAL.Height - gap2);
-                    using (var brush = new SolidBrush(Style.Db.BgBase))
-                    {
-                        g.FillEllipse(brush, dot_rect);
-                    }
+                    g.FillEllipse(enable ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
                     if (_switch.Loading)
                     {
                         var dot_rect2 = new RectangleF(dot_rect.X + gap, dot_rect.Y + gap, dot_rect.Height - gap2, dot_rect.Height - gap2);
@@ -974,11 +1424,7 @@ namespace AntdUI
                         using (var brush = new Pen(color, size))
                         {
                             brush.StartCap = brush.EndCap = LineCap.Round;
-                            try
-                            {
-                                g.DrawArc(brush, dot_rect2, _switch.LineAngle, _switch.LineWidth * 3.6F);
-                            }
-                            catch { }
+                            g.DrawArc(brush, dot_rect2, _switch.LineAngle, _switch.LineWidth * 3.6F);
                         }
                     }
                 }
@@ -1004,65 +1450,96 @@ namespace AntdUI
 
         #endregion
 
-        void PaintEmpty(Graphics g, Rectangle rect)
-        {
-            using (var fore = new SolidBrush(Style.Db.Text))
-            {
-                string emptytext = EmptyText ?? Localization.Provider?.GetLocalizedString("NoData") ?? "暂无数据";
-                if (EmptyImage == null) g.DrawStr(emptytext, Font, fore, rect, stringCenter);
-                else
-                {
-                    int gap = (int)(_gap * Config.Dpi);
-                    var size = g.MeasureString(emptytext, Font).Size();
-                    Rectangle rect_img = new Rectangle(rect.X + (rect.Width - EmptyImage.Width) / 2, rect.Y + (rect.Height - EmptyImage.Height) / 2 - size.Height, EmptyImage.Width, EmptyImage.Height),
-                        rect_font = new Rectangle(rect.X, rect_img.Bottom + gap, rect.Width, size.Height);
-                    g.DrawImage(EmptyImage, rect_img);
-                    g.DrawStr(emptytext, Font, fore, rect_font, stringCenter);
-                }
-            }
-        }
+        void PaintEmpty(Canvas g, Rectangle rect, int offset) => g.PaintEmpty(rect, Font, fore ?? Colour.Text.Get("Table", ColorScheme), EmptyText, EmptyImage, offset, StringFormat(ColumnAlign.Center));
 
-        internal static StringFormat StringF(Column column)
+        public static StringFormat StringFormat(Column column, bool isColumn) =>
+          isColumn ? StringFormat(column.ColAlign ?? column.Align, LineBreak: column.ColBreak) : StringFormat(column);
+
+        public static StringFormat StringFormat(Column column) => StringFormat(column.Align, column.Ellipsis, column.LineBreak);
+
+        static Dictionary<string, StringFormat> sf_cache = new Dictionary<string, StringFormat>(12) { { "Center00", Helper.SF_NoWrap() } };
+        public static StringFormat StringFormat(ColumnAlign Align, bool Ellipsis = false, bool LineBreak = false)
         {
-            if (column.LineBreak)
-            {
-                switch (column.Align)
-                {
-                    case ColumnAlign.Center: return stringCenterN;
-                    case ColumnAlign.Right: return stringRightN;
-                    case ColumnAlign.Left:
-                    default: return stringLeftN;
-                }
-            }
-            else if (column.Ellipsis)
-            {
-                switch (column.Align)
-                {
-                    case ColumnAlign.Center: return stringCenterEllipsis;
-                    case ColumnAlign.Right: return stringRightEllipsis;
-                    case ColumnAlign.Left:
-                    default: return stringLeftEllipsis;
-                }
-            }
+            var id = Align.ToString() + (Ellipsis ? 1 : 0) + (LineBreak ? 1 : 0);
+            if (sf_cache.TryGetValue(id, out var value)) return value;
             else
             {
-                switch (column.Align)
+                if (Ellipsis && LineBreak)
                 {
-                    case ColumnAlign.Center: return stringCenter;
-                    case ColumnAlign.Right: return stringRight;
-                    case ColumnAlign.Left:
-                    default: return stringLeft;
+                    switch (Align)
+                    {
+                        case ColumnAlign.Center:
+                            StringFormat resultCenter = Helper.SF_Ellipsis();
+                            sf_cache.Add(id, resultCenter);
+                            return resultCenter;
+                        case ColumnAlign.Left:
+                            StringFormat resultLeft = Helper.SF_Ellipsis(lr: StringAlignment.Near);
+                            sf_cache.Add(id, resultLeft);
+                            return resultLeft;
+                        case ColumnAlign.Right:
+                        default:
+                            StringFormat resultRight = Helper.SF_Ellipsis(lr: StringAlignment.Far);
+                            sf_cache.Add(id, resultRight);
+                            return resultRight;
+                    }
                 }
-            }
-        }
-        static StringFormat StringF(ColumnAlign align)
-        {
-            switch (align)
-            {
-                case ColumnAlign.Center: return stringCenter;
-                case ColumnAlign.Right: return stringRight;
-                case ColumnAlign.Left:
-                default: return stringLeft;
+                else if (Ellipsis)
+                {
+                    switch (Align)
+                    {
+                        case ColumnAlign.Center:
+                            StringFormat resultCenter = Helper.SF_ALL();
+                            sf_cache.Add(id, resultCenter);
+                            return resultCenter;
+                        case ColumnAlign.Left:
+                            StringFormat resultLeft = Helper.SF_ALL(lr: StringAlignment.Near);
+                            sf_cache.Add(id, resultLeft);
+                            return resultLeft;
+                        case ColumnAlign.Right:
+                        default:
+                            StringFormat resultRight = Helper.SF_ALL(lr: StringAlignment.Far);
+                            sf_cache.Add(id, resultRight);
+                            return resultRight;
+                    }
+                }
+                else if (LineBreak)
+                {
+                    switch (Align)
+                    {
+                        case ColumnAlign.Center:
+                            StringFormat resultCenter = Helper.SF();
+                            sf_cache.Add(id, resultCenter);
+                            return resultCenter;
+                        case ColumnAlign.Left:
+                            StringFormat resultLeft = Helper.SF(lr: StringAlignment.Near);
+                            sf_cache.Add(id, resultLeft);
+                            return resultLeft;
+                        case ColumnAlign.Right:
+                        default:
+                            StringFormat resultRight = Helper.SF(lr: StringAlignment.Far);
+                            sf_cache.Add(id, resultRight);
+                            return resultRight;
+                    }
+                }
+                else
+                {
+                    switch (Align)
+                    {
+                        case ColumnAlign.Center:
+                            StringFormat resultCenter = Helper.SF_NoWrap();
+                            sf_cache.Add(id, resultCenter);
+                            return resultCenter;
+                        case ColumnAlign.Left:
+                            StringFormat resultLeft = Helper.SF_NoWrap(lr: StringAlignment.Near);
+                            sf_cache.Add(id, resultLeft);
+                            return resultLeft;
+                        case ColumnAlign.Right:
+                        default:
+                            StringFormat resultRight = Helper.SF_NoWrap(lr: StringAlignment.Far);
+                            sf_cache.Add(id, resultRight);
+                            return resultRight;
+                    }
+                }
             }
         }
     }

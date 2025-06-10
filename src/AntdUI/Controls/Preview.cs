@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -37,15 +37,7 @@ namespace AntdUI
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.Form.InvokeRequired)
-                {
-                    Form? frm2 = null;
-                    config.Form.Invoke(new Action(() =>
-                    {
-                        frm2 = open(config);
-                    }));
-                    return frm2;
-                }
+                if (config.Form.InvokeRequired) return ITask.Invoke(config.Form, new Func<Form?>(() => open(config)));
                 var frm = new LayeredFormPreview(config);
                 frm.Show(config.Form);
                 return frm;
@@ -110,6 +102,18 @@ namespace AntdUI
             }
 
             /// <summary>
+            /// Preview 配置
+            /// </summary>
+            /// <param name="form">所属窗口</param>
+            /// <param name="list">多个图片和图片对应的文字和文字样式</param>
+            public Config(Form form, IList<ImageTextContent> list)
+            {
+                Form = form;
+                Content = list;
+                ContentCount = list.Count;
+            }
+
+            /// <summary>
             /// 所属窗口
             /// </summary>
             public Form Form { get; set; }
@@ -139,9 +143,34 @@ namespace AntdUI
             /// <summary>
             /// 自定义按钮回调
             /// </summary>
-            public Action<string, object?>? OnBtns { get; set; }
+            public Action<string, BtnEvent>? OnBtns { get; set; }
 
             #endregion
+        }
+
+        public class BtnEvent
+        {
+            public BtnEvent(int index, object? data, object? tag)
+            {
+                Index = index;
+                Data = data;
+                Tag = tag;
+            }
+
+            /// <summary>
+            /// 数据序号
+            /// </summary>
+            public int Index { get; set; }
+
+            /// <summary>
+            /// 元数据
+            /// </summary>
+            public object? Data { get; set; }
+
+            /// <summary>
+            /// Btn的Tag
+            /// </summary>
+            public object? Tag { get; set; }
         }
 
         /// <summary>
@@ -174,6 +203,52 @@ namespace AntdUI
             /// 用户定义数据
             /// </summary>
             public object? Tag { get; set; }
+        }
+
+        /// <summary>
+        /// 图片和文本内容
+        /// </summary>
+        public class ImageTextContent
+        {
+            public ImageTextContent(Image image)
+            {
+                Image = image;
+            }
+
+            public ImageTextContent(Image image, string? text)
+            {
+                Image = image;
+                Text = text;
+            }
+
+            public ImageTextContent(Image image, string? text, Color? foreColor)
+            {
+                Image = image;
+                Text = text;
+                ForeColor = foreColor;
+            }
+
+            public Image Image { get; set; }
+
+            /// <summary>
+            /// 显示文本
+            /// </summary>
+            public string? Text { get; set; }
+
+            /// <summary>
+            /// 文本字体
+            /// </summary>
+            public Font? Font { get; set; }
+
+            /// <summary>
+            /// 文本颜色
+            /// </summary>
+            public Color? ForeColor { get; set; }
+
+            /// <summary>
+            /// 文本位置
+            /// </summary>
+            public ContentAlignment TextAlign { get; set; } = ContentAlignment.TopCenter;
         }
     }
 }

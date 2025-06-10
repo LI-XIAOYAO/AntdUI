@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -24,9 +24,9 @@ namespace AntdUI
 {
     partial class CellImage
     {
-        internal override void PaintBack(Graphics g) { }
+        public override void PaintBack(Canvas g) { }
 
-        internal override void Paint(Graphics g, Font font, SolidBrush fore)
+        public override void Paint(Canvas g, Font font, bool enable, SolidBrush fore)
         {
             float radius = Radius * Config.Dpi;
             using (var path = Rect.RoundPath(radius))
@@ -39,48 +39,34 @@ namespace AntdUI
                         {
                             using (var bmpsvg = ImageSvg.SvgToBmp(Rect.Width, Rect.Height, FillSvg))
                             {
-                                if (bmpsvg != null) g2.PaintImg(new RectangleF(0, 0, Rect.Width, Rect.Height), bmpsvg, ImageFit);
+                                if (bmpsvg != null) g2.Image(new RectangleF(0, 0, Rect.Width, Rect.Height), bmpsvg, ImageFit);
                             }
                         }
-                        else if (image != null) g2.PaintImg(new RectangleF(0, 0, Rect.Width, Rect.Height), image, ImageFit);
+                        else if (image != null) g2.Image(new RectangleF(0, 0, Rect.Width, Rect.Height), image, ImageFit);
                     }
                     using (var brush = new TextureBrush(bmp, WrapMode.Clamp))
                     {
                         brush.TranslateTransform(Rect.X, Rect.Y);
                         if (Round) g.FillEllipse(brush, Rect);
-                        else
-                        {
-                            g.FillPath(brush, path);
-                        }
+                        else g.Fill(brush, path);
                     }
                 }
 
-                if (BorderWidth > 0 && BorderColor.HasValue)
-                {
-                    float border = BorderWidth * Config.Dpi;
-                    using (var brush = new Pen(BorderColor.Value, border))
-                    {
-                        g.DrawPath(brush, path);
-                    }
-                }
+                if (BorderWidth > 0 && BorderColor.HasValue) g.Draw(BorderColor.Value, BorderWidth * Config.Dpi, path);
             }
         }
 
-        internal override Size GetSize(Graphics g, Font font, int gap, int gap2)
+        public override Size GetSize(Canvas g, Font font, int gap, int gap2)
         {
-            if (Size.HasValue)
-            {
-                return new Size((int)Math.Ceiling(Size.Value.Width * Config.Dpi) + gap2, (int)Math.Ceiling(Size.Value.Height * Config.Dpi) + gap2);
-            }
+            if (Size.HasValue) return new Size((int)Math.Ceiling(Size.Value.Width * Config.Dpi), (int)Math.Ceiling(Size.Value.Height * Config.Dpi));
             else
             {
-                int size = gap2 + (int)Math.Round(g.MeasureString(Config.NullText, font).Height);
+                int size = gap2 + g.MeasureString(Config.NullText, font, 0, PARENT.PARENT.sf).Height;
                 return new Size(size, size);
             }
         }
 
-        internal Rectangle Rect;
-        internal override void SetRect(Graphics g, Font font, Rectangle rect, Size size, int gap, int gap2)
+        public override void SetRect(Canvas g, Font font, Rectangle rect, Size size, int maxwidth, int gap, int gap2)
         {
             int w = size.Width - gap2, h = size.Height - gap2;
             Rect = new Rectangle(rect.X + (rect.Width - w) / 2, rect.Y + (rect.Height - h) / 2, w, h);

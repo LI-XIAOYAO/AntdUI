@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -23,40 +23,45 @@ namespace AntdUI
 {
     public class ITaskOpacity : IDisposable
     {
+        string key;
         Control control;
         Action action;
-        public ITaskOpacity(ILayeredFormOpacityDown _control)
+        public ITaskOpacity(string k, ILayeredFormOpacityDown _control)
         {
+            key = k;
             control = _control;
-            action = new Action(() =>
+            action = () =>
             {
                 if (_control.RunAnimation) return;
                 _control.Print();
-            });
+            };
         }
-        public ITaskOpacity(ILayeredForm _control)
+        public ITaskOpacity(string k, ILayeredForm _control)
         {
+            key = k;
             control = _control;
-            action = new Action(() =>
+            action = () =>
             {
                 _control.Print();
-            });
+            };
         }
-        public ITaskOpacity(Form _control)
+        public ITaskOpacity(string k, Form _control)
         {
+            key = k;
             control = _control;
-            action = new Action(() =>
+            action = () =>
             {
                 _control.Invalidate();
-            });
+            };
         }
-        public ITaskOpacity(IControl _control)
+        public ITaskOpacity(string k, IControl _control)
         {
+            key = k;
             control = _control;
-            action = new Action(() =>
+            action = () =>
             {
                 _control.Invalidate();
-            });
+            };
         }
 
         ITask? Thread = null;
@@ -82,7 +87,7 @@ namespace AntdUI
                 if (value && !enable) value = false;
                 if (_switch == value) return;
                 _switch = value;
-                if (Config.Animation)
+                if (Config.HasAnimation(key))
                 {
                     Thread?.Dispose();
                     Animation = true;
@@ -142,9 +147,6 @@ namespace AntdUI
         public int MaxValue { get; set; } = 255;
         public int Value { get; private set; }
         public bool Animation { get; private set; }
-        public void Dispose()
-        {
-            Thread?.Dispose();
-        }
+        public void Dispose() => Thread?.Dispose();
     }
 }

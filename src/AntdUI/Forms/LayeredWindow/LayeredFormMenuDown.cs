@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -26,19 +25,25 @@ namespace AntdUI
 {
     internal class LayeredFormMenuDown : ILayeredFormOpacityDown, SubLayeredForm
     {
+        #region 初始化
+
         internal float Radius = 0;
-        bool isauto = true, isdark = false;
+        TAMode Theme;
+        bool isdark = false;
         List<OMenuItem> Items;
-        Color? BackHover, BackActive, foreColor, ForeActive;
-        public LayeredFormMenuDown(Menu control, int radius, Rectangle rect_read, MenuItemCollection items)
+        Color? backColor, BackHover, BackActive, foreColor, ForeActive;
+
+        ScrollY? scrollY;
+        public LayeredFormMenuDown(Menu control, int radius, Rectangle rect_read, IList<MenuItem> items)
         {
             MessageCloseMouseLeave = true;
-            isauto = control.Theme == TAMode.Auto;
-            isdark = Config.IsDark || control.Theme == TAMode.Dark;
+            Theme = control.ColorScheme;
+            isdark = Config.IsDark || control.ColorScheme == TAMode.Dark;
             control.Parent.SetTopMost(Handle);
             PARENT = control;
             select_x = 0;
             Font = control.Font;
+            if (control.ShowSubBack) backColor = control.BackColor;
             foreColor = control.ForeColor;
             ForeActive = control.ForeActive;
             BackHover = control.BackHover;
@@ -50,13 +55,14 @@ namespace AntdUI
 
         public LayeredFormMenuDown(Menu parent, int sx, LayeredFormMenuDown control, float radius, Rectangle rect_read, MenuItemCollection items)
         {
-            isauto = parent.Theme == TAMode.Auto;
-            isdark = Config.IsDark || parent.Theme == TAMode.Dark;
+            Theme = parent.ColorScheme;
+            isdark = Config.IsDark || parent.ColorScheme == TAMode.Dark;
             parent.Parent.SetTopMost(Handle);
             select_x = sx;
             PARENT = parent;
             Font = control.Font;
-            foreColor = control.ForeColor;
+            backColor = control.backColor;
+            foreColor = control.foreColor;
             ForeActive = control.ForeActive;
             BackHover = control.BackHover;
             BackActive = control.BackActive;
@@ -66,61 +72,75 @@ namespace AntdUI
             Init(control, rect_read, items);
         }
 
+        public override string name => nameof(Menu);
+
         public ILayeredForm? SubForm() => subForm;
         LayeredFormMenuDown? subForm = null;
-        void Init(Control control, Rectangle rect_read, MenuItemCollection items)
+        void Init(Control control, Rectangle rect_read, IList<MenuItem> items)
         {
-            int y = 10, w = rect_read.Width;
+            if (OS.Win7OrLower) Select();
+            int y = 10, w = rect_read.Width, count = 0;
+            OMenuItem? oMenuItem = null;
             Helper.GDI(g =>
             {
-                var size = g.MeasureString(Config.NullText, Font).Size();
-                int gap_y = (int)(5 * Config.Dpi), gap_x = (int)(12 * Config.Dpi), gap_x2 = gap_x * 2, gap_y2 = gap_y * 2;
-                int font_size = size.Height + gap_y2;
-                y += gap_y;
+                var size = g.MeasureString(Config.NullText, Font);
+                int gap = (int)(4 * Config.Dpi), gap_y = (int)(5 * Config.Dpi), gap_x = (int)(12 * Config.Dpi),
+                gap2 = gap * 2, gap_x2 = gap_x * 2, gap_y2 = gap_y * 2,
+                text_height = size.Height, item_height = text_height + gap_y2;
+                y += gap;
 
                 #region AutoWidth
 
                 int b_w = size.Width + gap_x2;
                 bool ui_icon = false, ui_arrow = false;
-                foreach (var obj in items)
+                foreach (var it in items)
                 {
-                    if (obj.Text != null)
+                    if (it.Visible)
                     {
-                        var size3 = g.MeasureString(obj.Text, Font).Size();
-                        if (size3.Width > b_w) b_w = size3.Width;
+                        if (it.Text != null)
+                        {
+                            var size2 = g.MeasureText(it.Text, Font);
+                            if (size2.Width > b_w) b_w = size2.Width;
+                        }
+                        if (it.HasIcon) ui_icon = true;
+                        if (it.CanExpand) ui_arrow = true;
                     }
-                    if (obj.HasIcon) ui_icon = true;
-                    if (obj.CanExpand) ui_arrow = true;
                 }
-                if (ui_icon) b_w += font_size;
-                if (ui_arrow) b_w += (int)Math.Ceiling(font_size * 0.6F);
-                w = b_w + gap_x2;
+                if (ui_icon)
+                {
+                    if (ui_icon) b_w += text_height;
+                    else b_w += gap_y;
+                }
+                if (ui_arrow) b_w += gap_y2;
+                w = b_w + gap_x2 + gap2;
 
                 #endregion
 
-                int item_count = 0, divider_count = 0;
-                int text_height = font_size - gap_y2;
-                foreach (MenuItem it in items)
+                foreach (var it in items)
                 {
-                    item_count++;
-                    Rectangle rect_bg = new Rectangle(10 + gap_y, y, w - gap_y2, font_size), rect_text = new Rectangle(rect_bg.X + gap_x, rect_bg.Y + gap_y, rect_bg.Width - gap_x2, text_height);
-                    Items.Add(new OMenuItem(it, rect_bg, gap_y, rect_text));
-                    y += font_size;
+                    if (it.Visible)
+                    {
+                        Rectangle rect = new Rectangle(10 + gap, y, w - gap2, item_height), rect_text = new Rectangle(rect.X + gap_x, rect.Y + gap_y, rect.Width - gap_x2, text_height);
+                        var item = new OMenuItem(it, rect, gap_y, rect_text);
+                        Items.Add(item);
+                        if (it.Select) oMenuItem = item;
+                        y += item_height;
+                        count++;
+                    }
                 }
-                var vr = (font_size * item_count) + (gap_y * divider_count);
+                var vr = item_height * count;
                 y = 10 + gap_y2 + vr;
             });
             int h = y + 10;
-            SetSize(w + 20, h);
             if (control is LayeredFormMenuDown)
             {
                 var point = control.PointToScreen(Point.Empty);
-                SetLocation(point.X + rect_read.Width, point.Y + rect_read.Y - 10);
+                InitPoint(point.X + rect_read.Width, point.Y + rect_read.Y - 10, w + 20, h);
             }
             else
             {
-                if (control is Menu menu && menu.Mode == TMenuMode.Horizontal) SetLocation(rect_read.X + (rect_read.Width - (w + 20)) / 2, rect_read.Bottom);
-                else SetLocation(rect_read.Right, rect_read.Y);
+                if (control is Menu menu && menu.Mode == TMenuMode.Horizontal) InitPoint(rect_read.X - 10, Config.ShadowEnabled ? rect_read.Bottom : rect_read.Bottom - 10, w + 20, h);
+                else InitPoint(Config.ShadowEnabled ? rect_read.Right : rect_read.Right - 10, rect_read.Y, w + 20, h);
             }
             KeyCall = keys =>
             {
@@ -189,12 +209,39 @@ namespace AntdUI
                 }
                 return false;
             };
+            if (oMenuItem != null) FocusItem(oMenuItem, false);
         }
 
-        StringFormat stringFormatLeft = Helper.SF(lr: StringAlignment.Near);
-        public void FocusItem(OMenuItem item)
+        void InitPoint(int x, int y, int w, int h)
         {
-            if (item.SetHover(true)) Print();
+            var screen = Screen.FromPoint(new Point(x, y)).WorkingArea;
+            if (x < screen.X) x = screen.X;
+            else if (x > (screen.X + screen.Width) - w) x = screen.X + screen.Width - w;
+
+            if (h > screen.Height)
+            {
+                int gap_y = (int)(4 * Config.Dpi), vr = h, height = screen.Height;
+                scrollY = new ScrollY(this);
+                scrollY.Rect = new Rectangle(w - gap_y - scrollY.SIZE, 10 + gap_y, scrollY.SIZE, height - 20 - gap_y * 2);
+                scrollY.Show = true;
+                scrollY.SetVrSize(vr, height);
+                h = height;
+            }
+
+            if (y < screen.Y) y = screen.Y;
+            else if (y > (screen.Y + screen.Height) - h) y = screen.Y + screen.Height - h;
+
+            SetLocation(x, y);
+            SetSize(w, h);
+        }
+
+        public void FocusItem(OMenuItem it, bool print = true)
+        {
+            if (it.SetHover(true))
+            {
+                if (scrollY != null && scrollY.Show) scrollY.Value = it.Rect.Y - it.Rect.Height;
+                if (print) Print();
+            }
         }
 
         /// <summary>
@@ -202,22 +249,234 @@ namespace AntdUI
         /// </summary>
         bool nodata = false;
 
+        #endregion
+
+        #region 渲染
+
+        StringFormat sf = Helper.SF(lr: StringAlignment.Near);
+        public override Bitmap PrintBit()
+        {
+            var rect = TargetRectXY;
+            var rect_read = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20);
+            Bitmap original_bmp = new Bitmap(rect.Width, rect.Height);
+            using (var g = Graphics.FromImage(original_bmp).HighLay(true))
+            {
+                using (var path = rect_read.RoundPath(Radius))
+                {
+                    DrawShadow(g, rect);
+                    g.Fill(backColor ?? Colour.BgElevated.Get("Menu", Theme), path);
+                    if (nodata) g.PaintEmpty(rect_read, Font, Color.FromArgb(180, Colour.Text.Get("Menu", Theme)));
+                    else
+                    {
+                        g.SetClip(rect_read);
+                        if (scrollY != null && scrollY.Show) g.TranslateTransform(0, -scrollY.Value);
+                        if (foreColor.HasValue)
+                        {
+                            using (var brush = new SolidBrush(foreColor.Value))
+                            {
+                                foreach (var it in Items)
+                                {
+                                    if (it.Show) DrawItem(g, brush, it);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            using (var brush = new SolidBrush(Colour.Text.Get("Menu", Theme)))
+                            {
+                                foreach (var it in Items)
+                                {
+                                    if (it.Show) DrawItem(g, brush, it);
+                                }
+                            }
+                        }
+                        g.ResetClip();
+                        g.ResetTransform();
+                        scrollY?.Paint(g);
+                    }
+                }
+            }
+            return original_bmp;
+        }
+
+        void DrawItem(Canvas g, SolidBrush brush, OMenuItem it)
+        {
+            if (it.Val.Enabled)
+            {
+                if (isdark)
+                {
+                    if (it.Val.Select)
+                    {
+                        using (var path = it.Rect.RoundPath(Radius))
+                        {
+                            g.Fill(BackActive ?? Colour.Primary.Get("Menu", Theme), path);
+                        }
+                        using (var brush_select = new SolidBrush(ForeActive ?? Colour.TextBase.Get("Menu", Theme)))
+                        {
+                            g.DrawText(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, sf);
+                        }
+                        PaintIcon(g, it, brush.Color);
+                    }
+                    else
+                    {
+                        if (it.Hover)
+                        {
+                            using (var path = it.Rect.RoundPath(Radius))
+                            {
+                                g.Fill(BackHover ?? Colour.FillTertiary.Get("Menu", Theme), path);
+                            }
+                        }
+                        g.DrawText(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, sf);
+                        PaintIcon(g, it, brush.Color);
+                    }
+                }
+                else
+                {
+                    if (it.Val.Select)
+                    {
+                        using (var path = it.Rect.RoundPath(Radius))
+                        {
+                            g.Fill(BackActive ?? Colour.PrimaryBg.Get("Menu", Theme), path);
+                        }
+                        using (var brush_select = new SolidBrush(ForeActive ?? Colour.TextBase.Get("Menu", Theme)))
+                        {
+                            g.DrawText(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, sf);
+                        }
+                    }
+                    else
+                    {
+                        if (it.Hover)
+                        {
+                            using (var path = it.Rect.RoundPath(Radius))
+                            {
+                                g.Fill(BackHover ?? Colour.FillTertiary.Get("Menu", Theme), path);
+                            }
+                        }
+                        g.DrawText(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, sf);
+                    }
+                    PaintIcon(g, it, brush.Color);
+                }
+            }
+            else
+            {
+                if (it.Val.Select)
+                {
+                    if (isdark)
+                    {
+                        using (var path = it.Rect.RoundPath(Radius))
+                        {
+                            g.Fill(BackActive ?? Colour.Primary.Get("Menu", Theme), path);
+                        }
+                    }
+                    else
+                    {
+                        using (var path = it.Rect.RoundPath(Radius))
+                        {
+                            g.Fill(BackActive ?? Colour.PrimaryBg.Get("Menu", Theme), path);
+                        }
+                    }
+                }
+                using (var fore = new SolidBrush(Colour.TextQuaternary.Get("Menu", Theme)))
+                {
+                    g.DrawText(it.Val.Text, it.Val.Font ?? Font, fore, it.RectText, sf);
+                }
+                PaintIcon(g, it, brush.Color);
+            }
+            if (it.has_sub) PaintArrow(g, it, brush.Color);
+        }
+        void PaintIcon(Canvas g, OMenuItem it, Color fore)
+        {
+            if (it.Val.Icon != null) g.Image(it.Val.Icon, it.RectIcon);
+            if (it.Val.IconSvg != null) g.GetImgExtend(it.Val.IconSvg, it.RectIcon, fore);
+        }
+        void PaintArrow(Canvas g, OMenuItem item, Color color)
+        {
+            int size = item.arr_rect.Width, size_arrow = size / 2;
+            g.TranslateTransform(item.arr_rect.X + size_arrow, item.arr_rect.Y + size_arrow);
+            g.RotateTransform(-90F);
+            using (var pen = new Pen(color, 2F))
+            {
+                pen.StartCap = pen.EndCap = LineCap.Round;
+                g.DrawLines(pen, new Rectangle(-size_arrow, -size_arrow, item.arr_rect.Width, item.arr_rect.Height).TriangleLines(-1, .2F));
+            }
+            g.ResetTransform();
+        }
+
+        SafeBitmap? shadow_temp = null;
+        /// <summary>
+        /// 绘制阴影
+        /// </summary>
+        /// <param name="g">GDI</param>
+        /// <param name="rect">客户区域</param>
+        void DrawShadow(Canvas g, Rectangle rect)
+        {
+            if (Config.ShadowEnabled)
+            {
+                if (shadow_temp == null)
+                {
+                    shadow_temp?.Dispose();
+                    using (var path = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20).RoundPath(Radius))
+                    {
+                        shadow_temp = path.PaintShadow(rect.Width, rect.Height);
+                    }
+                }
+                g.Image(shadow_temp.Bitmap, rect, .2F);
+            }
+        }
+
+        #endregion
+
         #region 鼠标
 
         internal int select_x = 0;
-        int hoveindex = -1;
+        int hoveindex = -1, hoveindexold = -1;
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
+            if (RunAnimation) return;
+            int y = (scrollY != null && scrollY.Show) ? (int)scrollY.Value : 0;
             foreach (var it in Items)
             {
-                if (RunAnimation) return;
-                if (it.Show && it.Val.Enabled && it.Contains(e.Location, out _))
+                if (it.Show && it.Val.Enabled && it.Contains(e.X, e.Y + y, out _))
                 {
                     if (OnClick(it)) return;
                 }
             }
             base.OnMouseUp(e);
+        }
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (RunAnimation) return;
+            base.OnMouseMove(e);
+            hoveindex = -1;
+            int y = (scrollY != null && scrollY.Show) ? (int)scrollY.Value : 0;
+            int count = 0;
+            for (int i = 0; i < Items.Count; i++)
+            {
+                var it = Items[i];
+                if (it.Show && it.Val.Enabled)
+                {
+                    if (it.Contains(e.X, e.Y + y, out var change)) hoveindex = i;
+                    if (change) count++;
+                }
+            }
+            if (count > 0) Print();
+            if (hoveindexold == hoveindex) return;
+            hoveindexold = hoveindex;
+            subForm?.IClose();
+            subForm = null;
+            if (hoveindex > -1)
+            {
+                if (PARENT is Menu menu) menu.select_x = select_x;
+                var it = Items[hoveindex];
+                if (it.Sub != null && it.Sub.Count > 0 && PARENT != null) OpenDown(it);
+            }
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            scrollY?.MouseWheel(e.Delta);
+            base.OnMouseWheel(e);
         }
 
         bool OnClick(OMenuItem it)
@@ -249,364 +508,7 @@ namespace AntdUI
             }
         }
 
-        int hoveindexold = -1;
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            if (RunAnimation) return;
-            hoveindex = -1;
-
-            int count = 0;
-            for (int i = 0; i < Items.Count; i++)
-            {
-                var it = Items[i];
-                if (it.Show && it.Val.Enabled)
-                {
-                    if (it.Contains(e.Location, out var change)) hoveindex = i;
-                    if (change) count++;
-                }
-            }
-            if (count > 0) Print();
-            base.OnMouseMove(e);
-            if (hoveindexold == hoveindex) return;
-            hoveindexold = hoveindex;
-            subForm?.IClose();
-            subForm = null;
-            if (hoveindex > -1)
-            {
-                if (PARENT is Menu menu) menu.select_x = select_x;
-                var it = Items[hoveindex];
-                if (it.Sub != null && it.Sub.Count > 0 && PARENT != null) OpenDown(it);
-            }
-        }
-
         #endregion
-
-        readonly StringFormat s_f = Helper.SF_NoWrap();
-        public override Bitmap PrintBit()
-        {
-            var rect = TargetRectXY;
-            var rect_read = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20);
-            Bitmap original_bmp = new Bitmap(rect.Width, rect.Height);
-            using (var g = Graphics.FromImage(original_bmp).High())
-            {
-                using (var path = rect_read.RoundPath(Radius))
-                {
-                    DrawShadow(g, rect);
-                    if (isauto)
-                    {
-                        using (var brush = new SolidBrush(Style.Db.BgElevated))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
-                    else if (isdark)
-                    {
-                        using (var brush = new SolidBrush("#1F1F1F".ToColor()))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
-                    else
-                    {
-                        using (var brush = new SolidBrush(Color.White))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
-                }
-
-                if (nodata)
-                {
-                    string emptytext = Localization.Provider?.GetLocalizedString("NoData") ?? "暂无数据";
-                    using (var brush = new SolidBrush(Color.FromArgb(180, Style.Db.Text)))
-                    { g.DrawStr(emptytext, Font, brush, rect_read, s_f); }
-                }
-                else
-                {
-                    if (foreColor.HasValue)
-                    {
-                        using (var brush = new SolidBrush(foreColor.Value))
-                        {
-                            foreach (var it in Items)
-                            {
-                                if (it.Show) DrawItem(g, brush, it);
-                            }
-                        }
-                    }
-                    else if (isauto)
-                    {
-                        using (var brush = new SolidBrush(Style.Db.Text))
-                        {
-                            foreach (var it in Items)
-                            {
-                                if (it.Show) DrawItem(g, brush, it);
-                            }
-                        }
-                    }
-                    else if (isdark)
-                    {
-                        using (var brush = new SolidBrush(Color.White))
-                        {
-                            foreach (var it in Items)
-                            {
-                                if (it.Show) DrawItem(g, brush, it);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        using (var brush = new SolidBrush(Color.Black))
-                        {
-                            foreach (var it in Items)
-                            {
-                                if (it.Show) DrawItem(g, brush, it);
-                            }
-                        }
-                    }
-                }
-            }
-            return original_bmp;
-        }
-
-        void DrawItem(Graphics g, SolidBrush brush, OMenuItem it)
-        {
-            if (it.Val.Enabled)
-            {
-                if (isauto)
-                {
-                    if (isdark)
-                    {
-                        if (it.Val.Select)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.Primary))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                            using (var brush_select = new SolidBrush(ForeActive ?? Style.Db.TextBase))
-                            {
-                                g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, stringFormatLeft);
-                            }
-                            PaintIcon(g, it, brush.Color);
-                        }
-                        else
-                        {
-                            if (it.Hover)
-                            {
-                                using (var brush_back = new SolidBrush(BackHover ?? Style.Db.FillTertiary))
-                                {
-                                    using (var path = it.Rect.RoundPath(Radius))
-                                    {
-                                        g.FillPath(brush_back, path);
-                                    }
-                                }
-                            }
-                            g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, stringFormatLeft);
-                            PaintIcon(g, it, brush.Color);
-                        }
-                    }
-                    else
-                    {
-                        if (it.Val.Select)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.PrimaryBg))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                            using (var brush_select = new SolidBrush(ForeActive ?? Style.Db.TextBase))
-                            {
-                                g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, stringFormatLeft);
-                            }
-                        }
-                        else
-                        {
-                            if (it.Hover)
-                            {
-                                using (var brush_back = new SolidBrush(BackHover ?? Style.Db.FillTertiary))
-                                {
-                                    using (var path = it.Rect.RoundPath(Radius))
-                                    {
-                                        g.FillPath(brush_back, path);
-                                    }
-                                }
-                            }
-                            g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, stringFormatLeft);
-                        }
-                        PaintIcon(g, it, brush.Color);
-                    }
-                }
-                else
-                {
-                    if (isdark)
-                    {
-                        if (it.Val.Select)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? "#1668DC".ToColor()))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                            using (var brush_select = new SolidBrush(ForeActive ?? Color.White))
-                            {
-                                g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, stringFormatLeft);
-                            }
-                            PaintIcon(g, it, brush.Color);
-                        }
-                        else
-                        {
-                            if (it.Hover)
-                            {
-                                using (var brush_back = new SolidBrush(BackHover ?? Style.rgba(255, 255, 255, 0.08F)))
-                                {
-                                    using (var path = it.Rect.RoundPath(Radius))
-                                    {
-                                        g.FillPath(brush_back, path);
-                                    }
-                                }
-                            }
-                            g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, stringFormatLeft);
-                            PaintIcon(g, it, brush.Color);
-                        }
-                    }
-                    else
-                    {
-                        if (it.Val.Select)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.PrimaryBg))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                            using (var brush_select = new SolidBrush(ForeActive ?? Style.Db.TextBase))
-                            {
-                                g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush_select, it.RectText, stringFormatLeft);
-                            }
-                        }
-                        else
-                        {
-                            if (it.Hover)
-                            {
-                                using (var brush_back = new SolidBrush(BackHover ?? Style.Db.FillTertiary))
-                                {
-                                    using (var path = it.Rect.RoundPath(Radius))
-                                    {
-                                        g.FillPath(brush_back, path);
-                                    }
-                                }
-                            }
-                            g.DrawStr(it.Val.Text, it.Val.Font ?? Font, brush, it.RectText, stringFormatLeft);
-                        }
-                        PaintIcon(g, it, brush.Color);
-                    }
-                }
-            }
-            else
-            {
-                if (it.Val.Select)
-                {
-                    if (isauto)
-                    {
-                        if (isdark)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.Primary))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.PrimaryBg))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (isdark)
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? "#1668DC".ToColor()))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            using (var brush_back = new SolidBrush(BackActive ?? Style.Db.PrimaryBg))
-                            {
-                                using (var path = it.Rect.RoundPath(Radius))
-                                {
-                                    g.FillPath(brush_back, path);
-                                }
-                            }
-                        }
-                    }
-                }
-                using (var fore = new SolidBrush(Style.Db.TextQuaternary))
-                {
-                    g.DrawStr(it.Val.Text, it.Val.Font ?? Font, fore, it.RectText, stringFormatLeft);
-                }
-                PaintIcon(g, it, brush.Color);
-            }
-            if (it.has_sub) PaintArrow(g, it, brush.Color);
-        }
-        void PaintIcon(Graphics g, OMenuItem it, Color fore)
-        {
-            if (it.Val.Icon != null) g.DrawImage(it.Val.Icon, it.RectIcon);
-            else if (it.Val.IconSvg != null) g.GetImgExtend(it.Val.IconSvg, it.RectIcon, fore);
-        }
-        void PaintArrow(Graphics g, OMenuItem item, Color color)
-        {
-            int size = item.arr_rect.Width, size_arrow = size / 2;
-            g.TranslateTransform(item.arr_rect.X + size_arrow, item.arr_rect.Y + size_arrow);
-            g.RotateTransform(-90F);
-            using (var pen = new Pen(color, 2F))
-            {
-                pen.StartCap = pen.EndCap = LineCap.Round;
-                g.DrawLines(pen, new Rectangle(-size_arrow, -size_arrow, item.arr_rect.Width, item.arr_rect.Height).TriangleLines(-1, .2F));
-            }
-            g.ResetTransform();
-        }
-
-        Bitmap? shadow_temp = null;
-        /// <summary>
-        /// 绘制阴影
-        /// </summary>
-        /// <param name="g">GDI</param>
-        /// <param name="rect">客户区域</param>
-        void DrawShadow(Graphics g, Rectangle rect)
-        {
-            if (Config.ShadowEnabled)
-            {
-                if (shadow_temp == null)
-                {
-                    shadow_temp?.Dispose();
-                    using (var path = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20).RoundPath(Radius))
-                    {
-                        shadow_temp = path.PaintShadow(rect.Width, rect.Height);
-                    }
-                }
-                g.DrawImage(shadow_temp, rect, 0.2F);
-            }
-        }
 
         #region 列模型
 
@@ -660,9 +562,9 @@ namespace AntdUI
                 return change;
             }
 
-            internal bool Contains(Point point, out bool change)
+            internal bool Contains(int x, int y, out bool change)
             {
-                if (Rect.Contains(point))
+                if (Rect.Contains(x, y))
                 {
                     change = SetHover(true);
                     return true;

@@ -11,39 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
-using System;
 using System.Drawing;
 
 namespace AntdUI
 {
     partial class CellDivider
     {
-        internal override void PaintBack(Graphics g) { }
+        public override void PaintBack(Canvas g) { }
 
-        internal override void Paint(Graphics g, Font font, SolidBrush fore)
+        public override void Paint(Canvas g, Font font, bool enable, SolidBrush fore)
         {
-            using (var brush = new SolidBrush(Style.Db.Split))
-            {
-                g.FillRectangle(brush, Rect);
-            }
+            g.Fill(Colour.Split.Get("Divider", PARENT.PARENT.ColorScheme), Rect);
         }
 
-        internal override Size GetSize(Graphics g, Font font, int gap, int gap2)
+        public override Size GetSize(Canvas g, Font font, int gap, int gap2)
         {
-            var size = g.MeasureString(Config.NullText, font);
-            return new Size(gap, (int)Math.Ceiling(size.Height) + gap);
+            var size = g.MeasureString(Config.NullText, font, 0, PARENT.PARENT.sf);
+            return new Size(0, size.Height - gap);
         }
 
-        Rectangle Rect;
-        internal override void SetRect(Graphics g, Font font, Rectangle rect, Size size, int gap, int gap2)
+        public override void SetRect(Canvas g, Font font, Rectangle rect, Size size, int maxwidth, int gap, int gap2)
         {
-            int h = size.Height - gap2;
-            Rect = new Rectangle(rect.X + (rect.Width - 1) / 2, rect.Y + (rect.Height - h) / 2, 1, h);
+            Rect = new Rectangle(rect.X + (rect.Width - 1) / 2, rect.Y + (rect.Height - size.Height) / 2, 1, size.Height);
         }
     }
 }

@@ -11,21 +11,54 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Windows.Forms;
 
 namespace AntdUI
 {
     partial class Helper
     {
         #region 文本布局
+
+        /// <summary>
+        /// 文本布局
+        /// </summary>
+        public static StringFormat SF(TAlign align)
+        {
+            switch (align)
+            {
+                case TAlign.Left:
+                    return SF(tb: StringAlignment.Center, lr: StringAlignment.Near);
+                case TAlign.TL:
+                case TAlign.LT:
+                    return SF(tb: StringAlignment.Near, lr: StringAlignment.Near);
+                case TAlign.Top:
+                    return SF(tb: StringAlignment.Near, lr: StringAlignment.Center);
+                case TAlign.TR:
+                case TAlign.RT:
+                    return SF(tb: StringAlignment.Near, lr: StringAlignment.Far);
+                case TAlign.Right:
+                    return SF(tb: StringAlignment.Center, lr: StringAlignment.Far);
+                case TAlign.BR:
+                case TAlign.RB:
+                    return SF(tb: StringAlignment.Far, lr: StringAlignment.Far);
+                case TAlign.Bottom:
+                    return SF(tb: StringAlignment.Far, lr: StringAlignment.Center);
+                case TAlign.BL:
+                case TAlign.LB:
+                    return SF(tb: StringAlignment.Far, lr: StringAlignment.Near);
+                default: return SF();
+            }
+        }
 
         /// <summary>
         /// 文本布局
@@ -78,6 +111,145 @@ namespace AntdUI
             return sf;
         }
 
+        public static StringFormat SF_MEASURE_FONT(StringFormat? format)
+        {
+            if (format == null)
+            {
+                var sf = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                sf.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
+                return sf;
+            }
+            else
+            {
+                var sf = new StringFormat(StringFormat.GenericTypographic) { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                sf.FormatFlags = format.FormatFlags;
+                sf.Trimming = format.Trimming;
+                sf.HotkeyPrefix = format.HotkeyPrefix;
+                sf.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces;
+                return sf;
+            }
+        }
+
+        /// <summary>
+        /// 文本布局
+        /// </summary>
+        /// <param name="tb">垂直（上下）</param>
+        /// <param name="lr">水平（前后）</param>
+        public static TextFormatFlags TF(StringAlignment tb = StringAlignment.Center, StringAlignment lr = StringAlignment.Center)
+        {
+            TextFormatFlags flags = TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl;
+            switch (tb)
+            {
+                case StringAlignment.Center:
+                    flags |= TextFormatFlags.VerticalCenter;
+                    break;
+                case StringAlignment.Near:
+                    flags |= TextFormatFlags.Top;
+                    break;
+                case StringAlignment.Far:
+                default:
+                    flags |= TextFormatFlags.Bottom;
+                    break;
+            }
+            switch (lr)
+            {
+                case StringAlignment.Center:
+                    flags |= TextFormatFlags.HorizontalCenter;
+                    break;
+                case StringAlignment.Near:
+                    flags |= TextFormatFlags.Left;
+                    break;
+                case StringAlignment.Far:
+                default:
+                    flags |= TextFormatFlags.Right;
+                    break;
+            }
+            return flags;
+        }
+
+        /// <summary>
+        /// 文本布局
+        /// </summary>
+        public static TextFormatFlags TF(StringFormat sf)
+        {
+            TextFormatFlags flags = TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl;
+            switch (sf.LineAlignment)
+            {
+                case StringAlignment.Center:
+                    flags |= TextFormatFlags.VerticalCenter;
+                    break;
+                case StringAlignment.Near:
+                    flags |= TextFormatFlags.Top;
+                    break;
+                case StringAlignment.Far:
+                default:
+                    flags |= TextFormatFlags.Bottom;
+                    break;
+            }
+            switch (sf.Alignment)
+            {
+                case StringAlignment.Center:
+                    flags |= TextFormatFlags.HorizontalCenter;
+                    break;
+                case StringAlignment.Near:
+                    flags |= TextFormatFlags.Left;
+                    break;
+                case StringAlignment.Far:
+                default:
+                    flags |= TextFormatFlags.Right;
+                    break;
+            }
+            if (sf.Trimming.HasFlag(StringTrimming.EllipsisCharacter)) flags |= TextFormatFlags.EndEllipsis;
+            if (sf.FormatFlags.HasFlag(StringFormatFlags.NoWrap)) flags |= TextFormatFlags.SingleLine;
+            return flags;
+        }
+
+        /// <summary>
+        /// 文本布局（不换行）
+        /// </summary>
+        /// <param name="tb">垂直（上下）</param>
+        /// <param name="lr">水平（前后）</param>
+        public static TextFormatFlags TF_NoWrap(StringAlignment tb = StringAlignment.Center, StringAlignment lr = StringAlignment.Center) => TF(tb, lr) | TextFormatFlags.SingleLine;
+
+        /// <summary>
+        /// 文本布局（超出省略号）
+        /// </summary>
+        /// <param name="tb">垂直（上下）</param>
+        /// <param name="lr">水平（前后）</param>
+        public static TextFormatFlags TF_Ellipsis(StringAlignment tb = StringAlignment.Center, StringAlignment lr = StringAlignment.Center) => TF(tb, lr) | TextFormatFlags.EndEllipsis;
+
+        /// <summary>
+        /// 文本布局（超出省略号+不换行）
+        /// </summary>
+        /// <param name="tb">垂直（上下）</param>
+        /// <param name="lr">水平（前后）</param>
+        public static TextFormatFlags TF_ALL(StringAlignment tb = StringAlignment.Center, StringAlignment lr = StringAlignment.Center) => TF(tb, lr) | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis;
+
+        public static TextFormatFlags CreateTextFormatFlags(this ContentAlignment alignment, bool showEllipsis, bool multiLine)
+        {
+            TextFormatFlags flags = ConvertAlignmentToTextFormat(alignment);
+            if (multiLine) flags |= TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl;
+            else flags |= TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl | TextFormatFlags.SingleLine;
+            if (showEllipsis) flags |= TextFormatFlags.EndEllipsis;
+            //if (control.RightToLeft == RightToLeft.Yes) flags |= TextFormatFlags.RightToLeft;
+            return flags;
+        }
+
+        const ContentAlignment AnyRight = ContentAlignment.TopRight | ContentAlignment.MiddleRight | ContentAlignment.BottomRight;
+        const ContentAlignment AnyBottom = ContentAlignment.BottomLeft | ContentAlignment.BottomCenter | ContentAlignment.BottomRight;
+        const ContentAlignment AnyCenter = ContentAlignment.TopCenter | ContentAlignment.MiddleCenter | ContentAlignment.BottomCenter;
+        const ContentAlignment AnyMiddle = ContentAlignment.MiddleLeft | ContentAlignment.MiddleCenter | ContentAlignment.MiddleRight;
+        public static TextFormatFlags ConvertAlignmentToTextFormat(this ContentAlignment alignment)
+        {
+            TextFormatFlags flags = TextFormatFlags.Top | TextFormatFlags.Left;
+            if ((alignment & AnyBottom) != 0) flags |= TextFormatFlags.Bottom;
+            else if ((alignment & AnyMiddle) != 0) flags |= TextFormatFlags.VerticalCenter;
+
+            if ((alignment & AnyRight) != 0) flags |= TextFormatFlags.Right;
+            else if ((alignment & AnyCenter) != 0) flags |= TextFormatFlags.HorizontalCenter;
+            return flags;
+        }
+
         #endregion
 
         /// <summary>
@@ -90,55 +262,177 @@ namespace AntdUI
         {
             if (code != null)
             {
-                var arr = code.Split(',');
+                var arr = BrushEx(code);
                 if (arr.Length > 1)
                 {
-                    if (arr.Length > 2 && float.TryParse(arr[0], out float deg)) return new LinearGradientBrush(rect, arr[1].Trim().ToColor(), arr[2].Trim().ToColor(), 270 + deg);
-                    else return new LinearGradientBrush(rect, arr[0].Trim().ToColor(), arr[1].Trim().ToColor(), 270F);
+                    if (arr.Length > 2 && float.TryParse(arr[0], out float deg)) return BrushEx(rect, deg, arr, code.Contains("%"), 1);
+                    else if (arr.Length > 2 && arr[0].EndsWith("deg") && float.TryParse(arr[0].Substring(0, arr[0].Length - 3), out float deg2)) return BrushEx(rect, deg2, arr, code.Contains("%"), 1);
+                    else return BrushEx(rect, 0, arr, code.Contains("%"));
                 }
             }
             return new SolidBrush(def);
         }
 
-        public static Graphics High(this Graphics g)
+        static string[] BrushEx(string code)
         {
-            Config.SetDpi(g);
+            var arr = code.Split(new string[] { " , ", ", ", "," }, StringSplitOptions.RemoveEmptyEntries);
+            if (arr.Length > 1)
+            {
+                if (code.Contains("rgb") && code.Contains("("))
+                {
+                    List<string> list = new List<string>(arr.Length), tmp = new List<string>(arr.Length);
+                    foreach (var it in arr)
+                    {
+                        if (it.StartsWith("rgb") && it.Contains("(")) tmp.Add(it);
+                        else if (tmp.Count > 1 && it.Contains(")"))
+                        {
+                            tmp.Add(it);
+                            list.Add(string.Join(",", tmp));
+                            tmp.Clear();
+                        }
+                        else if (tmp.Count > 0) tmp.Add(it);
+                        else list.Add(it);
+                    }
+                    return list.ToArray();
+                }
+                return arr;
+            }
+            return new string[0];
+        }
+
+        static LinearGradientBrush BrushEx(Rectangle rect, float deg, string[] arr, bool _in, int start = 0)
+        {
+            if (arr.Length > (2 + start))
+            {
+                int len = arr.Length - start;
+                var colors = new List<Color>(len);
+                var positions = new List<float>(len);
+                for (int i = start; i < arr.Length; i++)
+                {
+                    var arr2 = arr[i].Split(' ');
+                    colors.Add(arr2[0].ToColor());
+                    if (arr2.Length > 1 && float.TryParse(arr2[1].TrimEnd('%'), out var result)) positions.Add(result / 100F);
+                    else if (i == start) positions.Add(0F);
+                    else if (i == arr.Length - 1) positions.Add(1F);
+                }
+                if (positions.Count != colors.Count)
+                {
+                    positions.Clear();
+                    var tmp = 100F / colors.Count / 100F;
+                    positions.Add(0F);
+                    var use = tmp;
+                    for (int i = 1; i < colors.Count - 1; i++)
+                    {
+                        positions.Add(use);
+                        use += tmp;
+                    }
+                    positions.Add(1F);
+                }
+                return new LinearGradientBrush(rect, Color.Transparent, Color.Transparent, 270 + deg)
+                {
+                    InterpolationColors = new ColorBlend(colors.Count)
+                    {
+                        Colors = colors.ToArray(),
+                        Positions = positions.ToArray()
+                    }
+                };
+            }
+            else if (_in)
+            {
+                int len = arr.Length - start;
+                var colors = new List<Color>(len);
+                float position = -1;
+                for (int i = start; i < arr.Length; i++)
+                {
+                    var arr2 = arr[i].Split(' ');
+                    colors.Add(arr2[0].ToColor());
+                    if (arr2.Length > 1 && float.TryParse(arr2[1].TrimEnd('%'), out var result)) position = result / 100F;
+                }
+                if (position > -1)
+                {
+                    colors.Add(colors[colors.Count - 1]);
+                    return new LinearGradientBrush(rect, colors[0], colors[colors.Count - 1], 270 + deg)
+                    {
+                        InterpolationColors = new ColorBlend(colors.Count)
+                        {
+                            Colors = colors.ToArray(),
+                            Positions = new float[] { 0, position, 1 }
+                        }
+                    };
+                }
+                return new LinearGradientBrush(rect, colors[0], colors[colors.Count - 1], 270 + deg);
+            }
+            else return new LinearGradientBrush(rect, arr[start].Trim().ToColor(), arr[start + 1].Trim().ToColor(), 270 + deg);
+        }
+
+        /// <summary>
+        /// 画刷（渐变色）
+        /// </summary>
+        public static bool BrushEx(this string? code, Rectangle rect, Canvas g)
+        {
+            if (code != null)
+            {
+                var arr = code.Split(',');
+                if (arr.Length > 1)
+                {
+                    if (arr.Length > 2 && float.TryParse(arr[0], out float deg))
+                    {
+                        using (var brush = new LinearGradientBrush(rect, arr[1].Trim().ToColor(), arr[2].Trim().ToColor(), 270 + deg))
+                        {
+                            g.Fill(brush, rect);
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        using (var brush = new LinearGradientBrush(rect, arr[0].Trim().ToColor(), arr[1].Trim().ToColor(), 270F))
+                        {
+                            g.Fill(brush, rect);
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static Canvas High(this Graphics g)
+        {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             if (Config.TextRenderingHint.HasValue) g.TextRenderingHint = Config.TextRenderingHint.Value;
-            return g;
+            return new Core.CanvasGDI(g);
         }
-        public static Graphics HighLay(this Graphics g)
+
+        public static Canvas HighLay(this Graphics g, bool text = false)
         {
             Config.SetDpi(g);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-            return g;
+            if (text) g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            return new Core.CanvasGDI(g);
         }
 
-        public static void GDI(Action<Graphics> action)
+        public static void GDI(Action<Canvas> action)
         {
             using (var bmp = new Bitmap(1, 1))
             {
                 using (var g = Graphics.FromImage(bmp))
                 {
-                    Config.SetDpi(g);
-                    action(g);
+                    action(g.HighLay());
                 }
             }
         }
 
-        public static T GDI<T>(Func<Graphics, T> action)
+        public static T GDI<T>(Func<Canvas, T> action)
         {
             using (var bmp = new Bitmap(1, 1))
             {
                 using (var g = Graphics.FromImage(bmp))
                 {
-                    Config.SetDpi(g);
-                    return action(g);
+                    return action(g.HighLay());
                 }
             }
         }
@@ -161,42 +455,60 @@ namespace AntdUI
 
         #region 圆角
 
-        public static GraphicsPath RoundPath(this Rectangle rect, float radius)
-        {
-            return RoundPathCore(rect, radius);
-        }
+        public static GraphicsPath RoundPath(this Rectangle rect, float radius) => RoundPathCore(rect, radius);
 
-        public static GraphicsPath RoundPath(this RectangleF rect, float radius)
-        {
-            return RoundPathCore(rect, radius);
-        }
+        public static GraphicsPath RoundPath(this RectangleF rect, float radius) => RoundPathCore(rect, radius);
 
-        internal static GraphicsPath RoundPath(this RectangleF rect, float radius, TShape shape)
-        {
-            return RoundPath(rect, radius, shape == TShape.Round);
-        }
+        public static GraphicsPath RoundPath(this RectangleF rect, float radius, TShape shape) => RoundPath(rect, radius, shape == TShape.Round);
 
-        internal static GraphicsPath RoundPath(this Rectangle rect, float radius, bool round)
+        public static GraphicsPath RoundPath(this Rectangle rect, float radius, bool round)
         {
             if (round) return CapsulePathCore(rect);
             return RoundPathCore(rect, radius);
         }
 
-        internal static GraphicsPath RoundPath(this RectangleF rect, float radius, bool round)
+        public static GraphicsPath RoundPath(this RectangleF rect, float radius, bool round)
         {
             if (round) return CapsulePathCore(rect);
             return RoundPathCore(rect, radius);
         }
 
-        internal static GraphicsPath RoundPath(this Rectangle rect, float radius, TAlignMini shadowAlign)
+        public static GraphicsPath RoundPath(this Rectangle rect, float radius, TAlignMini shadowAlign, TAlignRound align)
         {
-            switch (shadowAlign)
+            if (align == TAlignRound.ALL)
             {
-                case TAlignMini.Top: return RoundPath(rect, radius, true, true, false, false);
-                case TAlignMini.Bottom: return RoundPath(rect, radius, false, false, true, true);
-                case TAlignMini.Left: return RoundPath(rect, radius, true, false, false, true);
-                case TAlignMini.Right: return RoundPath(rect, radius, false, true, true, false);
-                case TAlignMini.None:
+                switch (shadowAlign)
+                {
+                    case TAlignMini.Top: return RoundPath(rect, radius, true, true, false, false);
+                    case TAlignMini.Bottom: return RoundPath(rect, radius, false, false, true, true);
+                    case TAlignMini.Left: return RoundPath(rect, radius, true, false, false, true);
+                    case TAlignMini.Right: return RoundPath(rect, radius, false, true, true, false);
+                    case TAlignMini.None:
+                    default: return RoundPath(rect, radius, align);
+                }
+            }
+            return RoundPath(rect, radius, align);
+        }
+
+        /// <summary>
+        /// 自定义圆角
+        /// </summary>
+        /// <param name="rect">区域</param>
+        /// <param name="radius">圆角大小</param>
+        /// <param name="align">圆角方向</param>
+        public static GraphicsPath RoundPath(this Rectangle rect, float radius, TAlignRound align)
+        {
+            switch (align)
+            {
+                case TAlignRound.Top: return RoundPath(rect, radius, true, true, false, false);
+                case TAlignRound.Bottom: return RoundPath(rect, radius, false, false, true, true);
+                case TAlignRound.Left: return RoundPath(rect, radius, true, false, false, true);
+                case TAlignRound.Right: return RoundPath(rect, radius, false, true, true, false);
+                case TAlignRound.TL: return RoundPath(rect, radius, true, false, false, false);
+                case TAlignRound.TR: return RoundPath(rect, radius, false, true, false, false);
+                case TAlignRound.BR: return RoundPath(rect, radius, false, false, true, false);
+                case TAlignRound.BL: return RoundPath(rect, radius, false, false, false, true);
+                case TAlignRound.ALL:
                 default: return RoundPathCore(rect, radius);
             }
         }
@@ -255,9 +567,10 @@ namespace AntdUI
         public static GraphicsPath RoundPath(this RectangleF rect, float radius, bool TL, bool TR, bool BR, bool BL)
         {
             var path = new GraphicsPath();
-            if (radius <= 0F) path.AddRectangle(rect);
-            else
+            if (radius > 0)
             {
+                radius = Math.Min(radius, Math.Min(rect.Width, rect.Height) / 2);
+
                 float diameter = radius * 2F;
                 var arc = new RectangleF(rect.X, rect.Y, diameter, diameter);
 
@@ -282,6 +595,7 @@ namespace AntdUI
 
                 path.CloseFigure();
             }
+            else path.AddRectangle(rect);
             return path;
         }
 
@@ -349,11 +663,7 @@ namespace AntdUI
                     arc.Y = rect.Bottom - diameter;
                     path.AddArc(arc, 0, 180);
                 }
-                else
-                {
-                    // Circle
-                    path.AddEllipse(rect);
-                }
+                else path.AddEllipse(rect);// Circle
             }
             else path.AddEllipse(rect);
             path.CloseFigure();
@@ -361,167 +671,67 @@ namespace AntdUI
 
         #endregion
 
-        #region 图片渲染
-
-        public static void PaintImg(this Graphics g, RectangleF rect, Image image, TFit fit, float radius, bool round)
-        {
-            if (round || radius > 0)
-            {
-                using (var bmp = new Bitmap((int)rect.Width, (int)rect.Height))
-                {
-                    using (var g2 = Graphics.FromImage(bmp).High())
-                    {
-                        PaintImg(g2, new RectangleF(0, 0, rect.Width, rect.Height), image, fit);
-                    }
-                    using (var brush = new TextureBrush(bmp, WrapMode.Clamp))
-                    {
-                        brush.TranslateTransform(rect.X, rect.Y);
-                        if (round) g.FillEllipse(brush, rect);
-                        else
-                        {
-                            using (var path = rect.RoundPath(radius))
-                            {
-                                g.FillPath(brush, path);
-                            }
-                        }
-                    }
-                }
-            }
-            else PaintImg(g, rect, image, fit);
-        }
-        public static void PaintImg(this Graphics g, RectangleF rect, Image image, TFit fit, float radius, TShape shape)
-        {
-            if (shape == TShape.Circle || shape == TShape.Round || radius > 0)
-            {
-                using (var bmp = new Bitmap((int)rect.Width, (int)rect.Height))
-                {
-                    using (var g2 = Graphics.FromImage(bmp).High())
-                    {
-                        PaintImg(g2, new RectangleF(0, 0, rect.Width, rect.Height), image, fit);
-                    }
-                    using (var brush = new TextureBrush(bmp, WrapMode.Clamp))
-                    {
-                        brush.TranslateTransform(rect.X, rect.Y);
-                        if (shape == TShape.Circle) g.FillEllipse(brush, rect);
-                        else
-                        {
-                            using (var path = rect.RoundPath(radius))
-                            {
-                                g.FillPath(brush, path);
-                            }
-                        }
-                    }
-                }
-            }
-            else PaintImg(g, rect, image, fit);
-        }
-
-        internal static void PaintImg(this Graphics g, RectangleF rect, Image image, TFit fit)
-        {
-            switch (fit)
-            {
-                case TFit.Fill:
-                    g.DrawImage(image, rect);
-                    break;
-                case TFit.None:
-                    g.DrawImage(image, new RectangleF(rect.X + (rect.Width - image.Width) / 2, rect.Y + (rect.Height - image.Height) / 2, image.Width, image.Height));
-                    break;
-                case TFit.Contain:
-                    PaintImgContain(g, image, rect);
-                    break;
-                case TFit.Cover:
-                    PaintImgCover(g, image, rect);
-                    break;
-            }
-        }
-        internal static void PaintImgCover(this Graphics g, Image image, RectangleF rect)
-        {
-            float originWidth = image.Width, originHeight = image.Height;
-            if (originWidth == originHeight)
-            {
-                if (rect.Width == rect.Height) g.DrawImage(image, rect);
-                else if (rect.Width > rect.Height) g.DrawImage(image, new RectangleF(0, (rect.Height - rect.Width) / 2, rect.Width, rect.Width));
-                else g.DrawImage(image, new RectangleF((rect.Width - rect.Height) / 2, 0, rect.Height, rect.Height));
-                return;
-            }
-            float destWidth = rect.Width, destHeight = rect.Height;
-            float currentWidth, currentHeight;
-            if ((originWidth * destHeight) > (originHeight * destWidth))
-            {
-                currentHeight = destHeight;
-                currentWidth = (originWidth * destHeight) / originHeight;
-            }
-            else
-            {
-                currentWidth = destWidth;
-                currentHeight = (destWidth * originHeight) / originWidth;
-            }
-            g.DrawImage(image, new RectangleF(rect.X + (destWidth - currentWidth) / 2, rect.Y + (destHeight - currentHeight) / 2, currentWidth, currentHeight), new RectangleF(0, 0, originWidth, originHeight), GraphicsUnit.Pixel);
-        }
-        internal static void PaintImgContain(this Graphics g, Image image, RectangleF rect)
-        {
-            float originWidth = image.Width, originHeight = image.Height;
-            if (originWidth == originHeight)
-            {
-                if (rect.Width == rect.Height) g.DrawImage(image, rect);
-                else if (rect.Width > rect.Height) g.DrawImage(image, new RectangleF((rect.Width - rect.Height) / 2, 0, rect.Height, rect.Height));
-                else g.DrawImage(image, new RectangleF(0, (rect.Height - rect.Width) / 2, rect.Width, rect.Width));
-                return;
-            }
-            float destWidth = rect.Width, destHeight = rect.Height;
-            float currentWidth, currentHeight;
-            if ((originWidth * destHeight) > (originHeight * destWidth))
-            {
-                currentWidth = destWidth;
-                currentHeight = (destWidth * originHeight) / originWidth;
-            }
-            else
-            {
-                currentHeight = destHeight;
-                currentWidth = (originWidth * destHeight) / originHeight;
-            }
-            g.DrawImage(image, new RectangleF(rect.X + (destWidth - currentWidth) / 2, rect.Y + (destHeight - currentHeight) / 2, currentWidth, currentHeight), new RectangleF(0, 0, originWidth, originHeight), GraphicsUnit.Pixel);
-        }
-
-        #endregion
-
         #region 图标渲染
 
-        internal static void PaintIcons(this Graphics g, TType icon, Rectangle rect)
+        internal static void PaintIcons(this Canvas g, IconInfo icon, Rectangle rect)
+        {
+            if (icon.Back.HasValue)
+            {
+                using (var brush = new SolidBrush(icon.Back.Value))
+                {
+                    int offset = icon.Offset * 2;
+                    var rectreal = new Rectangle(rect.X + icon.Offset, rect.Y + icon.Offset, rect.Width - offset, rect.Height - offset);
+                    if (icon.Round) g.FillEllipse(brush, rectreal);
+                    else
+                    {
+                        using (var path = rectreal.RoundPath(icon.Radius))
+                        {
+                            g.Fill(brush, path);
+                        }
+                    }
+                }
+            }
+            using (var bmp = SvgExtend.GetImgExtend(icon.Svg, rect, icon.Fill))
+            {
+                if (bmp == null) return;
+                g.Image(bmp, rect);
+            }
+        }
+        internal static void PaintIcons(this Canvas g, TType icon, Rectangle rect, string keyid, TAMode colorScheme)
         {
             switch (icon)
             {
                 case TType.Success:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoSuccess, rect, Style.Db.Success))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoSuccess, rect, Colour.Success.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Info:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoInfo, rect, Style.Db.Info))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoInfo, rect, Colour.Info.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Warn:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoWarn, rect, Style.Db.Warning))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoWarn, rect, Colour.Warning.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Error:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoError, rect, Style.Db.Error))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoError, rect, Colour.Error.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
             }
         }
-        internal static void PaintIcons(this Graphics g, TType icon, Rectangle rect, Color back)
+        internal static void PaintIcons(this Canvas g, TType icon, Rectangle rect, Color back, string keyid, TAMode colorScheme)
         {
             using (var brush = new SolidBrush(back))
             {
@@ -530,36 +740,36 @@ namespace AntdUI
             switch (icon)
             {
                 case TType.Success:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoSuccess, rect, Style.Db.Success))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoSuccess, rect, Colour.Success.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Info:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoInfo, rect, Style.Db.Info))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoInfo, rect, Colour.Info.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Warn:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoWarn, rect, Style.Db.Warning))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoWarn, rect, Colour.Warning.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Error:
-                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoError, rect, Style.Db.Error))
+                    using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoError, rect, Colour.Error.Get(keyid, colorScheme)))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
             }
         }
-        internal static void PaintIconGhosts(this Graphics g, TType icon, Rectangle rect, Color color)
+        internal static void PaintIconGhosts(this Canvas g, TType icon, Rectangle rect, Color color)
         {
             switch (icon)
             {
@@ -567,37 +777,37 @@ namespace AntdUI
                     using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoSuccessGhost, rect, color))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Info:
                     using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoInfoGhost, rect, color))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Warn:
                     using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoWarnGhost, rect, color))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
                 case TType.Error:
                     using (var bmp = SvgExtend.GetImgExtend(SvgDb.IcoErrorGhost, rect, color))
                     {
                         if (bmp == null) return;
-                        g.DrawImage(bmp, rect);
+                        g.Image(bmp, rect);
                     }
                     break;
             }
         }
-        internal static void PaintIconClose(this Graphics g, Rectangle rect, Color color)
+        internal static void PaintIconClose(this Canvas g, Rectangle rect, Color color)
         {
             PaintIconCore(g, rect, SvgDb.IcoErrorGhost, color);
         }
-        internal static void PaintIconClose(this Graphics g, Rectangle rect, Color color, float dot)
+        internal static void PaintIconClose(this Canvas g, Rectangle rect, Color color, float dot)
         {
             PaintIconCore(g, rect, SvgDb.IcoErrorGhost, color, dot);
         }
@@ -605,7 +815,7 @@ namespace AntdUI
         /// <summary>
         /// 绘制带圆背景的镂空图标
         /// </summary>
-        internal static void PaintIconCoreGhost(this Graphics g, Rectangle rect, string svg, Color back, Color fore)
+        internal static void PaintIconCoreGhost(this Canvas g, Rectangle rect, string svg, Color back, Color fore)
         {
             using (var brush = new SolidBrush(back))
             {
@@ -613,7 +823,7 @@ namespace AntdUI
             }
             g.GetImgExtend(svg, rect, fore);
         }
-        internal static void PaintIconCore(this Graphics g, Rectangle rect, string svg, Color back, Color fore)
+        internal static void PaintIconCore(this Canvas g, Rectangle rect, string svg, Color back, Color fore)
         {
             using (var brush = new SolidBrush(back))
             {
@@ -621,8 +831,8 @@ namespace AntdUI
             }
             g.GetImgExtend(svg, rect, fore);
         }
-        internal static void PaintIconCore(this Graphics g, Rectangle rect, string svg, Color color) => g.GetImgExtend(svg, rect, color);
-        internal static void PaintIconCore(this Graphics g, Rectangle rect, string svg, Color color, float dot)
+        internal static void PaintIconCore(this Canvas g, Rectangle rect, string svg, Color color) => g.GetImgExtend(svg, rect, color);
+        internal static void PaintIconCore(this Canvas g, Rectangle rect, string svg, Color color, float dot)
         {
             int size = (int)(rect.Height * dot);
             var rect_ico = new Rectangle(rect.X + (rect.Width - size) / 2, rect.Y + (rect.Height - size) / 2, size, size);
@@ -631,123 +841,77 @@ namespace AntdUI
 
         #endregion
 
-        #region 图片透明度
-
-        public static void DrawImage(this Graphics g, Bitmap bmp, Rectangle rect, float opacity)
-        {
-            using (var attributes = new ImageAttributes())
-            {
-                var matrix = new ColorMatrix { Matrix33 = opacity };
-                attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                g.DrawImage(bmp, rect, 0, 0, bmp.Width, bmp.Height, GraphicsUnit.Pixel, attributes);
-            }
-        }
-
-        public static void DrawImage(this Graphics g, Image bmp, Rectangle rect, float opacity)
-        {
-            if (opacity >= 1F)
-            {
-                g.DrawImage(bmp, rect);
-                return;
-            }
-            using (var attributes = new ImageAttributes())
-            {
-                var matrix = new ColorMatrix { Matrix33 = opacity };
-                attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                g.DrawImage(bmp, rect, 0, 0, bmp.Width, bmp.Height, GraphicsUnit.Pixel, attributes);
-            }
-        }
-
-        #endregion
-
         #region 阴影/徽标
 
         #region 徽标
 
-        public static void PaintBadge(this IControl control, Graphics g)
+        public static void PaintBadge(this IControl control, Canvas g) => PaintBadge(control, control.Font, control.ClientRectangle, g, control.ColorScheme);
+        public static void PaintBadge(this BadgeConfig badegConfig, Font Font, Rectangle Rect, Canvas g, TAMode colorScheme)
         {
-            if (control.BadgeSvg != null)
+            if (badegConfig.BadgeSvg != null)
             {
-                int hasx = (int)(control.BadgeOffsetX * Config.Dpi), hasy = (int)(control.BadgeOffsetY * Config.Dpi);
-                using (var font = new Font(control.Font.FontFamily, control.Font.Size * control.BadgeSize))
+                int hasx = (int)(badegConfig.BadgeOffsetX * Config.Dpi), hasy = (int)(badegConfig.BadgeOffsetY * Config.Dpi);
+                using (var font = new Font(Font.FontFamily, Font.Size * badegConfig.BadgeSize))
                 {
-                    var size_badge = g.MeasureString(Config.NullText, font).Size().Height;
-                    var rect_badge = PaintBadge(control.ClientRectangle, control.BadgeAlign, hasx, hasy, size_badge, size_badge);
-                    g.GetImgExtend(control.BadgeSvg, rect_badge, control.BadgeBack ?? Style.Db.Error);
+                    var size_badge = g.MeasureString(Config.NullText, font).Height;
+                    var rect_badge = PaintBadge(Rect, badegConfig.BadgeAlign, hasx, hasy, size_badge, size_badge);
+                    g.GetImgExtend(badegConfig.BadgeSvg, rect_badge, badegConfig.BadgeBack ?? Colour.Error.Get("Badge", colorScheme));
                 }
             }
-            else if (control.Badge != null)
+            else if (badegConfig.Badge != null)
             {
-                var color = control.BadgeBack ?? Style.Db.Error;
-                var rect = control.ClientRectangle;
-                using (var brush_fore = new SolidBrush(Style.Db.ErrorColor))
+                var color = badegConfig.BadgeBack ?? Colour.Error.Get("Badge", colorScheme);
+                var rect = Rect;
+                float borsize = Config.Dpi;
+                using (var font = new Font(Font.FontFamily, Font.Size * badegConfig.BadgeSize))
                 {
-                    float borsize = 1F * Config.Dpi;
-                    using (var font = new Font(control.Font.FontFamily, control.Font.Size * control.BadgeSize))
+                    int hasx = (int)(badegConfig.BadgeOffsetX * Config.Dpi), hasy = (int)(badegConfig.BadgeOffsetY * Config.Dpi);
+                    if (string.IsNullOrWhiteSpace(badegConfig.Badge))
                     {
-                        int hasx = (int)(control.BadgeOffsetX * Config.Dpi), hasy = (int)(control.BadgeOffsetY * Config.Dpi);
-                        if (string.IsNullOrWhiteSpace(control.Badge))
+                        var size = g.MeasureString(Config.NullText, font).Height / 2;
+                        var rect_badge = PaintBadge(rect, badegConfig.BadgeAlign, hasx, hasy, size, size);
+                        using (var brush = new SolidBrush(color))
                         {
-                            var size = (int)(g.MeasureString(Config.NullText, font).Height);
-                            var rect_badge = PaintBadge(rect, control.BadgeAlign, hasx, hasy, size, size);
-                            using (var brush = new SolidBrush(color))
+                            if (badegConfig.BadgeMode)
                             {
-                                if (control.BadgeMode)
+                                float b2 = borsize * 2, rr = size * 0.2F, rr2 = rr * 2;
+                                g.FillEllipse(Colour.ErrorColor.Get("Badge", colorScheme), new RectangleF(rect_badge.X - borsize, rect_badge.Y - borsize, rect_badge.Width + b2, rect_badge.Height + b2));
+                                using (var path = rect_badge.RoundPath(1, true))
                                 {
-                                    float b2 = borsize * 2, rr = size * 0.2F, rr2 = rr * 2;
-                                    g.FillEllipse(brush_fore, new RectangleF(rect_badge.X - borsize, rect_badge.Y - borsize, rect_badge.Width + b2, rect_badge.Height + b2));
-                                    using (var path = rect_badge.RoundPath(1, true))
-                                    {
-                                        path.AddEllipse(new RectangleF(rect_badge.X + rr, rect_badge.Y + rr, rect_badge.Width - rr2, rect_badge.Height - rr2));
-                                        g.FillPath(brush, path);
-                                    }
-                                }
-                                else
-                                {
-                                    g.FillEllipse(brush, rect_badge);
-                                    using (var pen = new Pen(brush_fore.Color, borsize))
-                                    {
-                                        g.DrawEllipse(pen, rect_badge);
-                                    }
+                                    path.AddEllipse(new RectangleF(rect_badge.X + rr, rect_badge.Y + rr, rect_badge.Width - rr2, rect_badge.Height - rr2));
+                                    g.Fill(color, path);
                                 }
                             }
-                        }
-                        else
-                        {
-                            var size = g.MeasureString(control.Badge, font).Size();
-                            using (var s_f = SF_NoWrap())
+                            else
                             {
-                                int size_badge = (int)(size.Height * 1.2F);
-                                if (size.Height > size.Width)
+                                g.FillEllipse(color, rect_badge);
+                                g.DrawEllipse(Colour.ErrorColor.Get("Badge", colorScheme), borsize, rect_badge);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var size = g.MeasureString(badegConfig.Badge, font);
+                        using (var s_f = SF_NoWrap())
+                        {
+                            int size_badge = (int)(size.Height * 1.2F);
+                            if (size.Height > size.Width)
+                            {
+                                var rect_badge = PaintBadge(rect, badegConfig.BadgeAlign, hasx, hasy, size_badge, size_badge);
+                                g.FillEllipse(color, rect_badge);
+                                g.DrawEllipse(Colour.ErrorColor.Get("Badge", colorScheme), borsize, rect_badge);
+                                g.String(badegConfig.Badge, font, Colour.ErrorColor.Get("Badge", colorScheme), rect_badge, s_f);
+                            }
+                            else
+                            {
+                                int w_badge = size.Width + (size_badge - size.Height);
+                                var rect_badge = PaintBadge(rect, badegConfig.BadgeAlign, hasx, hasy, w_badge, size_badge);
+                                using (var path = rect_badge.RoundPath(rect_badge.Height))
                                 {
-                                    var rect_badge = PaintBadge(rect, control.BadgeAlign, hasx, hasy, size_badge, size_badge);
-                                    using (var brush = new SolidBrush(color))
-                                    {
-                                        g.FillEllipse(brush, rect_badge);
-                                    }
-                                    using (var pen = new Pen(brush_fore.Color, borsize))
-                                    {
-                                        g.DrawEllipse(pen, rect_badge);
-                                    }
-                                    g.DrawStr(control.Badge, font, brush_fore, rect_badge, s_f);
+                                    g.Fill(color, path);
+                                    g.Draw(Colour.ErrorColor.Get("Badge", colorScheme), borsize, path);
                                 }
-                                else
-                                {
-                                    int w_badge = (int)(size.Width * 1.2F);
-                                    var rect_badge = PaintBadge(rect, control.BadgeAlign, hasx, hasy, w_badge, size_badge);
-                                    using (var brush = new SolidBrush(color))
-                                    {
-                                        using (var path = rect_badge.RoundPath(rect_badge.Height))
-                                        {
-                                            g.FillPath(brush, path);
-                                            using (var pen = new Pen(brush_fore.Color, borsize))
-                                            {
-                                                g.DrawPath(pen, path);
-                                            }
-                                        }
-                                    }
-                                    g.DrawStr(control.Badge, font, brush_fore, rect_badge, s_f);
-                                }
+                                g.String(badegConfig.Badge, font, Colour.ErrorColor.Get("Badge", colorScheme), rect_badge, s_f);
                             }
                         }
                     }
@@ -755,84 +919,64 @@ namespace AntdUI
             }
         }
 
-        static Rectangle PaintBadge(Rectangle rect, TAlignFrom align, int x, int y, int w, int h)
+        static Rectangle PaintBadge(Rectangle rect, TAlign align, int x, int y, int w, int h)
         {
             switch (align)
             {
-                case TAlignFrom.TL:
-                    return new Rectangle(rect.X + x, rect.Y + y, w, h);
-                case TAlignFrom.BL:
-                    return new Rectangle(rect.X + x, rect.Bottom - y - h, w, h);
-                case TAlignFrom.BR:
-                    return new Rectangle(rect.Right - x - w, rect.Bottom - y - h, w, h);
-                case TAlignFrom.Top:
-                    return new Rectangle(rect.X + (rect.Width - w) / 2, rect.Y + y, w, h);
-                case TAlignFrom.Bottom:
-                    return new Rectangle(rect.X + (rect.Width - w) / 2, rect.Bottom - y - h, w, h);
-                case TAlignFrom.TR:
+                case TAlign.TL:
+                case TAlign.LT: return new Rectangle(rect.X + x, rect.Y + y, w, h);
+                case TAlign.BL:
+                case TAlign.LB: return new Rectangle(rect.X + x, rect.Bottom - y - h, w, h);
+                case TAlign.BR:
+                case TAlign.RB: return new Rectangle(rect.Right - x - w, rect.Bottom - y - h, w, h);
+                case TAlign.Top: return new Rectangle(rect.X + (rect.Width - w) / 2, rect.Y + y, w, h);
+                case TAlign.Bottom: return new Rectangle(rect.X + (rect.Width - w) / 2, rect.Bottom - y - h, w, h);
+                case TAlign.TR:
+                case TAlign.RT: return new Rectangle(rect.Right - x - w, rect.Y + y, w, h);
+                case TAlign.Left: return new Rectangle(rect.X + x, rect.Y + (rect.Height - h) / 2, w, h);
+                case TAlign.Right: return new Rectangle(rect.Right - x - w, rect.Y + (rect.Height - h) / 2, w, h);
                 default:
-                    return new Rectangle(rect.Right - x - w, rect.Y + y, w, h);
+                    return new Rectangle(rect.X + (rect.Width - w) / 2, rect.Y + (rect.Height - h) / 2, w, h);
             }
         }
-        public static void PaintBadge(this IControl control, DateBadge badge, Font font, RectangleF rect, Graphics g)
+
+        public static void PaintBadge(this IControl control, DateBadge badge, Rectangle rect, Canvas g)
         {
-            var color = badge.Fill ?? control.BadgeBack ?? Style.Db.Error;
-            using (var brush_fore = new SolidBrush(Style.Db.ErrorColor))
+            var color = badge.Fill ?? control.BadgeBack ?? Colour.Error.Get("Badge", control.ColorScheme);
+            float borsize = Config.Dpi;
+            using (var font = new Font(control.Font.FontFamily, control.Font.Size * badge.Size))
             {
-                float borsize = 1F * Config.Dpi;
-                if (badge.Count == 0)
+                int hasx = (int)(badge.OffsetX * Config.Dpi), hasy = (int)(badge.OffsetY * Config.Dpi);
+                if (string.IsNullOrWhiteSpace(badge.Content))
                 {
-                    var rect_badge = new RectangleF(rect.Right - 10F, rect.Top + 2F, 8, 8);
-                    using (var brush = new SolidBrush(color))
-                    {
-                        g.FillEllipse(brush, rect_badge);
-                        using (var pen = new Pen(brush_fore.Color, borsize))
-                        {
-                            g.DrawEllipse(pen, rect_badge);
-                        }
-                    }
+                    var size_badge = g.MeasureString(Config.NullText, font).Height / 2;
+                    var rect_badge = PaintBadge(rect, badge.Align, hasx, hasy, size_badge, size_badge);
+                    g.FillEllipse(color, rect_badge);
+                    g.DrawEllipse(Colour.ErrorColor.Get("Badge", control.ColorScheme), borsize, rect_badge);
                 }
                 else
                 {
+                    var size = g.MeasureString(badge.Content, font);
                     using (var s_f = SF_NoWrap())
                     {
-                        string countStr;
-                        if (badge.Count == 999) countStr = "999";
-                        else if (badge.Count > 1000) countStr = (badge.Count / 1000).ToString().Substring(0, 1) + "K+";
-                        else if (badge.Count > 99) countStr = "99+";
-                        else countStr = badge.Count.ToString();
-
-                        var size = g.MeasureString(countStr, font);
-                        var size_badge = size.Height * 1.2F;
+                        int size_badge = (int)(size.Height * 1.2F);
                         if (size.Height > size.Width)
                         {
-                            var rect_badge = new RectangleF(rect.Right - size_badge + 6F, rect.Top - 8F, size_badge, size_badge);
-                            using (var brush = new SolidBrush(color))
-                            {
-                                g.FillEllipse(brush, rect_badge);
-                                using (var pen = new Pen(brush_fore.Color, borsize))
-                                {
-                                    g.DrawEllipse(pen, rect_badge);
-                                }
-                            }
-                            g.DrawStr(countStr, font, brush_fore, rect_badge, s_f);
+                            var rect_badge = PaintBadge(rect, badge.Align, hasx, hasy, size_badge, size_badge);
+                            g.FillEllipse(color, rect_badge);
+                            g.DrawEllipse(Colour.ErrorColor.Get("Badge", control.ColorScheme), borsize, rect_badge);
+                            g.String(badge.Content, font, Colour.ErrorColor.Get("Badge", control.ColorScheme), rect_badge, s_f);
                         }
                         else
                         {
-                            var w_badge = size.Width * 1.2F;
-                            var rect_badge = new RectangleF(rect.Right - w_badge + 6F, rect.Top - 8F, w_badge, size_badge);
-                            using (var brush = new SolidBrush(color))
+                            int w_badge = size.Width + (size_badge - size.Height);
+                            var rect_badge = PaintBadge(rect, badge.Align, hasx, hasy, w_badge, size_badge);
+                            using (var path = rect_badge.RoundPath(rect_badge.Height))
                             {
-                                using (var path = rect_badge.RoundPath(rect_badge.Height))
-                                {
-                                    g.FillPath(brush, path);
-                                    using (var pen = new Pen(brush_fore.Color, borsize))
-                                    {
-                                        g.DrawPath(pen, path);
-                                    }
-                                }
+                                g.Fill(color, path);
+                                g.Draw(Colour.ErrorColor.Get("Badge", control.ColorScheme), borsize, path);
                             }
-                            g.DrawStr(countStr, font, brush_fore, rect_badge, s_f);
+                            g.String(badge.Content, font, Colour.ErrorColor.Get("Badge", control.ColorScheme), rect_badge, s_f);
                         }
                     }
                 }
@@ -841,7 +985,7 @@ namespace AntdUI
 
         #endregion
 
-        public static void PaintShadow(this Graphics g, ShadowConfig config, Rectangle _rect, Rectangle rect, float radius, bool round)
+        public static void PaintShadow(this Canvas g, ShadowConfig config, Rectangle _rect, Rectangle rect, float radius, bool round)
         {
             int shadow = (int)(config.Shadow * Config.Dpi), shadowOffsetX = (int)(config.ShadowOffsetX * Config.Dpi), shadowOffsetY = (int)(config.ShadowOffsetY * Config.Dpi);
             using (var bmp_shadow = new Bitmap(_rect.Width, _rect.Height))
@@ -850,7 +994,7 @@ namespace AntdUI
                 {
                     using (var path = RoundPath(rect, radius, round))
                     {
-                        using (var brush = config.ShadowColor.Brush(Style.Db.TextBase))
+                        using (var brush = config.ShadowColor.Brush(Colour.TextBase.Get()))
                         {
                             g_shadow.FillPath(brush, path);
                         }
@@ -864,42 +1008,84 @@ namespace AntdUI
                         Matrix33 = config.ShadowOpacity
                     };
                     attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                    g.DrawImage(bmp_shadow, new Rectangle(_rect.X + shadowOffsetX, _rect.Y + shadowOffsetY, _rect.Width, _rect.Height), 0, 0, _rect.Width, _rect.Height, GraphicsUnit.Pixel, attributes);
+                    g.Image(bmp_shadow, new Rectangle(_rect.X + shadowOffsetX, _rect.Y + shadowOffsetY, _rect.Width, _rect.Height), 0, 0, _rect.Width, _rect.Height, GraphicsUnit.Pixel, attributes);
                 }
             }
         }
 
         #endregion
 
+        public static void PaintEmpty(this Canvas g, Rectangle rect, Font font, Color fore, string? text = null, Image? image = null, int offset = 0)
+        {
+            using (var sc = SF_NoWrap())
+            {
+                PaintEmpty(g, rect, font, fore, text, image, offset, sc);
+            }
+        }
+
+        public static void PaintEmpty(this Canvas g, Rectangle rect, Font font, Color fore, string? text, Image? image, int offset, StringFormat sf)
+        {
+            using (var brush = new SolidBrush(fore))
+            {
+                if (offset > 0)
+                {
+                    rect.Offset(0, offset);
+                    rect.Height -= offset;
+                }
+                string emptytext = text ?? Localization.Get("NoData", "暂无数据");
+                if (Config.EmptyImageSvg != null)
+                {
+                    var size = g.MeasureString(emptytext, font);
+                    int gap = (int)(8 * Config.Dpi), icon_size = (int)(size.Height * Config.EmptyImageRatio);
+
+                    Rectangle rect_img = new Rectangle(rect.X + (rect.Width - icon_size) / 2, rect.Y + (rect.Height - icon_size) / 2 - size.Height, icon_size, icon_size),
+                        rect_font = new Rectangle(rect.X, rect_img.Bottom + gap, rect.Width, size.Height);
+
+                    using (var _bmp = SvgExtend.GetImgExtend(Config.IsDark ? Config.EmptyImageSvg[1] : Config.EmptyImageSvg[0], rect_img, fore))
+                    {
+                        if (_bmp == null)
+                        {
+                            g.String(emptytext, font, brush, rect, sf);
+                            return;
+                        }
+                        else g.Image(_bmp, rect_img);
+                    }
+                    g.String(emptytext, font, brush, rect_font, sf);
+                }
+                else if (image != null)
+                {
+                    int gap = (int)(8 * Config.Dpi);
+                    var size = g.MeasureString(emptytext, font);
+                    Rectangle rect_img = new Rectangle(rect.X + (rect.Width - image.Width) / 2, rect.Y + (rect.Height - image.Height) / 2 - size.Height, image.Width, image.Height), rect_font = new Rectangle(rect.X, rect_img.Bottom + gap, rect.Width, size.Height);
+                    g.Image(image, rect_img);
+                    g.String(emptytext, font, brush, rect_font, sf);
+                }
+                else g.String(emptytext, font, brush, rect, sf);
+            }
+        }
+
         #region 图像处理
 
         #region 模糊
 
-        public static void Blur(Bitmap bmp, int range)
-        {
-            Blur(bmp, range, new Rectangle(0, 0, bmp.Width, bmp.Height));
-        }
+        public static void Blur(Bitmap bmp, int range) => Blur(bmp, range, new Rectangle(0, 0, bmp.Width, bmp.Height));
         public static void Blur(Bitmap bmp, int range, Rectangle rect)
         {
             if (range > 1)
             {
-                using (UnsafeBitmap unsafeBitmap = new UnsafeBitmap(bmp, true))
+                using (var unsafeBitmap = new UnsafeBitmap(bmp, true))
                 {
-                    BlurHorizontal(unsafeBitmap, range, rect);
-                    BlurVertical(unsafeBitmap, range, rect);
-                    BlurHorizontal(unsafeBitmap, range, rect);
-                    BlurVertical(unsafeBitmap, range, rect);
+                    int halfRange = range / 2;
+                    BlurHorizontal(unsafeBitmap, halfRange, rect.X, rect.Y, rect.Right, rect.Bottom);
+                    BlurVertical(unsafeBitmap, halfRange, rect.X, rect.Y, rect.Right, rect.Bottom);
+                    BlurHorizontal(unsafeBitmap, halfRange, rect.X, rect.Y, rect.Right, rect.Bottom);
+                    BlurVertical(unsafeBitmap, halfRange, rect.X, rect.Y, rect.Right, rect.Bottom);
                 }
             }
         }
 
-        private static void BlurHorizontal(UnsafeBitmap unsafeBitmap, int range, Rectangle rect)
+        static void BlurHorizontal(UnsafeBitmap unsafeBitmap, int halfRange, int left, int top, int right, int bottom)
         {
-            int left = rect.X;
-            int top = rect.Y;
-            int right = rect.Right;
-            int bottom = rect.Bottom;
-            int halfRange = range / 2;
             ColorBgra[] newColors = new ColorBgra[unsafeBitmap.Width];
 
             for (int y = top; y < bottom; y++)
@@ -944,26 +1130,15 @@ namespace AntdUI
                         hits++;
                     }
 
-                    if (x >= left)
-                    {
-                        newColors[x] = new ColorBgra((byte)(b / hits), (byte)(g / hits), (byte)(r / hits), (byte)(a / hits));
-                    }
+                    if (x >= left) newColors[x] = new ColorBgra((byte)(b / hits), (byte)(g / hits), (byte)(r / hits), (byte)(a / hits));
                 }
 
-                for (int x = left; x < right; x++)
-                {
-                    unsafeBitmap.SetPixel(x, y, newColors[x]);
-                }
+                for (int x = left; x < right; x++) unsafeBitmap.SetPixel(x, y, newColors[x]);
             }
         }
 
-        private static void BlurVertical(UnsafeBitmap unsafeBitmap, int range, Rectangle rect)
+        static void BlurVertical(UnsafeBitmap unsafeBitmap, int halfRange, int left, int top, int right, int bottom)
         {
-            int left = rect.X;
-            int top = rect.Y;
-            int right = rect.Right;
-            int bottom = rect.Bottom;
-            int halfRange = range / 2;
             ColorBgra[] newColors = new ColorBgra[unsafeBitmap.Height];
 
             for (int x = left; x < right; x++)
@@ -1008,16 +1183,10 @@ namespace AntdUI
                         hits++;
                     }
 
-                    if (y >= top)
-                    {
-                        newColors[y] = new ColorBgra((byte)(b / hits), (byte)(g / hits), (byte)(r / hits), (byte)(a / hits));
-                    }
+                    if (y >= top) newColors[y] = new ColorBgra((byte)(b / hits), (byte)(g / hits), (byte)(r / hits), (byte)(a / hits));
                 }
 
-                for (int y = top; y < bottom; y++)
-                {
-                    unsafeBitmap.SetPixel(x, y, newColors[y]);
-                }
+                for (int y = top; y < bottom; y++) unsafeBitmap.SetPixel(x, y, newColors[y]);
             }
         }
 
@@ -1025,11 +1194,23 @@ namespace AntdUI
 
         #region 阴影
 
-        public static Bitmap PaintShadow(this GraphicsPath path, int width, int height, int range = 10)
+        public static SafeBitmap PaintShadow(this GraphicsPath path, int width, int height, int range = 10) => PaintShadow(path, width, height, Color.Black, range);
+        public static SafeBitmap PaintShadow(this GraphicsPath path, int width, int height, Color color, int range = 10)
         {
-            return PaintShadow(path, width, height, Color.Black, range);
+            var bmp_shadow = new SafeBitmap(width, height);
+            using (var g = bmp_shadow.Graphics)
+            {
+                using (var brush = new SolidBrush(color))
+                {
+                    g.FillPath(brush, path);
+                }
+                Blur(bmp_shadow.Bitmap, range);
+            }
+            return bmp_shadow;
         }
-        public static Bitmap PaintShadow(this GraphicsPath path, int width, int height, Color color, int range = 10)
+
+        public static Bitmap PaintShadowO(this GraphicsPath path, int width, int height, int range = 10) => PaintShadowO(path, width, height, Color.Black, range);
+        public static Bitmap PaintShadowO(this GraphicsPath path, int width, int height, Color color, int range = 10)
         {
             var bmp_shadow = new Bitmap(width, height);
             using (var g = Graphics.FromImage(bmp_shadow))

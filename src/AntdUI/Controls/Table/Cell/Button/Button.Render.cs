@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -23,22 +23,36 @@ namespace AntdUI
 {
     partial class CellButton
     {
-        internal override void Paint(Graphics g, Font font, SolidBrush fore)
+        public override void Paint(Canvas g, Font font, bool enable, SolidBrush fore) => Table.PaintButton(g, font, PARENT.PARENT.Gap, Rect, this, enable, PARENT.PARENT.ColorScheme);
+
+        #region GetSize
+
+        public override Size GetSize(Canvas g, Font font, int gap, int gap2)
         {
-            Table.PaintButton(g, font, (PARENT == null || PARENT.PARENT == null) ? 12 : PARENT.PARENT.Gap, Rect, this);
+            if (Gap.HasValue)
+            {
+                int sp = (int)(Gap.Value * Config.Dpi);
+                return GetSizeCore(g, font, sp, sp * 2);
+            }
+            else if (PARENT.PARENT.GapCell.HasValue)
+            {
+                int sp = (int)(PARENT.PARENT.GapCell.Value * Config.Dpi);
+                return GetSizeCore(g, font, sp, sp * 2);
+            }
+            else return GetSizeCore(g, font, gap, gap2);
         }
 
-        internal override Size GetSize(Graphics g, Font font, int gap, int gap2)
+        Size GetSizeCore(Canvas g, Font font, int gap, int gap2)
         {
             if (string.IsNullOrEmpty(Text))
             {
-                var size = g.MeasureString(Config.NullText, font).Size();
+                var size = g.MeasureString(Config.NullText, font);
                 int sizei = size.Height + gap;
-                return new Size(sizei + gap2, sizei);
+                return new Size(sizei, sizei);
             }
             else
             {
-                var size = g.MeasureString(Text ?? Config.NullText, font).Size();
+                var size = g.MeasureString(Text ?? Config.NullText, font);
                 bool has_icon = HasIcon;
                 if (has_icon || ShowArrow)
                 {
@@ -48,13 +62,15 @@ namespace AntdUI
                         return new Size(size.Width + gap2 * 2 + size_read, size.Height + gap + size_read);
                     }
                     int height = size.Height + gap;
-                    if (has_icon && ShowArrow) return new Size(size.Width + gap2 * 2 + size.Height * 2, height);
-                    else if (has_icon) return new Size(size.Width + gap2 * 2 + (int)Math.Ceiling(size.Height * 1.2F), height);
-                    else return new Size(size.Width + gap2 * 2 + (int)Math.Ceiling(size.Height * .8F), height);
+                    if (has_icon && ShowArrow) return new Size(size.Width + gap2 + size.Height * 2, height);
+                    else if (has_icon) return new Size(size.Width + gap2 + (int)Math.Ceiling(size.Height * 1.2F), height);
+                    else return new Size(size.Width + gap2 + (int)Math.Ceiling(size.Height * .8F), height);
                 }
-                else return new Size(size.Width + gap2 * 2, size.Height + gap);
+                else return new Size(size.Width + gap, size.Height + gap);
             }
         }
+
+        #endregion
 
         #region 动画
 
@@ -65,36 +81,35 @@ namespace AntdUI
             {
                 if (_mouseHover == value) return;
                 _mouseHover = value;
-                if (PARENT == null) return;
                 if (Enabled)
                 {
                     Color _back_hover;
                     switch (Type)
                     {
                         case TTypeMini.Default:
-                            if (BorderWidth > 0) _back_hover = Style.Db.PrimaryHover;
-                            else _back_hover = Style.Db.FillSecondary;
+                            if (BorderWidth > 0) _back_hover = Colour.PrimaryHover.Get("Button", PARENT.PARENT.ColorScheme);
+                            else _back_hover = Colour.FillSecondary.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                         case TTypeMini.Success:
-                            _back_hover = Style.Db.SuccessHover;
+                            _back_hover = Colour.SuccessHover.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                         case TTypeMini.Error:
-                            _back_hover = Style.Db.ErrorHover;
+                            _back_hover = Colour.ErrorHover.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                         case TTypeMini.Info:
-                            _back_hover = Style.Db.InfoHover;
+                            _back_hover = Colour.InfoHover.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                         case TTypeMini.Warn:
-                            _back_hover = Style.Db.WarningHover;
+                            _back_hover = Colour.WarningHover.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                         case TTypeMini.Primary:
                         default:
-                            _back_hover = Style.Db.PrimaryHover;
+                            _back_hover = Colour.PrimaryHover.Get("Button", PARENT.PARENT.ColorScheme);
                             break;
                     }
 
                     if (BackHover.HasValue) _back_hover = BackHover.Value;
-                    if (Config.Animation)
+                    if (Config.HasAnimation(nameof(Table)))
                     {
                         if (IconHoverAnimation > 0 && HasIcon && (IconHoverSvg != null || IconHover != null))
                         {
@@ -178,8 +193,7 @@ namespace AntdUI
 
         internal override void Click()
         {
-            if (PARENT == null) return;
-            if (_mouseDown && Config.Animation)
+            if (_mouseDown && Config.HasAnimation(nameof(Table)))
             {
                 ThreadClick?.Dispose();
                 AnimationClickValue = 0;

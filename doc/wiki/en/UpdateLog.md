@@ -1,4 +1,606 @@
-﻿[Home](Home.md)・[UpdateLog](UpdateLog.md)・[Config](Config.md)・[Theme](Theme.md)・[SVG](SVG.md)
+﻿[Home](Home.md)・[UpdateLog](UpdateLog.md)・[Config](Config.md)・[Theme](Theme.md)
+
+### `2.0.3` 2025-06-09
+
+- ➕ Table SortOrderSize
+- ➕ Table Event Supplementary Column
+- ➕ Table GapCell
+- ➕ Table CellImpactHeight
+- ➕ Table ICell ImpactHeight
+- ➕ Table ICell completion settings
+- ➕ Table Tag Gap
+- ➕ Avatar Mouse Suspension Interaction
+- ➕ Progress UseTextCenter
+- ➕ Select DropDownEmptyClose
+- ➕ Pagination adds page labels, text labels, and text prompts for modification
+- ➕ Helper SearchWeightSort
+- ➕ Tooltip completion direction
+- ➕ Image coexistence display
+- ✍️ Possible dictionary access exceptions caused by ILayereddFormAnimate during Dispose
+- ✍️ Tree Multiple Choice
+- ✍️ Tree Hover Judgment
+- ✍️ Table column fixed title bar border miscellaneous edges
+- ✍️ Table Shift+scrollbar
+- ✍️ Menu Select Method
+- ✍️ Menu Padding scrollbar
+- ✍️ TimePicker scrollbar issue
+- ✍️ IconState misalignment
+- ✍️ Lable Emoji Misalignment
+
+### `2.0.2` 2025-05-30
+
+- ➕ Select/Dropdown/Table DropDownTextAlign
+- ➕ Table CellPaintBegin/CellHover Events
+- ➕ Table CellCheckbox/CellRadio Cells
+- ✍️ Table Right floating floating background
+- ✍️ Page Header Maximization Button Change
+- ✍️ Suppress Win7 No Aero flicker
+- ✍️ Optimize shadow concurrency
+- ✍️ Optimize DatePickerRange interaction
+- ✍️ Date selection layout
+- ✍️ Table Merge Borders
+- ✍️ Adapt to Win7 scrollbar with no focus and no response
+
+### `2.0.1` 2025-05-26
+
+- ➕ Label IconGap
+- ➕ NoticeOverflowClose
+- ➕ Message/Notification MaxCount
+- ➕ Select option to enrich style attributes
+- ➕ Dropdown/Select Empty
+- ➕ PageHeader MDI
+- ➕ Table SetSortList
+- ➕ Select/Dropdown/Table DropDownTextAlign
+- ✍️ Lable centered layout
+- ✍️ InputNumber suffix occlusion
+- ✍️ Unified rendering for empty space
+- ✍️ Internal Alignment of Table Container
+- ✍️ Mask border alignment window
+- ✍️ Steps item hidden
+
+### `2.0.0` 2025-05-19 🥣💲🐖👚
+
+- ➕ Select to complete the Property Change
+- ➕ Table Row Sorting Event
+- ➕ Table HitTest
+- ➕ Message TopMost
+- ➕ Tree HitTest
+- ➕ Tree event interaction flag
+- ➕ Tree GapIndent
+- ➕ Tree Index Number
+- ➕ Menu item logo
+- ➕ Menu HitTest
+- ➕ Menu Index Number
+- ➕ Button JoinMode
+- ➕ Input JoinMode
+- ➕ ColorPicker JoinMode
+- ➕ ColorPicker Double Click Dropdown Interaction
+- ➕ DatePicker ShowButtonToDay
+- ➕ TimePicker ShowButtonNow
+- ➕ TimePicker adaptation time, minutes, and seconds are displayed separately
+- ✍️ Input ClearStyle fix not effective
+- ✍️ Input direction message
+- ✍️ ColorPicker RGB mode Input coordinate exception
+- ✍️ Table Floating Column Background
+- ✍️ Table Tableau Editing Mode Settings
+- ✍️ Table Slot Column Sorting
+- ✍️ InputNumber fixes TextAlign. Right
+- ✍️ Avatar PlayGIF settings are invalid
+
+### `1.9.12` 2025-04-27
+
+- ➕ Multi level dropdown table
+- ➕ VirtualPanel specifies the rendering of the region within the container
+- ✍️ SelectMultiple SelectAllItems cannot be cancelled
+- ✍️ Menu submenu Visible is invalid
+- ✍️ Table fixed column color does not take effect
+- ✍️ Input failed on WPS/Addin keyboard
+- ✍️ Spin rendering twitching
+- ✍️ Table LostFocusClearSelection exception
+- ✍️ Remove rendering queue
+- ✍️ Remove Input Active GC
+- ✍️ Table: Multiple data all select stuttering
+- ✍️ Modal default font
+
+### `1.9.11` 2025-04-18
+
+- ➕ Separate ColorScheme
+- ➕ Modal DefaultFocus
+- ➕ Tabs EnableSwitch
+- ➕ Menu Horizontal added beyond display
+- ➕ Panel BackExtend
+- ➕ Custom icon for Message Modal Notation
+- ➕ Menu Horizontal Out of Display
+- ➕ Table adaptation Binding Source
+- ➕ Table column support display name
+- ➕ Input Variant Form
+- ➕ Input ClearClick Event
+- ➕ ScrollBar supplementary event
+- ✍️ Table Binding Source refresh issue outside the first row
+- ✍️ Merge cells to overwrite the table header
+- ✍️ Table Different types of reflection sets
+- ✍️ Table movement exception
+- ✍️ Table Binding does not refresh
+- ✍️ Table editing mode disappears with abnormal focus
+- ✍️ Notification rendering issue
+- ✍️ Button AnimationBlink overlay background
+- ✍️ Input rounded corner issue
+- ✍️ Abnormal position of multiple screen pop ups in Tooltip
+
+### `1.9.10` 2025-04-12
+
+- ➕ Table Summary Column
+- ➕ Table TemplateColumn
+- ➕ Table CellPaint
+- ➕ Table GapTree
+- ➕ Input SetStyle
+- ➕ Tabs TabPage Disable Effect
+- ✍️ Table header background misalignment
+- ✍️ Table preset column width
+- ✍️ Table Tree misalignment
+- ✍️ Tree actively selects triggering events
+- ✍️ Input: Select multiple parking spaces in the selected location
+- ✍️ Input cursor jumps around
+- ✍️ Menu Enable Unique Unprocessed Multiple Unfolding
+- ✍️ Panel ShadowOpacityAnimation controls Message Filter
+- ✍️ ContextMenuStrip cannot be clicked without animation
+- ✍️ Segmented Item Colorless IconSvg
+- ✍️ ColorPicker offset at 100% scaling
+- ✍️ Message animation lost
+- ✍️ EventHub memory leak
+
+### `1.9.9` 2025-04-03
+
+- ➕ More delicate animation enables configuration
+- ✍️ Input SelectionStart
+- ✍️ Table SelectIndexChanged triggered multiple times
+- ✍️ Progress width 0 abnormal
+- ✍️ ContextMenuStrip interaction
+- ✍️ Spin TopLevel multi window nesting exception
+- ✍️ Add Input to Active GC
+- ✍️ Input Mouse Interaction
+
+### `1.9.8` 2025-03-29
+
+- ➕ Gradient colors support multiple sets of colors and percentages
+- ➕ Table CellBeginEditInputStyle control override
+- ➕ Menu interaction attribute MouseRightCtrl
+- ➕ Input AnimationBlink
+- ✍️ Spin TopLevel multi window nesting exception
+- ✍️ Table CellEndEdit triggered without modification
+- ✍️ Window Flash Native Title
+- ✍️ The animation speed is too fast
+
+### `1.9.7` 2025-03-25
+
+- ➕ InputNumber WheelModifierEnabled interaction property
+- ➕ Table CellProgress Size
+- ➕ BaseCollection ToArray ToList
+- ➕ Button excessive flashing animation
+- ➕ DatePicker selector type property
+- ✍️ Split Lazy is not effective
+- ✍️ The rounded corners of the table are covered
+- ✍️ ColorPicker concurrency issue
+- ✍️ Window default maximizes twitching
+- ✍️ Spliter cannot be dragged
+
+### `1.9.6` 2025-03-20
+
+- ➕ Dropdown ItemClick
+- ✍️ Fixed ghosting on the right side of the table
+- ✍️ Table Cell DropDown cannot be triggered
+- ✍️ Tabs adaptation language switching
+- ✍️ Collapse, modify Text, refresh
+
+### `1.9.5` 2025-03-19
+
+- ➕ Table CellButtonDown CellButtonUp
+- ➕ Config EmptyImageSvg
+- ➕ Popover Padding
+- ➕ Table CellRectangle method
+- ➕ Table Column WidthPixel
+- ✍️ Drawer's parent container is covered when pulled down internally after being placed on top
+- ✍️ Input scrollbar interaction misalignment
+- ✍️ Calendar language switching
+- ✍️ Pop up Modal without mask in Table editing mode
+- ✍️ Pagination ShowSizeChanger Switch Language Watermark Text Unchanged
+- ✍️ Table Floating Column Rounds
+- ✍️ Table Binding List triggers layout multiple times
+- ✍️ Dropdown linkage SelectedValue
+- ✍️ SelectMultiple: watermark misalignment after clearing
+- ✍️ Split removes designer restrictions on dragging
+- ✍️ Optimize rendering concurrency
+
+### `1.9.4` 2025-03-14
+
+- ➕ Tabs DragOrder Drag Order
+- ➕ Segmented Segmented Item Hover icon properties
+- ➕ Segmented BarBg BarColor Tooltip
+- ➕ Input VerifiyKeyboard shortcut key interception
+- ➕ Panel RadiusAlign
+- ➕ Tree supports selecting multiple nodes
+- ✍️ Table MultipleRows takes effect by right clicking
+- ✍️ Tooltip multi screen abnormality
+- ✍️ After clearing DatePicker Text, Value still exists
+- ✍️ Double clicking on the table triggers two clicks
+- ✍️ Light color mode mistakenly enters dark color API
+- ✍️ Window suppresses duplicate rendering
+
+### `1.9.3` 2025-03-11
+
+- ➕ Preview can display text data
+- ➕ PageHeader IconRatio
+- ➕ Tabs TabClick Cancel can cancel the jump
+- ➕ Split Delay Rendering Properties
+- ➕ Minimum width limit for splitter folding function
+- ➕ GridPanel adds 'spring'
+- ✍️ Button multi line width collision
+- ✍️ Modal parent window hiding processing
+- ✍️ The layout container is not laid out in controls such as Popover
+- ✍️ Select FilterChanged and Thread Call
+- ✍️ DPI adaptation to SplitContainer PanelMinSize
+- ✍️ PageHeader still works after hiding the three golden keys
+- ✍️ PageHeader UseLeftMargin
+
+### `1.9.2` 2025-03-06
+
+- ➕ Table StackedHeader Stacked Header
+- ➕ Table Column DragSort
+- ➕ Alert LoopInfinite
+- ➕ Tooltip area collision
+- ✍️ FlowPanel controls overlap
+- ✍️ Tabs Card exception
+- ✍️ Optimize border cropping
+- ✍️ Table column Style background cannot follow the horizontal scrollbar
+- ✍️ Fold the panel and restore it proportionally
+
+### `1.9.1` 2025-03-04
+
+- ➕ Tabs ContainsTabPage
+- ➕ Drawer wait
+- ➕ Spliter folding function
+- ➕ Select property CloseIcon, event ClosedItem
+- ➕ ControlEvent notifies successful loading in Modal/Drawer/Popover
+- ✍️ Complete TextRendering HighQuality Size conversion
+- ✍️ Replace KeyPress with VNet CHAR for Input
+- ✍️ DatePicker and other controls will fill in Value even if they lose focus after clearing the content
+- ✍️ Table editing mode text box height exception
+- ✍️ Input Emoji Judgment
+- ✍️ Window maximum value secondary enlargement
+
+### `1.9.0` 2025-02-27 🥥
+
+- ➕ Table Merge Cells
+- ➕ Table columns can be individually set to edit or not in edit mode
+- ➕ Table ColBreak Header Automatic Line Break Properties and Related Methods
+- ➕ FlowPanel sub control Index property
+- ➕ GridPanel sub control Index property
+- ➕ PageHeader UseLeftMargin
+- ➕ Menu Text property with multilingual features
+- ➕ Badge subscript internationalization language features
+- ➕ High quality presentation of text
+- ✍️ After binding empty data to Table Binding List, ToVNet encountered an exception
+- ✍️ Table merging cells at the same level exception
+- ✍️ Table Binding List is bound multiple times
+- ✍️ Table initialization display
+- ✍️ Tabs SelectTab uses Name to determine
+- ✍️ Tabs active control removed
+- ✍️ Adaptation of Tabs TabPage Text property when non constructed calls are made
+- ✍️ Select Sub Node Region Collision
+- ✍️ Input deleted, cursor position abnormal
+- ✍️ Input AOT cannot be copied
+- ✍️ Input Multiple Choice Tab Switch Focus
+- ✍️ SelectMultiple AutoHeight
+- ✍️ Button gradient color space size exception
+- ✍️ Tour window top bubble cover
+- ✍️ Spin asynchronously throws an exception
+- ✍️ GridPanel is placed at the top, with an average height of a certain row
+- ✍️ Partial keyboard removal of interception
+
+### `1.8.9` 2025-02-18
+
+- ➕ Tour style guidance
+- ➕ Popover Focus
+- ➕ Adapt to international TooltipComponent, EmptyText
+- ➕ Chat.MsgList enriches avatar attributes to prevent scrollbar occlusion
+- ➕ Table tree expansion method and events
+- ➕ Table Refresh method applicable to scenarios where the Data Source is AntList
+- ✍️ Table header changes, additions, and deletions have not taken effect
+- ✍️ Incorrect assignment of Table Column. SetClAling()
+- ✍️ Table Refresh Adaptation to AntList
+- ✍️ Multiple Choice of First Table
+- ✍️ Table CellText Adapts to Ellipsis
+- ✍️ Spin loading issue in some containers
+- ✍️ Spin method returns Task
+- ✍️ Spin does not display in the native window
+- ✍️ Tabs Card switching exception
+- ✍️ Tabs delete TabPage array index out of bounds
+- ✍️ Tabs Card2 style border occlusion
+- ✍️ Input line break misalignment, multi line first line interaction
+- ✍️ SelectMultipleClearSelect() and SelectAllItem() methods
+- ✍️ Optimize rendering queue
+- ✍️ GridPanel custom row height
+- ✍️ Reserve scrollbar space in the sgList
+- ✍️ Tree Minimizes Scroll Bar Initial
+- ✍️ Fix all possible hidden initial scrollbars
+- ✍️ Visible Restore Native
+
+### `1.8.8` 2025-02-11
+
+- ➕ Layout Container ScrollControlIntoView
+- ➕ Slider SetMinMax
+- ➕ ColorPicker ShowClose
+- ➕ Input multi line supports text orientation
+- ✍️ Tabs switching exception, exceeding the UI of some cards
+- ✍️ Input MaxLength replaces interaction
+- ✍️ Tree BlockNode Interaction
+
+### `1.8.7` 2025-02-08
+
+- ➕ Input VerifyChar verification character event
+- ➕ Input HandShortcutKeys
+- ✍️ Container cannot penetrate ValidChildren
+- ✍️ The maximum input value cannot limit pasting
+- ✍️ Input multi line interaction
+- ✍️ Spin does not display midway
+- ✍️ Exception in adding Description area to Timeline
+- ✍️ Tabs exceeding display switch scroll
+- ✍️ Control failure when setting the same column width for multiple rows
+- ✍️ Input cursor unified scrollbar UI
+- ✍️ Tooltip did not use object fonts
+- ✍️ Window Borderless Processing Size
+
+### `1.8.6` 2025-01-23
+
+- ➕ Internationalization Table Header/ContextMenuStripe/LabelTime
+- ➕ Split Panel
+- ➕ LabelTime AutoWidth
+- ➕ Tabs TabClick
+- ✍️ Rich interfaces in the table header
+- ✍️ Menu Code Settings Select
+- ✍️ Mask judgment in native window
+- ✍️ GridPanel single row column width failure
+- ✍️ Input cursor
+
+### `1.8.5` 2025-01-21
+
+- ➕ International Tabs/Menu/Readcrumb/Collapse/FloatButton/Message/Notification/Segmented/Lecture/Steps/Timeline/Tree
+- ➕ Config TouchThreshold
+- ➕ Tree method for obtaining regions
+- ➕ Segmented Logo
+- ➕ Table CustomSort
+- ➕ GridPanel Span Extension Row Height Setting
+- ✍️ Menu/PageHeader Theme
+- ✍️ FloatButton's ability to complete logos
+- ✍️ Button Loading Keyboard Interaction
+- ✍️ SelectMultiple clearing does not trigger an event
+- ✍️ Input SelectionStart cursor question
+- ✍️ Table Negative Sorting
+
+### `1.8.4` 2025-01-16
+- ➕ VirtualPanel exposes some properties
+- ➕ Tree SelectItem Rich Attribute Method
+- ➕ Tabs IStyle GetTabRect
+- ➕ Modal title can be empty
+- ➕ Segmented icon supports line breaks up and down
+- ✍️ Select Value value cannot be set to Sub sub item
+- ✍️ TimePicker ValueTimeHorizontal misalignment
+- ✍️ Select Focus Set Properties Pop Up UI
+- ✍️ Bottom pop-up window in Drawer
+- ✍️ Input multiple lines, first line. Enter cannot select
+- ✍️ Menu cannot be selected without shadow, expand menu
+- ✍️ Rich keyboard interaction, added carriage return support
+
+### `1.8.3` 2025-01-10
+- ➕ Label Rotate
+- ➕ Checkbox/Radio Focus Style
+- ➕ Drawer DisplayDelay
+- ✍️ VirtualPanel dirty rendering area
+- ✍️ Spin adaptation form
+- ✍️ StackPanel Designer Copy Paste
+
+### `1.8.2` 2025-01-09
+- ➕ SelectMultiple multiline style, AutoHeight
+- ➕ Button/Switch/ColorPicker Focus Style
+- ➕ Button LoadingRespondClick
+- ➕ Button Loading -1 support
+- ➕ Style Clear Clear Style
+- ✍️ ShowInTaskbar size change
+- ✍️ Input keyboard message
+- ✍️ Alert text on the side
+- ✍️ Shrink ShowInTaskbar window
+- ✍️ Enrich Preview OnBtns return content, optimize experience
+- ✍️ LabelTime internationalization
+- ✍️ Unified rounded corner calculation
+
+### `1.8.1` 2025-01-07
+[To remove WindowBar, use PageHeader+ShowButton]
+- ➕ Menu Gap
+- ➕ Select filtering weight
+- ➕ PageHeader UseSubCenter
+- ✍️ Message and other high-frequency rendering misalignment
+- ✍️ Input cannot tab to the next one
+- ✍️ Standardize Table Cell Spacing
+- ✍️ Drawer suppresses flicker
+- ✍️ Window ShowInTaskbar frameless exception
+- ✍️ Input scrollbar hidden style is invalid
+- ✍️ Control Tab Focus Issue
+
+### `1.8.0` 2024-12-31 🐍
+- ➕ Date logo function alignment
+- ➕ Horizontal scrolling shortcut key
+- ➕ PageHeader SubFont，BackExtend
+- ➕ PageHeader Full Screen
+- ➕ Switch Loading
+- ✍️ Drawer rendering issue
+- ✍️ Partial components have dropped frames
+- ✍️ Old issues with the OS framework
+- ✍️ Tree drag and drop
+
+### `1.7.14` 2024-12-26
+- ➕ UploadDragger Click to select file ClickHand Click to upload and other attributes
+- ➕ UploadDragger Drag and Drop Folder
+- ✍️ Button responds to clicks even after the mouse is away
+- ✍️ Optimize PageHeader CancelButton interaction
+- ✍️ Abnormal after Tabs Clear
+- ✍️ Spin does not work in Drawer
+- ✍️ Modal BtnHeight=0 Keyboard is invalid
+- ✍️ Tabs Card2
+
+### `1.7.13` 2024-12-20
+- ➕ Table sorting mode SortModeChanged
+- ➕ Click on Configure on the touch screen TouchClickEnabled
+- ➕ Table SelectIndexChanged
+- ➕ Date logo adds string and rounded corner support
+- ➕ Modal drag and drop window
+- ✍️ Table PART exception
+- ✍️ Layout control initialization issue
+
+### `1.7.12` 2024-12-16
+- ✍️ Alert Loop Empty Text Stuck
+- ✍️ Tree interaction adds click icon
+- ✍️ Press Enter button with multiple triggers
+- ✍️ Popover custom control internal TopMost
+- ✍️ Tree still responds to events after hiding
+- ✍️ Label automatic width null value
+- ✍️ Timeline Gap
+
+### `1.7.11` 2024-12-11
+- ✍️ DPI processing hidden exception
+
+### `1.7.10` 2024-12-09
+- ➕ Timeline/Steps Open Gap
+- ➕ Table adds DropDown dropdown menu
+- ✍️ Button press triggers two clicks
+- ✍️ Table editing with multiple rows, different editing modes to restore old values, RowHoverBg transparent flashing
+- ✍️ Pagination rounded corner
+- ✍️ Progress size 0 is abnormal
+
+### `1.7.9` 2024-12-03
+- ➕ VirtualPanel single refresh
+- ✍️ Multiple CellTexts in Table are misaligned
+- ✍️ DatePicker Format parsing exception
+- ✍️ Table cell modification, error reported when binding data type to uint16
+- ✍️ ProcessCmdKey
+- ✍️ Tree without data does not trigger Paint
+- ✍️ Button dropdown arrow centered
+- ✍️ Input up and down abnormality
+- ✍️ DateChanged triggered multiple times
+
+### `1.7.8` 2024-11-28
+- ➕ Table adds disabled rows
+- ➕ Badge DotRatio/Gap
+- ➕ Menu IconActive
+- ➕ IconState
+- ✍️ Table editing mode replication exception
+- ✍️ Date selection maximum value
+- ✍️ ColorPicker AllowClear
+- ✍️ Table ToVNet Slot
+- ✍️ Data bindings do not support AOT
+- ✍️ Window size change
+- ✍️ Spliter DPI exception
+- ✍️ Loading Add Background
+- ✍️ Concurrent image rendering
+- ✍️ Public Table ICell container
+- ✍️ Color card collection
+
+### `1.7.7` 2024-11-25
+- ➕ Table multi row selection
+- ➕ Table Processing Shortcut Keys
+- ➕ Table ToVNet Slot
+- ➕ Menu scrollbar collides with screen edge
+- ✍️ Table VNet cannot apply editing
+- ✍️ Button background overlap
+- ✍️ Adapt to Data Binding
+- ✍️ TreeCheckdEventArgs value
+
+### `1.7.6` 2024-11-21
+- ✍️ Table Check box not displayed
+- ✍️ Tree Parent level multiple-choice status exception
+- ✍️ Modal Flash retreat
+
+### `1.7.5` 2024-11-20
+- ➕ Color Mixing Algorithm
+- ➕ Collapse Full Fully covered
+- ➕ Table Add global text color and ToVNet method
+- ➕ Slider Track Color Background Color Attribute
+- ➕ Menu GetSelectIndex
+- ➕ Enhance Spin's new progress and allow for parameter modification midway
+- ✍️ Table Header refresh
+- ✍️ Check/Radio Empty text not displayed
+- ✍️ Drawer Carden rollback
+- ✍️ Preliminary check for memory overflow
+- ✍️ Remove menu fold and modify width
+- ✍️ Control Disable issue
+- ✍️ Tabs Dynamic does not display for the first time
+- ✍️ Table Delete tree nodes and sub items without refreshing
+- ✍️ Input Multi line scrollbar covering text
+- ✍️ Drag and drop file capability to download all files
+- ✍️ Remove right-click menu, leave mouse and disappear
+
+### `1.7.4` 2024-11-15
+- ➕ Table ColumnSort Drag and drop handle column
+- ➕ ColorPicker AllowClear
+- ➕ TimePicker/DatePicker ValueTimeHorizontal
+- ✍️ Optimize drag and drop experience
+- ✍️ Tabs Small Refactoring
+- ✍️ Alert Fix border
+- ✍️ Default text blur
+
+### `1.7.3` 2024-11-14
+
+> 🎉 NET 9.0
+
+- ✍️ Menu The pop-up length is not enough
+- ✍️ Window The designer has a size
+- ✍️ Optimize the Select filtering experience
+- ✍️ DatePicker Incomplete English display
+- ✍️ Table EmptyHeader Display header not centered
+
+### `1.7.1` 2024-11-12
+- ➕ Table SortColumns
+- ✍️ Table EnterEditMode The position of the scrollbar is incorrect
+- ✍️ Preview Do not display button
+- ✍️ ContextMenuStrip Multiple
+- ✍️ Logo color
+
+### `1.7.0` 2024-11-11 🌍
+
+>Globalization support
+
+- ➕ LabelTime
+- ➕ FloatButton Enabled/Loading
+- ➕ Select DropDownRadius
+- ➕ Dropdown SelectedValue/DropDownRadius
+- ➕ Button TextCenterHasIcon
+- ➕ Segmented RightToLeft Reverse/Single item disabled
+- ➕ Segmented SelectIndexChanging
+- ➕ Menu Trigger
+- ✍️ Menu Level 3 color abnormality
+- ✍️ Logo text width
+- ✍️ Table Header width and height
+- ✍️ Tabs Collection modification SelectedIndex exception
+- ✍️ InputNumber ReadOnly
+- ✍️ Tabs Modify logo without refreshing
+- ✍️ Switch Click on animation
+- ✍️ Window NET6.0 Abnormal size below
+- ✍️ ContextMenuStrip Sub Cannot click
+- ✍️ Message/Notification close_id logic
+- ✍️ Button Ghost Disable background
+- ✍️ Open Keyboard Event
+- ✍️ Localization of dates
+
+### `1.6.16` 2024-10-31
+- ➕ Button IconGap
+- ➕ Input IconGap
+- ➕ Segmented IconGap/BarPosition/AutoSize
+- ➕ Collapse ExpandChanged
+- ➕ Label ColorExtend
+- ✍️ Menu Lateral pull-down misalignment
+- ✍️ Button Invalid after disabling the parent container
+- ✍️ Optimize the dropdown trigger Hover cannot interact
+- ✍️ ColorPicker Align dropdown arrows
+- ✍️ Complete Badge
 
 ### `1.6.15` 2024-10-29
 - ➕ Button Flashing animation

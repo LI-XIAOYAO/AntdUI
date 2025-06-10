@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -34,6 +34,12 @@ namespace AntdUI
         /// <summary>
         /// 图片
         /// </summary>
+        /// <param name="img">图片</param>
+        public CellImage(Image img) { image = img; }
+
+        /// <summary>
+        /// 图片
+        /// </summary>
         /// <param name="svg">SVG</param>
         public CellImage(string svg) { imageSvg = svg; }
 
@@ -50,6 +56,15 @@ namespace AntdUI
         /// <param name="img">图片</param>
         /// <param name="_radius">圆角</param>
         public CellImage(Bitmap img, int _radius) { image = img; radius = _radius; }
+
+        /// <summary>
+        /// 图片
+        /// </summary>
+        /// <param name="img">图片</param>
+        /// <param name="_radius">圆角</param>
+        public CellImage(Image img, int _radius) { image = img; radius = _radius; }
+
+        #region 属性
 
         #region 边框
 
@@ -145,11 +160,11 @@ namespace AntdUI
             }
         }
 
-        Bitmap? image;
+        Image? image;
         /// <summary>
         /// 图片
         /// </summary>
-        public Bitmap? Image
+        public Image? Image
         {
             get => image;
             set
@@ -195,9 +210,99 @@ namespace AntdUI
         /// </summary>
         public string? Tooltip { get; set; }
 
-        public override string? ToString()
+        #endregion
+
+        #region 设置
+
+        #region 图
+
+        public CellImage SetImage(Image img)
         {
-            return null;
+            image = img;
+            return this;
         }
+
+        public CellImage SetImage(string svg)
+        {
+            imageSvg = svg;
+            return this;
+        }
+
+        public CellImage SetImage(string svg, Color? fill)
+        {
+            imageSvg = svg;
+            fillSvg = fill;
+            return this;
+        }
+
+        public CellImage SetImageFit(TFit fit = TFit.Fill)
+        {
+            ImageFit = fit;
+            return this;
+        }
+
+        #endregion
+
+        #region 边框
+
+        public CellImage SetBorder(Color? color)
+        {
+            bordercolor = color;
+            return this;
+        }
+        public CellImage SetBorder(float value = 1F)
+        {
+            borderwidth = value;
+            return this;
+        }
+        public CellImage SetBorder(Color? color, float value = 1F)
+        {
+            bordercolor = color;
+            borderwidth = value;
+            return this;
+        }
+
+        #endregion
+
+        #region 大小
+
+        public CellImage SetSize(Size _size)
+        {
+            size = _size;
+            return this;
+        }
+        public CellImage SetSize(int _size)
+        {
+            size = new Size(_size, _size);
+            return this;
+        }
+        public CellImage SetSize(int w, int h)
+        {
+            size = new Size(w, h);
+            return this;
+        }
+
+        #endregion
+
+        public CellImage SetRound(bool value = true)
+        {
+            round = value;
+            return this;
+        }
+
+        public CellImage SetRadius(int value = 0)
+        {
+            radius = value;
+            return this;
+        }
+        public CellImage SetTooltip(string? tooltip)
+        {
+            Tooltip = tooltip;
+            return this;
+        }
+
+        #endregion
+
+        public override string? ToString() => null;
     }
 }

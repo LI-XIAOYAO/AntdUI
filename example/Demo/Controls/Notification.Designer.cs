@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -75,6 +71,8 @@ namespace Demo.Controls
             header1.Description = "全局展示通知提醒信息。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Notification.Description";
+            header1.LocalizationText = "Notification.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -103,7 +101,7 @@ namespace Demo.Controls
             panel3.Controls.Add(button9);
             panel3.Controls.Add(button10);
             panel3.Dock = DockStyle.Top;
-            panel3.Location = new Point(0, 239);
+            panel3.Location = new Point(0, 251);
             panel3.Name = "panel3";
             panel3.Size = new Size(543, 63);
             panel3.TabIndex = 4;
@@ -156,11 +154,11 @@ namespace Demo.Controls
             // 
             divider2.Dock = DockStyle.Top;
             divider2.Font = new Font("Microsoft YaHei UI", 10F);
-            divider2.Location = new Point(0, 217);
-            divider2.Margin = new Padding(10);
+            divider2.LocalizationText = "Notification.{id}";
+            divider2.Location = new Point(0, 223);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(543, 22);
+            divider2.Size = new Size(543, 28);
             divider2.TabIndex = 3;
             divider2.Text = "四种样式";
             // 
@@ -174,7 +172,7 @@ namespace Demo.Controls
             panel2.Controls.Add(button1);
             panel2.Dock = DockStyle.Top;
             panel2.ForeColor = Color.White;
-            panel2.Location = new Point(0, 22);
+            panel2.Location = new Point(0, 28);
             panel2.Name = "panel2";
             panel2.Size = new Size(543, 195);
             panel2.TabIndex = 2;
@@ -255,11 +253,11 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Notification.{id}";
             divider1.Location = new Point(0, 0);
-            divider1.Margin = new Padding(10);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(543, 22);
+            divider1.Size = new Size(543, 28);
             divider1.TabIndex = 0;
             divider1.Text = "六种方向";
             // 

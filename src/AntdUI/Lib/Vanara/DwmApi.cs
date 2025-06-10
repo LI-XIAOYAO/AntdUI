@@ -18,12 +18,10 @@ namespace Vanara.PInvoke
         /// <returns>If this function succeeds, it returns S_OK. Otherwise, it returns an HRESULT error code.</returns>
         [DllImport("dwmapi.dll", SetLastError = false, ExactSpelling = true)]
         [System.Security.SecurityCritical]
-        [PInvokeData("dwmapi.h")]
         public static extern void DwmExtendFrameIntoClientArea(HWND hWnd, in MARGINS pMarInset);
 
         /// <summary>Returned by the GetThemeMargins function to define the margins of windows that have visual styles applied.</summary>
         [StructLayout(LayoutKind.Sequential)]
-        [PInvokeData("dwmapi.h")]
         public struct MARGINS
         {
             /// <summary>Width of the left border that retains its size.</summary>
@@ -92,7 +90,7 @@ namespace Vanara.PInvoke
             /// <summary>Determines whether the specified <see cref="object"/>, is equal to this instance.</summary>
             /// <param name="obj">The <see cref="object"/> to compare with this instance.</param>
             /// <returns><c>true</c> if the specified <see cref="object"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-            public override bool Equals(object obj) => obj is MARGINS m2
+            public override bool Equals(object? obj) => obj is MARGINS m2
                 ? cxLeftWidth == m2.cxLeftWidth && cxRightWidth == m2.cxRightWidth && cyTopHeight == m2.cyTopHeight &&
                   cyBottomHeight == m2.cyBottomHeight
                 : base.Equals(obj);

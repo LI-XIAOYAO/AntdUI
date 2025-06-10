@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -22,23 +22,19 @@ namespace AntdUI
 {
     partial class CellLink
     {
-        internal override void PaintBack(Graphics g) { }
+        public override void PaintBack(Canvas g) { }
 
-        internal override void Paint(Graphics g, Font font, SolidBrush fore)
+        public override void Paint(Canvas g, Font font, bool enable, SolidBrush fore) => Table.PaintLink(g, font, Rect, this, enable, PARENT.PARENT.ColorScheme);
+
+        public override Size GetSize(Canvas g, Font font, int gap, int gap2)
         {
-            Table.PaintLink(g, font, Rect, this);
+            var size = g.MeasureString(Text ?? Config.NullText, font);
+            return new Size(size.Width, size.Height);
         }
 
-        internal override Size GetSize(Graphics g, Font font, int gap, int gap2)
+        public override void SetRect(Canvas g, Font font, Rectangle rect, Size size, int maxwidth, int gap, int gap2)
         {
-            var size = g.MeasureString(Text ?? Config.NullText, font).Size();
-            return new Size(size.Width + gap2 * 2, size.Height + gap);
-        }
-
-        internal Rectangle Rect;
-        internal override void SetRect(Graphics g, Font font, Rectangle rect, Size size, int gap, int gap2)
-        {
-            Rect = new Rectangle(rect.X + gap, rect.Y + (rect.Height - size.Height) / 2, rect.Width - gap2, size.Height);
+            Rect = new Rectangle(rect.X, rect.Y + (rect.Height - size.Height) / 2, rect.Width, size.Height);
         }
 
         #region 动画

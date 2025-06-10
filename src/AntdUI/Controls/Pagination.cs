@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -33,7 +33,7 @@ namespace AntdUI
     [ToolboxItem(true)]
     [DefaultProperty("Current")]
     [DefaultEvent("ValueChanged")]
-    public class Pagination : IControl
+    public class Pagination : IControl, IEventListener
     {
         #region 属性
 
@@ -54,6 +54,7 @@ namespace AntdUI
                 ValueChanged?.Invoke(this, new PagePageEventArgs(current, total, pageSize, PageTotal));
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(Current));
             }
         }
 
@@ -71,8 +72,31 @@ namespace AntdUI
                 total = value;
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(Total));
             }
         }
+
+
+
+        string? _recordsPerPageText;
+
+        /// <summary>
+        /// 每页记录数文本，标签提醒文本
+        /// </summary>
+        [Description("每页记录数文本，标签提醒文本"), Category("外观"), DefaultValue(null)]
+        public string? RecordsPerPageText
+        {
+            get => _recordsPerPageText;
+            set
+            {
+                if (_recordsPerPageText == value || string.IsNullOrWhiteSpace(value)) return;
+                _recordsPerPageText = value;
+                ButtonLayout();
+                Invalidate();
+                OnPropertyChanged(nameof(RecordsPerPageText));
+            }
+        }
+
 
         int pageSize = 10;
         /// <summary>
@@ -90,12 +114,13 @@ namespace AntdUI
                 ValueChanged?.Invoke(this, new PagePageEventArgs(current, total, pageSize, PageTotal));
                 if (input_SizeChanger != null)
                 {
-                    string tips = Localization.Provider?.GetLocalizedString("ItemsPerPage") ?? "条/页";
+                    string tips = RecordsPerPageText ?? Localization.Get("ItemsPerPage", "条/页");
                     input_SizeChanger.Clear();
                     input_SizeChanger.PlaceholderText = value.ToString() + " " + tips;
                 }
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(PageSize));
             }
         }
 
@@ -103,12 +128,13 @@ namespace AntdUI
         /// 最大显示总页数
         /// </summary>
         [Description("最大显示总页数"), Category("行为"), DefaultValue(0)]
-        public int MaxPageTotal { get; set; } = 0;
+        public int MaxPageTotal { get; set; }
 
         /// <summary>
         /// 总页数
         /// </summary>
         [Description("总页数"), Category("数据")]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int PageTotal { get; private set; } = 1;
 
         int _gap = 8;
@@ -125,6 +151,7 @@ namespace AntdUI
                 _gap = value;
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(Gap));
             }
         }
 
@@ -155,6 +182,7 @@ namespace AntdUI
                 if (!value) InputSizeChangerDispose();
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(ShowSizeChanger));
             }
         }
 
@@ -176,6 +204,7 @@ namespace AntdUI
                     ButtonLayout();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PageSizeOptions));
             }
         }
 
@@ -194,14 +223,12 @@ namespace AntdUI
                     ButtonLayout();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(SizeChangerWidth));
             }
         }
 
         int pyr = 0;
-        public override Rectangle DisplayRectangle
-        {
-            get => ClientRectangle.PaddingRect(Padding, 0, 0, pyr, 0, borderWidth * Config.Dpi);
-        }
+        public override Rectangle DisplayRectangle => ClientRectangle.PaddingRect(Padding, 0, 0, pyr, 0, borderWidth / 2F * Config.Dpi);
 
         Color? fill;
         /// <summary>
@@ -217,6 +244,7 @@ namespace AntdUI
                 fill = value;
                 if (input_SizeChanger != null) input_SizeChanger.BorderColor = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Fill));
             }
         }
 
@@ -232,7 +260,9 @@ namespace AntdUI
             {
                 if (radius == value) return;
                 radius = value;
+                if (input_SizeChanger != null) input_SizeChanger.Radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -249,6 +279,7 @@ namespace AntdUI
                 if (borderWidth == value) return;
                 borderWidth = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BorderWidth));
             }
         }
 
@@ -263,22 +294,28 @@ namespace AntdUI
                 rightToLeft = value;
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(RightToLeft));
             }
         }
 
         string? textdesc;
         [Description("主动显示内容"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? TextDesc
         {
-            get => textdesc;
+            get => this.GetLangI(LocalizationTextDesc, textdesc);
             set
             {
                 if (textdesc == value) return;
                 textdesc = value;
                 ButtonLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(TextDesc));
             }
         }
+
+        [Description("主动显示内容"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationTextDesc { get; set; }
 
         #endregion
 
@@ -287,13 +324,17 @@ namespace AntdUI
         readonly StringFormat s_f = Helper.SF_NoWrap();
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (buttons.Length < 2) return;
+            if (buttons.Length < 2)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
             float border = borderWidth * Config.Dpi, _radius = radius * Config.Dpi;
             if (Enabled)
             {
-                Color fore = Style.Db.Text, color = fill ?? Style.Db.Primary;
-                using (var brush_hover = new SolidBrush(Style.Db.FillSecondary))
+                Color fore = Colour.Text.Get("Pagination", ColorScheme), color = fill ?? Colour.Primary.Get("Pagination", ColorScheme);
+                using (var brush_hover = new SolidBrush(Colour.FillSecondary.Get("Pagination", ColorScheme)))
                 {
                     #region 渲染上下
 
@@ -302,10 +343,10 @@ namespace AntdUI
                     {
                         using (var path_previous = btn_previous.rect.RoundPath(_radius))
                         {
-                            g.FillPath(brush_hover, path_previous);
+                            g.Fill(brush_hover, path_previous);
                         }
                     }
-                    using (var pen_arrow = new Pen(btn_previous.enabled ? fore : Style.Db.TextQuaternary, border))
+                    using (var pen_arrow = new Pen(btn_previous.enabled ? fore : Colour.TextQuaternary.Get("Pagination", ColorScheme), border))
                     {
                         g.DrawLines(pen_arrow, TAlignMini.Left.TriangleLines(btn_previous.rect));
                     }
@@ -316,10 +357,10 @@ namespace AntdUI
                     {
                         using (var path_next = btn_next.rect.RoundPath(_radius))
                         {
-                            g.FillPath(brush_hover, path_next);
+                            g.Fill(brush_hover, path_next);
                         }
                     }
-                    using (var pen_arrow = new Pen(btn_next.enabled ? fore : Style.Db.TextQuaternary, border))
+                    using (var pen_arrow = new Pen(btn_next.enabled ? fore : Colour.TextQuaternary.Get("Pagination", ColorScheme), border))
                     {
                         g.DrawLines(pen_arrow, TAlignMini.Right.TriangleLines(btn_next.rect));
                     }
@@ -328,7 +369,7 @@ namespace AntdUI
 
                     using (var brush = new SolidBrush(fore))
                     {
-                        if (showTotal != null) g.DrawStr(showTotal, Font, brush, rect_text, s_f);
+                        if (showTotal != null) g.String(showTotal, Font, brush, rect_text, s_f);
                         for (int i = 2; i < buttons.Length; i++)
                         {
                             var btn = buttons[i];
@@ -336,14 +377,14 @@ namespace AntdUI
                             {
                                 using (var path = btn.rect.RoundPath(_radius))
                                 {
-                                    g.FillPath(brush_hover, path);
+                                    g.Fill(brush_hover, path);
                                 }
                             }
                             if (btn.prog > 0)
                             {
-                                using (var brush_prog = new SolidBrush(Style.Db.TextQuaternary))
+                                using (var brush_prog = new SolidBrush(Colour.TextQuaternary.Get("Pagination", ColorScheme)))
                                 {
-                                    g.DrawStr("•••", Font, brush_prog, btn.rect, s_f);
+                                    g.String("•••", Font, brush_prog, btn.rect, s_f);
                                 }
                             }
                             else
@@ -352,13 +393,10 @@ namespace AntdUI
                                 {
                                     using (var path = btn.rect.RoundPath(_radius))
                                     {
-                                        using (var pen = new Pen(color, border))
-                                        {
-                                            g.DrawPath(pen, path);
-                                        }
+                                        g.Draw(color, border, path);
                                     }
                                 }
-                                g.DrawStr(btn.key, Font, brush, btn.rect, s_f);
+                                g.String(btn.key, Font, brush, btn.rect, s_f);
                             }
                         }
                     }
@@ -369,28 +407,28 @@ namespace AntdUI
                 #region 渲染上下
 
                 var btn_previous = buttons[0];
-                using (var pen_arrow = new Pen(Style.Db.TextQuaternary, border))
+                using (var pen_arrow = new Pen(Colour.TextQuaternary.Get("Pagination", ColorScheme), border))
                 {
                     g.DrawLines(pen_arrow, TAlignMini.Left.TriangleLines(btn_previous.rect));
                 }
 
                 var btn_next = buttons[1];
-                using (var pen_arrow = new Pen(Style.Db.TextQuaternary, border))
+                using (var pen_arrow = new Pen(Colour.TextQuaternary.Get("Pagination", ColorScheme), border))
                 {
                     g.DrawLines(pen_arrow, TAlignMini.Right.TriangleLines(btn_next.rect));
                 }
 
                 #endregion
 
-                using (var brush = new SolidBrush(Style.Db.TextQuaternary))
+                using (var brush = new SolidBrush(Colour.TextQuaternary.Get("Pagination", ColorScheme)))
                 {
-                    if (showTotal != null) g.DrawStr(showTotal, Font, brush, rect_text, s_f);
+                    if (showTotal != null) g.String(showTotal, Font, brush, rect_text, s_f);
                     for (int i = 2; i < buttons.Length; i++)
                     {
                         var btn = buttons[i];
                         if (btn.prog > 0)
                         {
-                            g.DrawStr("•••", Font, brush, btn.rect, s_f);
+                            g.String("•••", Font, brush, btn.rect, s_f);
                         }
                         else
                         {
@@ -398,17 +436,16 @@ namespace AntdUI
                             {
                                 using (var path = btn.rect.RoundPath(_radius))
                                 {
-                                    using (var brush_2 = new SolidBrush(Style.Db.Fill))
-                                    {
-                                        g.FillPath(brush_2, path);
-                                    }
+                                    g.Fill(Colour.Fill.Get("Pagination", ColorScheme), path);
                                 }
                             }
-                            g.DrawStr(btn.key, Font, brush, btn.rect, s_f);
+                            g.String(btn.key, Font, brush, btn.rect, s_f);
                         }
                     }
                 }
             }
+            this.PaintBadge(g);
+            base.OnPaint(e);
         }
 
         #endregion
@@ -506,7 +543,7 @@ namespace AntdUI
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(InputSizeChangerDispose));
+                Invoke(InputSizeChangerDispose);
                 return;
             }
             input_SizeChanger?.Dispose();
@@ -514,7 +551,7 @@ namespace AntdUI
         }
         void ButtonLayout()
         {
-            var rect = ClientRectangle.PaddingRect(Padding, borderWidth * Config.Dpi);
+            var rect = ClientRectangle.PaddingRect(Padding, borderWidth / 2F * Config.Dpi);
             if (showSizeChanger)
             {
                 int wsize = (int)(4 * Config.Dpi);
@@ -540,8 +577,8 @@ namespace AntdUI
                 int total_page = (int)Math.Ceiling((total * 1.0) / pageSize);//总页数
                 if (total_page == 0) total_page = 1;
 
-                if (textdesc == null) showTotal = ShowTotalChanged?.Invoke(this, new PagePageEventArgs(current, total, pageSize, total_page));
-                else showTotal = textdesc;
+                if (TextDesc == null) showTotal = ShowTotalChanged?.Invoke(this, new PagePageEventArgs(current, total, pageSize, total_page));
+                else showTotal = TextDesc;
 
                 int pyrn = Helper.GDI(g =>
                 {
@@ -552,7 +589,7 @@ namespace AntdUI
                         if (i == min)
                         {
                             min = min * 10;
-                            var size_font = g.MeasureString((i + 1).ToString(), Font).Size();
+                            var size_font = g.MeasureString((i + 1).ToString(), Font);
                             if (size_font.Width > rect.Height)
                             {
                                 max_size = size_font.Width;
@@ -564,7 +601,7 @@ namespace AntdUI
                     if (showTotal != null)
                     {
                         var size_font = g.MeasureString(showTotal, Font);
-                        x = (int)Math.Ceiling(size_font.Width);
+                        x = size_font.Width;
                         rect_text = new Rectangle(rect.X, rect.Y, x, rect.Height);
                     }
 
@@ -647,15 +684,14 @@ namespace AntdUI
                 });
                 if (pyr == pyrn) return;
                 pyr = pyrn;
-                if (InvokeRequired) Invoke(new Action(() => { OnSizeChanged(EventArgs.Empty); }));
-                else OnSizeChanged(EventArgs.Empty);
+                IOnSizeChanged();
             }
         }
         int InitSizeChanger(Rectangle rect)
         {
             if (input_SizeChanger == null)
             {
-                string tips = Localization.Provider?.GetLocalizedString("ItemsPerPage") ?? "条/页";
+                string tips = RecordsPerPageText ?? Localization.Get("ItemsPerPage", "条/页");
                 var placeholder = pageSize.ToString() + " " + tips;
                 bool r = rightToLeft == RightToLeft.Yes;
                 int width = GetSizeChangerWidth(placeholder);
@@ -663,6 +699,7 @@ namespace AntdUI
                 {
                     var input = new Input
                     {
+                        Radius = radius,
                         PlaceholderText = placeholder,
                         Size = new Size(width, rect.Height),
                         Dock = DockStyle.Right,
@@ -675,6 +712,7 @@ namespace AntdUI
                 {
                     var input = new Select
                     {
+                        Radius = radius,
                         PlaceholderText = placeholder,
                         ListAutoWidth = true,
                         DropDownArrow = true,
@@ -695,10 +733,7 @@ namespace AntdUI
                 }
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(() =>
-                    {
-                        Controls.Add(input_SizeChanger);
-                    }));
+                    Invoke(() => Controls.Add(input_SizeChanger));
                 }
                 else Controls.Add(input_SizeChanger);
                 input_SizeChanger.KeyPress += Input_SizeChanger_KeyPress;
@@ -708,21 +743,21 @@ namespace AntdUI
             {
                 if (sizeChangerWidth <= 0)
                 {
-                    string tips = Localization.Provider?.GetLocalizedString("ItemsPerPage") ?? "条/页";
+                    string tips = RecordsPerPageText ?? Localization.Get("ItemsPerPage", "条/页");
                     var placeholder = pageSize.ToString() + " " + tips;
                     int width = GetSizeChangerWidth(placeholder);
-                    if (InvokeRequired)
-                    {
-                        Invoke(new Action(() =>
-                        {
-                            input_SizeChanger.Width = width;
-                        }));
-                    }
-                    else input_SizeChanger.Width = width;
+                    if (InvokeRequired) Invoke(() => SetSizeChanger(input_SizeChanger, width, placeholder));
+                    else SetSizeChanger(input_SizeChanger, width, placeholder);
                     return width;
                 }
                 return input_SizeChanger.Width;
             }
+        }
+
+        void SetSizeChanger(Input input_SizeChanger, int width, string placeholder)
+        {
+            input_SizeChanger.PlaceholderText = placeholder;
+            input_SizeChanger.Width = width;
         }
 
         int GetSizeChangerWidth(string placeholder)
@@ -733,7 +768,7 @@ namespace AntdUI
             {
                 return Helper.GDI(g =>
                 {
-                    var size = g.MeasureString(placeholder, Font).Size();
+                    var size = g.MeasureString(placeholder, Font);
                     return size.Width + wsize + (int)Math.Ceiling(size.Height * 0.6F);
                 });
             }
@@ -741,7 +776,7 @@ namespace AntdUI
             {
                 return Helper.GDI(g =>
                 {
-                    var size = g.MeasureString(placeholder, Font).Size();
+                    var size = g.MeasureString(placeholder, Font);
                     return size.Width + wsize + (int)Math.Ceiling(size.Height * 1.32F);
                 });
             }
@@ -814,6 +849,30 @@ namespace AntdUI
 
         #endregion
 
+        #region 语言变化
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            this.AddListener();
+        }
+
+        public void HandleEvent(EventType id, object? tag)
+        {
+            switch (id)
+            {
+                case EventType.LANG:
+                    if (showSizeChanger)
+                    {
+                        ButtonLayout();
+                        Invalidate();
+                    }
+                    break;
+            }
+        }
+
+        #endregion
+
         public bool ProcessCmdKey(Keys keyData)
         {
             if (keyData == Keys.Left)
@@ -831,6 +890,12 @@ namespace AntdUI
                 return true;
             }
             return false;
+        }
+
+        public void InitData(int Current = 1, int PageSize = 10)
+        {
+            current = Current;
+            pageSize = PageSize;
         }
     }
 }

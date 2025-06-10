@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -61,10 +61,16 @@ namespace AntdUI
         public int MaxCount { get; set; } = 4;
 
         /// <summary>
+        /// 下拉圆角
+        /// </summary>
+        [Description("下拉圆角"), Category("外观"), DefaultValue(null)]
+        public int? DropDownRadius { get; set; }
+
+        /// <summary>
         /// 下拉箭头是否显示
         /// </summary>
         [Description("下拉箭头是否显示"), Category("外观"), DefaultValue(false)]
-        public bool DropDownArrow { get; set; } = false;
+        public bool DropDownArrow { get; set; }
 
         /// <summary>
         /// 下拉边距
@@ -73,10 +79,22 @@ namespace AntdUI
         public Size DropDownPadding { get; set; } = new Size(12, 5);
 
         /// <summary>
+        /// 下拉文本方向
+        /// </summary>
+        [Description("下拉文本方向"), Category("外观"), DefaultValue(TAlign.Left)]
+        public TAlign DropDownTextAlign { get; set; } = TAlign.Left;
+
+        /// <summary>
         /// 点击到最里层（无节点才能点击）
         /// </summary>
         [Description("点击到最里层（无节点才能点击）"), Category("行为"), DefaultValue(false)]
-        public bool ClickEnd { get; set; } = false;
+        public bool ClickEnd { get; set; }
+
+        /// <summary>
+        /// 为空依旧下拉
+        /// </summary>
+        [Description("为空依旧下拉"), Category("外观"), DefaultValue(false)]
+        public bool Empty { get; set; }
 
         #region 数据
 
@@ -98,14 +116,34 @@ namespace AntdUI
         }
 
         /// <summary>
+        /// 选中值
+        /// </summary>
+        [Browsable(false)]
+        [Description("选中值"), Category("数据"), DefaultValue(null)]
+        public object? SelectedValue { get; set; }
+
+        /// <summary>
         /// SelectedValue 属性值更改时发生
         /// </summary>
         [Description("SelectedValue 属性值更改时发生"), Category("行为")]
         public event ObjectNEventHandler? SelectedValueChanged = null;
 
+        /// <summary>
+        /// 点击项时发生
+        /// </summary>
+        [Description("点击项时发生"), Category("行为")]
+        public event ObjectNEventHandler? ItemClick = null;
+
         internal void DropDownChange(object value)
         {
-            SelectedValueChanged?.Invoke(this, new ObjectNEventArgs(value));
+            var arge = new ObjectNEventArgs(value);
+            if (SelectedValue == value) ItemClick?.Invoke(this, arge);
+            else
+            {
+                SelectedValue = value;
+                ItemClick?.Invoke(this, arge);
+                SelectedValueChanged?.Invoke(this, arge);
+            }
             select_x = 0;
             subForm = null;
         }
@@ -128,7 +166,7 @@ namespace AntdUI
             {
                 if (expand == value) return;
                 expand = value;
-                if (ShowArrow && Config.Animation)
+                if (ShowArrow && Config.HasAnimation(nameof(Dropdown)))
                 {
                     ThreadExpand?.Dispose();
                     var t = Animation.TotalFrames(10, 100);
@@ -177,6 +215,16 @@ namespace AntdUI
             base.OnMouseClick(e);
         }
 
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
+        {
+            if (Trigger == Trigger.DoubleClick)
+            {
+                ClickDown();
+                return;
+            }
+            base.OnMouseDoubleClick(e);
+        }
+
         protected override void OnMouseEnter(EventArgs e)
         {
             if (Trigger == Trigger.Hover && subForm == null) ClickDown();
@@ -192,15 +240,17 @@ namespace AntdUI
         internal int select_x = 0;
         void ClickDown()
         {
-            if (items != null && items.Count > 0)
+            if (items != null && items.Count > 0 || Empty)
             {
                 if (subForm == null)
                 {
-                    var objs = new List<object>(items.Count);
-                    foreach (var it in items)
+                    List<object> objs;
+                    if (items != null && items.Count > 0)
                     {
-                        objs.Add(it);
+                        objs = new List<object>(items.Count);
+                        foreach (var it in items) objs.Add(it);
                     }
+                    else objs = new List<object>(0);
                     Expand = true;
                     subForm = new LayeredFormSelectDown(this, Radius, objs);
                     subForm.Disposed += (a, b) =>

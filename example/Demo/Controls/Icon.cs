@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -23,13 +23,15 @@ using System.Windows.Forms;
 
 namespace Demo.Controls
 {
-    public partial class Icon : UserControl
+    public partial class Icon : UserControl, AntdUI.IEventListener
     {
         Form form;
         public Icon(Form _form)
         {
             form = _form;
             InitializeComponent();
+            segmented1.Items[0].Text = AntdUI.Localization.Get("Outlined", "线框风格");
+            segmented1.Items[1].Text = AntdUI.Localization.Get("Filled", "实底风格");
             LoadData();
         }
 
@@ -64,38 +66,38 @@ namespace Demo.Controls
                 {
                     if (it.Key == "QuestionOutlined")
                     {
-                        dir.Add("方向性图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Directional", "方向性图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "EditOutlined")
                     {
-                        dir.Add("提示建议性图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Suggested", "提示建议性图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "AreaChartOutlined")
                     {
-                        dir.Add("编辑类图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Editor", "编辑类图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "AndroidOutlined")
                     {
-                        dir.Add("数据类图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Data", "数据类图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "AccountBookOutlined")
                     {
-                        dir.Add("品牌和标识", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Logos", "品牌和标识"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "StepBackwardFilled")
                     {
-                        dir.Add("网站通用图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Application", "网站通用图标"), new List<VItem>(tmp));
                         tmp.Clear();
                         return dir;
                     }
                     tmp.Add(new VItem(it.Key, it.Value));
                 }
-                dir.Add("网站通用图标", new List<VItem>(tmp));
+                dir.Add(AntdUI.Localization.Get("Icon.Application", "网站通用图标"), new List<VItem>(tmp));
                 tmp.Clear();
             }
             else
@@ -106,32 +108,32 @@ namespace Demo.Controls
                     if (it.Key == "StepBackwardFilled") isadd = true;
                     else if (it.Key == "QuestionCircleFilled")
                     {
-                        dir.Add("方向性图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Directional", "方向性图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "EditFilled")
                     {
-                        dir.Add("提示建议性图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Suggested", "提示建议性图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "PieChartFilled")
                     {
-                        dir.Add("编辑类图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Editor", "编辑类图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "AndroidFilled")
                     {
-                        dir.Add("数据类图标", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Data", "数据类图标"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     else if (it.Key == "AccountBookFilled")
                     {
-                        dir.Add("品牌和标识", new List<VItem>(tmp));
+                        dir.Add(AntdUI.Localization.Get("Icon.Logos", "品牌和标识"), new List<VItem>(tmp));
                         tmp.Clear();
                     }
                     if (isadd) tmp.Add(new VItem(it.Key, it.Value));
                 }
-                dir.Add("网站通用图标", new List<VItem>(tmp));
+                dir.Add(AntdUI.Localization.Get("Icon.Application", "网站通用图标"), new List<VItem>(tmp));
                 tmp.Clear();
             }
             return dir;
@@ -155,7 +157,7 @@ namespace Demo.Controls
 
             StringFormat s_f = AntdUI.Helper.SF_NoWrap(lr: StringAlignment.Near);
             StringFormat s_c = AntdUI.Helper.SF_NoWrap();
-            public override void Paint(Graphics g, AntdUI.VirtualPanelArgs e)
+            public override void Paint(AntdUI.Canvas g, AntdUI.VirtualPanelArgs e)
             {
                 var dpi = AntdUI.Config.Dpi;
 
@@ -165,26 +167,20 @@ namespace Demo.Controls
                     using (var font_count = new Font(e.Panel.Font.FontFamily, e.Panel.Font.Size * .74F, e.Panel.Font.Style))
                     {
                         var size = AntdUI.Helper.Size(g.MeasureString(title, font_title));
-                        AntdUI.CorrectionTextRendering.DrawStr(g, title, font_title, fore, e.Rect, s_f);
+                        g.String(title, font_title, fore, e.Rect, s_f);
 
                         var rect_count = new Rectangle(e.Rect.X + size.Width, e.Rect.Y + (e.Rect.Height - size.Height) / 2, size.Height, size.Height);
                         using (var path = AntdUI.Helper.RoundPath(rect_count, e.Radius))
                         {
-                            using (var brush = new SolidBrush(AntdUI.Style.Db.TagDefaultBg))
-                            {
-                                g.FillPath(brush, path);
-                            }
-                            using (var pen = new Pen(AntdUI.Style.Db.DefaultBorder, 1 * dpi))
-                            {
-                                g.DrawPath(pen, path);
-                            }
+                            g.Fill(AntdUI.Style.Db.TagDefaultBg, path);
+                            g.Draw(AntdUI.Style.Db.DefaultBorder, 1 * dpi, path);
                         }
-                        AntdUI.CorrectionTextRendering.DrawStr(g, count, font_count, fore, rect_count, s_c);
+                        g.String(count, font_count, fore, rect_count, s_c);
                     }
                 }
             }
 
-            public override Size Size(Graphics g, AntdUI.VirtualPanelArgs e)
+            public override Size Size(AntdUI.Canvas g, AntdUI.VirtualPanelArgs e)
             {
                 var dpi = AntdUI.Config.Dpi;
                 return new Size(e.Rect.Width, (int)(44 * dpi));
@@ -196,8 +192,8 @@ namespace Demo.Controls
             public VItem(string key, string value) { Tag = Key = key; Value = value; }
 
             StringFormat s_f = AntdUI.Helper.SF_NoWrap();
-            Bitmap bmp = null, bmp_ac = null;
-            public override void Paint(Graphics g, AntdUI.VirtualPanelArgs e)
+            internal Bitmap bmp = null, bmp_ac = null;
+            public override void Paint(AntdUI.Canvas g, AntdUI.VirtualPanelArgs e)
             {
                 var dpi = AntdUI.Config.Dpi;
                 int icon_size = (int)(36 * dpi), text_size = (int)(24 * dpi), y = e.Rect.Y + (e.Rect.Height - (icon_size + text_size)) / 2;
@@ -207,31 +203,23 @@ namespace Demo.Controls
                 {
                     using (var path = AntdUI.Helper.RoundPath(e.Rect, e.Radius))
                     {
-                        using (var brush = new SolidBrush(AntdUI.Style.Db.Primary))
-                        {
-                            g.FillPath(brush, path);
-                        }
+                        g.Fill(AntdUI.Style.Db.Primary, path);
                     }
                     if (bmp_ac == null) bmp_ac = AntdUI.SvgExtend.SvgToBmp(Value, icon_size, icon_size, AntdUI.Style.Db.PrimaryColor);
-                    g.DrawImage(bmp_ac, rect_icon);
+                    g.Image(bmp_ac, rect_icon);
 
-                    using (var fore = new SolidBrush(AntdUI.Style.Db.PrimaryColor))
-                    {
-                        AntdUI.CorrectionTextRendering.DrawStr(g, Key, e.Panel.Font, fore, rect_text, s_f);
-                    }
+                    g.String(Key, e.Panel.Font, AntdUI.Style.Db.PrimaryColor, rect_text, s_f);
                 }
                 else
                 {
                     if (bmp == null) bmp = AntdUI.SvgExtend.SvgToBmp(Value, icon_size, icon_size, AntdUI.Style.Db.Text);
-                    g.DrawImage(bmp, rect_icon);
-                    using (var fore = new SolidBrush(AntdUI.Style.Db.Text))
-                    {
-                        AntdUI.CorrectionTextRendering.DrawStr(g, Key, e.Panel.Font, fore, rect_text, s_f);
-                    }
+                    g.Image(bmp, rect_icon);
+                    g.String(Key, e.Panel.Font, AntdUI.Style.Db.Text, rect_text, s_f);
+
                 }
 
             }
-            public override Size Size(Graphics g, AntdUI.VirtualPanelArgs e)
+            public override Size Size(AntdUI.Canvas g, AntdUI.VirtualPanelArgs e)
             {
                 var dpi = AntdUI.Config.Dpi;
                 return new Size((int)(200 * dpi), (int)(100 * dpi));
@@ -244,8 +232,8 @@ namespace Demo.Controls
         {
             if (e.Item is VItem item)
             {
-                if (AntdUI.Helper.ClipboardSetText(this, item.Key)) AntdUI.Message.success(form, item.Key + " 复制成功");
-                else AntdUI.Message.error(form, item.Key + " 复制失败");
+                if (AntdUI.Helper.ClipboardSetText(this, item.Key)) AntdUI.Message.success(form, item.Key + " " + AntdUI.Localization.Get("CopyOK", "复制成功"));
+                else AntdUI.Message.error(form, item.Key + " " + AntdUI.Localization.Get("CopyFailed", "复制失败"));
             }
         }
 
@@ -287,6 +275,33 @@ namespace Demo.Controls
                 }
                 vpanel.PauseLayout = false;
             }));
+        }
+
+        #endregion
+
+        #region 语言变化
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            AntdUI.EventHub.AddListener(this);
+        }
+
+        public void HandleEvent(AntdUI.EventType id, object tag)
+        {
+            switch (id)
+            {
+                case AntdUI.EventType.THEME:
+                    foreach (var it in vpanel.Items)
+                    {
+                        if (it is VItem item)
+                        {
+                            item.bmp?.Dispose();
+                            item.bmp = null;
+                        }
+                    }
+                    break;
+            }
         }
 
         #endregion

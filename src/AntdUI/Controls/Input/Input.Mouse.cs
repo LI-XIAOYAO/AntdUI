@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -51,7 +51,7 @@ namespace AntdUI
                     if (index >= cache_font.Length) end = cache_font.Length;
                     else end = FindEnd(cache_font, index);
 
-                    SelectionStart = start;
+                    SetSelectionStart(start);
                     SelectionLength = end - start;
                     return;
                 }
@@ -74,9 +74,11 @@ namespace AntdUI
 
                 if (ScrollYShow && autoscroll && ScrollHover)
                 {
-                    float y = (e.Y - ScrollSlider.Height / 2F) / ScrollRect.Height, VrValue = ScrollYMax + ScrollRect.Height;
+                    float y = (e.Y - ScrollSliderFull / 2F) / (ScrollRect.Height - ScrollSliderFull), VrValue = ScrollYMax + Height;
                     ScrollY = (int)(y * VrValue);
                     ScrollYDown = true;
+                    SetCursor(false);
+                    Window.CanHandMessage = false;
                     return;
                 }
                 mDownMove = false;
@@ -87,19 +89,19 @@ namespace AntdUI
                 {
                     if (indeX > selectionStartTemp)
                     {
-                        if (selectionStart != selectionStartTemp) SelectionStart = selectionStartTemp;
+                        if (selectionStart != selectionStartTemp) SetSelectionStart(selectionStartTemp);
                         SelectionLength = indeX - selectionStartTemp;
                     }
                     else
                     {
                         int len = selectionStartTemp - indeX;
-                        SelectionStart = indeX;
+                        SetSelectionStart(indeX);
                         SelectionLength = len;
                     }
                 }
                 else
                 {
-                    SelectionStart = indeX;
+                    SetSelectionStart(indeX);
                     SelectionLength = 0;
                     SetCaretPostion(selectionStart);
                 }
@@ -114,8 +116,9 @@ namespace AntdUI
             base.OnMouseMove(e);
             if (ScrollYDown)
             {
-                float y = (e.Y - ScrollSlider.Height / 2F) / ScrollRect.Height, VrValue = ScrollYMax + ScrollRect.Height;
+                float y = (e.Y - ScrollSliderFull / 2F) / (ScrollRect.Height - ScrollSliderFull), VrValue = ScrollYMax + ScrollRect.Height;
                 ScrollY = (int)(y * VrValue);
+                Window.CanHandMessage = false;
                 return;
             }
             else if (mDown && cache_font != null)
@@ -127,10 +130,16 @@ namespace AntdUI
                 if (index > selectionStart) selectionStartTemp = selectionStart;
                 else selectionStartTemp = index;
                 SetCaretPostion(index);
+                Window.CanHandMessage = false;
             }
             else
             {
-                if (ScrollYShow && autoscroll) ScrollHover = ScrollRect.Contains(e.Location);
+                bool setScroll = true;
+                if (ScrollYShow && autoscroll)
+                {
+                    ScrollHover = ScrollRect.Contains(e.Location);
+                    if (ScrollHover) setScroll = false;
+                }
                 if (is_clear)
                 {
                     var hover = rect_r.Contains(e.Location);
@@ -154,7 +163,7 @@ namespace AntdUI
                 }
                 else
                 {
-                    if (rect_text.Contains(e.Location)) SetCursor(CursorType.IBeam);
+                    if (setScroll && rect_text.Contains(e.Location)) SetCursor(CursorType.IBeam);
                     else SetCursor(false);
                 }
             }
@@ -162,7 +171,12 @@ namespace AntdUI
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            if (ScrollYShow && autoscroll && e.Delta != 0) ScrollY -= e.Delta;
+            if (ScrollYShow && autoscroll)
+            {
+                if (e.Delta == 0) return;
+                int delta = e.Delta / SystemInformation.MouseWheelScrollDelta * (int)(Config.ScrollStep * Config.Dpi);
+                ScrollY -= delta;
+            }
             base.OnMouseWheel(e);
         }
 
@@ -171,10 +185,15 @@ namespace AntdUI
             base.OnMouseUp(e);
             bool md = mDown;
             mDown = false;
+            Window.CanHandMessage = true;
             ScrollYDown = false;
             if (is_clear_down)
             {
-                if (rect_r.Contains(e.Location)) OnClearValue();
+                if (rect_r.Contains(e.Location))
+                {
+                    OnClearValue();
+                    ClearClick?.Invoke(this, e);
+                }
                 is_clear_down = false;
                 return;
             }
@@ -198,13 +217,13 @@ namespace AntdUI
                 else if (index > selectionStart)
                 {
                     SelectionLength = Math.Abs(index - selectionStart);
-                    SelectionStart = selectionStart;
+                    SetCaretPostion(selectionStart + selectionLength);
                 }
                 else
                 {
                     int x = scrollx;
                     SelectionLength = Math.Abs(index - selectionStart);
-                    SelectionStart = index;
+                    SetSelectionStart(index);
                     ScrollX = x;
                 }
             }
@@ -225,6 +244,7 @@ namespace AntdUI
 
             "\r","\t","\n","\r\n"
         };
+
         #region 查找
 
         /// <summary>
@@ -289,6 +309,8 @@ namespace AntdUI
         #region 鼠标进出
 
         internal bool _mouseDown = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseDown
         {
             get => _mouseDown;
@@ -297,7 +319,7 @@ namespace AntdUI
                 if (_mouseDown == value) return;
                 _mouseDown = value;
                 ChangeMouseHover(_mouseHover, value);
-                if (Config.Animation && WaveSize > 0)
+                if (Config.HasAnimation(nameof(Input)) && WaveSize > 0 && TakePaint == null)
                 {
                     ThreadFocus?.Dispose();
                     AnimationFocus = true;
@@ -349,6 +371,8 @@ namespace AntdUI
         internal int AnimationHoverValue = 0;
         internal bool AnimationHover = false;
         internal bool _mouseHover = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseHover
         {
             get => _mouseHover;
@@ -360,7 +384,7 @@ namespace AntdUI
                 if (Enabled)
                 {
                     OnAllowClear();
-                    if (Config.Animation && !ExtraMouseDown)
+                    if (Config.HasAnimation(nameof(Input)) && !ExtraMouseDown && TakePaint == null)
                     {
                         ThreadHover?.Dispose();
                         AnimationHover = true;
@@ -403,11 +427,20 @@ namespace AntdUI
 
         #region 事件
 
+        [Description("清空 点击时发生"), Category("行为")]
+        public event MouseEventHandler? ClearClick = null;
+
         [Description("前缀 点击时发生"), Category("行为")]
         public event MouseEventHandler? PrefixClick = null;
 
         [Description("后缀 点击时发生"), Category("行为")]
         public event MouseEventHandler? SuffixClick = null;
+
+        [Description("验证字符时发生"), Category("行为")]
+        public event InputVerifyCharEventHandler? VerifyChar = null;
+
+        [Description("验证键盘时发生"), Category("行为")]
+        public event InputVerifyKeyboardEventHandler? VerifyKeyboard = null;
 
         #endregion
     }

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -54,7 +50,7 @@ namespace Demo.Controls
             label2 = new AntdUI.Label();
             button1 = new AntdUI.Button();
             button2 = new AntdUI.Button();
-            iconComplete1 = new AntdUI.Icon.IconComplete();
+            iconState = new AntdUI.IconState();
             SuspendLayout();
             // 
             // header1
@@ -62,6 +58,8 @@ namespace Demo.Controls
             header1.Description = "用于反馈一系列操作任务的处理结果。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Result.Description";
+            header1.LocalizationText = "Result.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -112,21 +110,21 @@ namespace Demo.Controls
             button2.TabIndex = 3;
             button2.Text = "Buy Again";
             // 
-            // iconComplete1
+            // iconState
             // 
-            iconComplete1.Anchor = AnchorStyles.Top;
-            iconComplete1.Location = new Point(288, 99);
-            iconComplete1.Name = "iconComplete1";
-            iconComplete1.Size = new Size(100, 100);
-            iconComplete1.TabIndex = 4;
+            iconState.Anchor = AnchorStyles.Top;
+            iconState.Location = new Point(288, 99);
+            iconState.Name = "iconState";
+            iconState.Size = new Size(100, 100);
+            iconState.TabIndex = 4;
             // 
             // Result
             // 
-            Controls.Add(iconComplete1);
             Controls.Add(button2);
             Controls.Add(button1);
             Controls.Add(label2);
             Controls.Add(label1);
+            Controls.Add(iconState);
             Controls.Add(header1);
             Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Result";
@@ -141,6 +139,6 @@ namespace Demo.Controls
         private AntdUI.Label label2;
         private AntdUI.Button button1;
         private AntdUI.Button button2;
-        private AntdUI.Icon.IconComplete iconComplete1;
+        private AntdUI.IconState iconState;
     }
 }

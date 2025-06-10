@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -20,68 +20,111 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AntdUI
 {
     [ToolboxItem(false)]
+    [Localizable(true)]
     public class IControl : Control, BadgeConfig
     {
-        public IControl()
+        public IControl(ControlType ctype = ControlType.Default)
         {
-            SetStyle(
-               ControlStyles.AllPaintingInWmPaint |
-               ControlStyles.OptimizedDoubleBuffer |
-               ControlStyles.ResizeRedraw |
-               ControlStyles.DoubleBuffer |
-               ControlStyles.SupportsTransparentBackColor |
-               ControlStyles.ContainerControl |
-               ControlStyles.UserPaint, true);
+            switch (ctype)
+            {
+                case ControlType.Default:
+                    SetStyle(ControlStyles.ContainerControl |
+                       ControlStyles.AllPaintingInWmPaint |
+                       ControlStyles.OptimizedDoubleBuffer |
+                       ControlStyles.ResizeRedraw |
+                       ControlStyles.DoubleBuffer |
+                       ControlStyles.SupportsTransparentBackColor |
+                       ControlStyles.UserPaint, true);
+                    SetStyle(ControlStyles.Selectable, false);
+                    break;
+                case ControlType.Select:
+                    SetStyle(ControlStyles.ContainerControl | ControlStyles.Selectable |
+                       ControlStyles.AllPaintingInWmPaint |
+                       ControlStyles.OptimizedDoubleBuffer |
+                       ControlStyles.ResizeRedraw |
+                       ControlStyles.DoubleBuffer |
+                       ControlStyles.SupportsTransparentBackColor |
+                       ControlStyles.UserPaint, true);
+                    break;
+                case ControlType.Button:
+                    SetStyle(ControlStyles.ContainerControl | ControlStyles.Selectable |
+                       ControlStyles.AllPaintingInWmPaint |
+                       ControlStyles.OptimizedDoubleBuffer |
+                       ControlStyles.ResizeRedraw |
+                       ControlStyles.DoubleBuffer |
+                       ControlStyles.SupportsTransparentBackColor |
+                       ControlStyles.UserPaint, true);
+                    SetStyle(ControlStyles.StandardClick | ControlStyles.StandardDoubleClick, false);
+                    break;
+            }
             UpdateStyles();
         }
 
         #region 属性
 
-        bool visible = true;
         /// <summary>
         /// 确定该控件是可见的还是隐藏的
         /// </summary>
         [Description("确定该控件是可见的还是隐藏的"), Category("行为"), DefaultValue(true)]
         public new bool Visible
         {
-            get => visible;
+            get => base.Visible;
             set
             {
-                if (visible == value) return;
-                visible = value;
-
-                if (InvokeRequired) Invoke(new Action(() => base.Visible = value));
+                if (InvokeRequired) Invoke(() => base.Visible = value);
                 else base.Visible = value;
             }
         }
 
-        bool enabled = true;
         /// <summary>
         /// 指示是否已启用该控件
         /// </summary>
         [Description("指示是否已启用该控件"), Category("行为"), DefaultValue(true)]
         public new bool Enabled
         {
-            get => enabled;
+            get => base.Enabled;
             set
             {
-                if (enabled == value) return;
-                enabled = value;
-
-                if (InvokeRequired) Invoke(new Action(() => base.Enabled = value));
+                if (InvokeRequired) Invoke(() => base.Enabled = value);
                 else base.Enabled = value;
             }
         }
 
+        #region 主题
+
+        TAMode colorScheme = TAMode.Auto;
+        /// <summary>
+        /// 色彩模式
+        /// </summary>
+        [Description("色彩模式"), Category("外观"), DefaultValue(TAMode.Auto)]
+        public TAMode ColorScheme
+        {
+            get => colorScheme;
+            set
+            {
+                if (colorScheme == value) return;
+                colorScheme = value;
+                OnColorSchemeChanged(EventArgs.Empty);
+                if (IsHandleCreated) Invalidate();
+                OnPropertyChanged(nameof(ColorScheme));
+            }
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        protected virtual void OnColorSchemeChanged(EventArgs e) { }
+
+        #endregion
+
         #region 徽标
 
         string? badge = null;
-        [Description("徽标内容"), Category("徽标"), DefaultValue(null)]
+        [Description("徽标内容"), Category("徽标"), DefaultValue(null), Localizable(true)]
         public string? Badge
         {
             get => badge;
@@ -106,9 +149,9 @@ namespace AntdUI
             }
         }
 
-        TAlignFrom badgeAlign = TAlignFrom.TR;
-        [Description("徽标方向"), Category("徽标"), DefaultValue(TAlignFrom.TR)]
-        public TAlignFrom BadgeAlign
+        TAlign badgeAlign = TAlign.TR;
+        [Description("徽标方向"), Category("徽标"), DefaultValue(TAlign.TR)]
+        public TAlign BadgeAlign
         {
             get => badgeAlign;
             set
@@ -198,10 +241,7 @@ namespace AntdUI
         /// </summary>
         /// <param name="action">需要等待的委托</param>
         /// <param name="end">运行结束后的回调</param>
-        public void Spin(Action action, Action? end = null)
-        {
-            Spin(new Spin.Config(), action, end);
-        }
+        public Task Spin(Action<Spin.Config> action, Action? end = null) => Spin(new Spin.Config(), action, end);
 
         /// <summary>
         /// Spin 加载中
@@ -209,10 +249,7 @@ namespace AntdUI
         /// <param name="text">加载文本</param>
         /// <param name="action">需要等待的委托</param>
         /// <param name="end">运行结束后的回调</param>
-        public void Spin(string text, Action action, Action? end = null)
-        {
-            Spin(new Spin.Config { Text = text }, action, end);
-        }
+        public Task Spin(string text, Action<Spin.Config> action, Action? end = null) => Spin(new Spin.Config { Text = text }, action, end);
 
         /// <summary>
         /// Spin 加载中
@@ -220,10 +257,7 @@ namespace AntdUI
         /// <param name="config">自定义配置</param>
         /// <param name="action">需要等待的委托</param>
         /// <param name="end">运行结束后的回调</param>
-        public void Spin(Spin.Config config, Action action, Action? end = null)
-        {
-            AntdUI.Spin.open(this, config, action, end);
-        }
+        public Task Spin(Spin.Config config, Action<Spin.Config> action, Action? end = null) => AntdUI.Spin.open(this, config, action, end);
 
         #region 帮助类
 
@@ -242,22 +276,38 @@ namespace AntdUI
         /// 真实区域
         /// </summary>
         [Browsable(false)]
-        public virtual Rectangle ReadRectangle
-        {
-            get => ClientRectangle.PaddingRect(Padding);
-        }
+        public virtual Rectangle ReadRectangle => ClientRectangle.PaddingRect(Padding);
 
         internal void IOnSizeChanged()
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                {
-                    IOnSizeChanged();
-                }));
+                Invoke(IOnSizeChanged);
                 return;
             }
             OnSizeChanged(EventArgs.Empty);
+        }
+
+        static bool disableDataBinding = false;
+#if NET40
+        public void OnPropertyChanged(string propertyName)
+#else
+        public void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+#endif
+        {
+            if (disableDataBinding) return;
+            try
+            {
+                foreach (Binding it in DataBindings)
+                {
+                    if (it.PropertyName == propertyName)
+                    {
+                        it.WriteValue();
+                        return;
+                    }
+                }
+            }
+            catch (NotSupportedException) { disableDataBinding = true; }
         }
 
         #region 鼠标
@@ -268,6 +318,7 @@ namespace AntdUI
         {
             if (oldcursor == cursor) return;
             oldcursor = cursor;
+            bool flag = true;
             switch (cursor)
             {
                 case CursorType.Hand:
@@ -280,25 +331,29 @@ namespace AntdUI
                     SetCursor(Cursors.No);
                     break;
                 case CursorType.SizeAll:
+                    flag = false;
                     SetCursor(Cursors.SizeAll);
                     break;
                 case CursorType.VSplit:
+                    flag = false;
                     SetCursor(Cursors.VSplit);
+                    break;
+                case CursorType.HSplit:
+                    flag = false;
+                    SetCursor(Cursors.HSplit);
                     break;
                 case CursorType.Default:
                 default:
                     SetCursor(DefaultCursor);
                     break;
             }
+            Window.CanHandMessage = flag;
         }
         void SetCursor(Cursor cursor)
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                {
-                    SetCursor(cursor);
-                }));
+                Invoke(() => SetCursor(cursor));
                 return;
             }
             Cursor = cursor;
@@ -309,22 +364,17 @@ namespace AntdUI
 
         #endregion
 
-        #region 渲染文本
+        #region 委托
 
-        internal void PaintText(Graphics g, string? text, Rectangle path, StringFormat stringFormat, bool enabled)
-        {
-            using (var brush = new SolidBrush(enabled ? ForeColor : Style.Db.TextQuaternary))
-            {
-                g.DrawStr(text, Font, brush, path, stringFormat);
-            }
-        }
-        internal void PaintText(Graphics g, string? text, RectangleF path, StringFormat stringFormat, bool enabled)
-        {
-            using (var brush = new SolidBrush(enabled ? ForeColor : Style.Db.TextQuaternary))
-            {
-                g.DrawStr(text, Font, brush, path, stringFormat);
-            }
-        }
+#if NET40 || NET46 || NET48
+
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public IAsyncResult BeginInvoke(Action method) => BeginInvoke(method, null);
+
+        public void Invoke(Action method) => _ = Invoke(method, null);
+        public T Invoke<T>(Func<T> method) => (T)Invoke(method, null);
+
+#endif
 
         #endregion
 
@@ -353,31 +403,26 @@ namespace AntdUI
         {
             if (mdown)
             {
-                int moveX = oldX - x, moveY = oldY - y, moveXa = Math.Abs(moveX), moveYa = Math.Abs(moveY);
-                oldMY = moveY;
-                if (mdownd > 0)
+                int moveX = oldX - x, moveY = oldY - y, moveXa = Math.Abs(moveX), moveYa = Math.Abs(moveY), threshold = (int)(Config.TouchThreshold * Config.Dpi);
+                if (mdownd > 0 || (moveXa > threshold || moveYa > threshold))
                 {
-                    if (mdownd == 1) OnTouchScrollY(-moveY);
-                    else OnTouchScrollX(-moveX);
-                    oldX = x;
-                    oldY = y;
-                    return false;
-                }
-                else if (moveXa > 2 || moveYa > 2)
-                {
-                    if (moveYa > moveXa)
+                    oldMY = moveY;
+                    if (mdownd > 0)
                     {
-                        mdownd = 1;
-                        OnTouchScrollY(-moveY);
+                        if (mdownd == 1) OnTouchScrollY(-moveY);
+                        else OnTouchScrollX(-moveX);
+                        oldX = x;
+                        oldY = y;
+                        return false;
                     }
                     else
                     {
-                        mdownd = 2;
-                        OnTouchScrollX(-moveX);
+                        if (moveYa > moveXa) mdownd = 1;
+                        else mdownd = 2;
+                        oldX = x;
+                        oldY = y;
+                        return false;
                     }
-                    oldX = x;
-                    oldY = y;
-                    return false;
                 }
             }
             return true;
@@ -444,7 +489,179 @@ namespace AntdUI
             base.OnMouseWheel(e);
         }
 
+        const int WM_POINTERDOWN = 0x0246, WM_POINTERUP = 0x0247;
+        const int WM_LBUTTONDOWN = 0x0201, WM_LBUTTONUP = 0x0202;
+
+        protected override void WndProc(ref System.Windows.Forms.Message m)
+        {
+            if (OS.Win7OrLower && m.Msg == WM_LBUTTONDOWN)
+            {
+                Select();
+                base.WndProc(ref m);
+            }
+            else if (Config.TouchClickEnabled)
+            {
+                switch (m.Msg)
+                {
+                    case WM_POINTERDOWN:
+                        Vanara.PInvoke.User32.PostMessage(m.HWnd, WM_LBUTTONDOWN, m.WParam, m.LParam);
+                        break;
+                    case WM_POINTERUP:
+                        Vanara.PInvoke.User32.PostMessage(m.HWnd, WM_LBUTTONUP, m.WParam, m.LParam);
+                        break;
+                    default:
+                        base.WndProc(ref m);
+                        return;
+                }
+            }
+            else base.WndProc(ref m);
+        }
+
         #endregion
+
+        #region 拖拽
+
+        /// <summary>
+        /// 拖拽文件夹处理
+        /// </summary>
+        [Description("拖拽文件夹处理"), Category("行为"), DefaultValue(true)]
+        public bool HandDragFolder { get; set; } = true;
+
+        protected virtual void OnDragEnter()
+        { }
+        protected virtual void OnDragLeave()
+        { }
+
+        FileDropHandler? fileDrop = null;
+        /// <summary>
+        /// 使用管理员权限拖拽上传
+        /// </summary>
+        public void UseAdmin()
+        {
+            if (fileDrop == null) fileDrop = new FileDropHandler(this);
+        }
+
+        protected override void OnDragEnter(DragEventArgs e)
+        {
+            base.OnDragEnter(e);
+            if (DragChanged == null) return;
+            if (AllowDrop)
+            {
+                OnDragEnter();
+                if (DragState(e.Data)) e.Effect = DragDropEffects.All;
+                else e.Effect = DragDropEffects.None;
+            }
+        }
+
+        protected override void OnDragLeave(EventArgs e)
+        {
+            base.OnDragLeave(e);
+            OnDragLeave();
+        }
+
+        internal Func<string[], string[]?>? ONDRAG;
+        protected override void OnDragDrop(DragEventArgs e)
+        {
+            base.OnDragDrop(e);
+            if (DragChanged == null) return;
+            if (DragData(e.Data, out var files))
+            {
+                if (ONDRAG == null) DragChanged(this, new StringsEventArgs(files));
+                else
+                {
+                    var r = ONDRAG(files);
+                    if (r != null) DragChanged(this, new StringsEventArgs(r));
+                }
+            }
+            OnDragLeave();
+        }
+
+        bool DragState(IDataObject? Data)
+        {
+            if (DragData(Data, out var files))
+            {
+                if (ONDRAG == null) return true;
+                else
+                {
+                    var r = ONDRAG(files);
+                    if (r == null) return false;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool DragData(IDataObject? Data, out string[] files)
+        {
+            if (Data == null)
+            {
+                files = new string[0];
+                return false;
+            }
+            foreach (string format in Data.GetFormats())
+            {
+                if (Data.GetData(format) is string[] tmp && tmp.Length > 0)
+                {
+                    if (HandDragFolder)
+                    {
+                        var list = new System.Collections.Generic.List<string>(tmp.Length);
+                        foreach (var it in tmp)
+                        {
+                            if (System.IO.File.Exists(it)) list.Add(it);
+                            else list.AddRange(DragDataDirTree(it));
+                        }
+                        files = list.ToArray();
+                    }
+                    else files = tmp;
+                    return true;
+                }
+            }
+            files = new string[0];
+            return false;
+        }
+
+        System.Collections.Generic.List<string> DragDataDirTree(string dir)
+        {
+            var dirinfo = new System.IO.DirectoryInfo(dir);
+            var files = dirinfo.GetFiles();
+            var dirs = dirinfo.GetDirectories();
+            var list = new System.Collections.Generic.List<string>(files.Length + dirs.Length);
+            foreach (var it in files) list.Add(it.FullName);
+            foreach (var it in dirs) list.AddRange(DragDataDirTree(it.FullName));
+            return list;
+        }
+
+        #region 事件
+
+        /// <summary>
+        /// Bool 类型事件
+        /// </summary>
+        public delegate void DragEventHandler(object sender, StringsEventArgs e);
+
+        /// <summary>
+        /// 文件拖拽后时发生
+        /// </summary>
+        [Description("文件拖拽后时发生"), Category("行为")]
+        public event DragEventHandler? DragChanged = null;
+        internal void OnDragChanged(string[] files) => DragChanged?.Invoke(this, new StringsEventArgs(files));
+
+        #endregion
+
+        protected override void Dispose(bool disposing)
+        {
+            Window.CanHandMessage = true;
+            fileDrop?.Dispose();
+            base.Dispose(disposing);
+        }
+
+        #endregion
+    }
+
+    public enum ControlType
+    {
+        Default,
+        Select,
+        Button
     }
 
     public enum CursorType
@@ -455,6 +672,7 @@ namespace AntdUI
         No,
         SizeAll,
         VSplit,
+        HSplit
     }
 
     public interface BadgeConfig
@@ -472,7 +690,7 @@ namespace AntdUI
         /// <summary>
         /// 徽标方向
         /// </summary>
-        TAlignFrom BadgeAlign { get; set; }
+        TAlign BadgeAlign { get; set; }
 
         /// <summary>
         /// 徽标大小
@@ -480,9 +698,24 @@ namespace AntdUI
         float BadgeSize { get; set; }
 
         /// <summary>
+        /// 徽标模式（镂空）
+        /// </summary>
+        bool BadgeMode { get; set; }
+
+        /// <summary>
         /// 徽标背景颜色
         /// </summary>
         Color? BadgeBack { get; set; }
+
+        /// <summary>
+        /// 徽标偏移X
+        /// </summary>
+        int BadgeOffsetX { get; set; }
+
+        /// <summary>
+        /// 徽标偏移Y
+        /// </summary>
+        int BadgeOffsetY { get; set; }
     }
 
     public interface ShadowConfig

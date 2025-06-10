@@ -1,4 +1,4 @@
-﻿// COPYRIGHT (C) Tom. ALL RIGHTS RESERVED.
+// COPYRIGHT (C) Tom. ALL RIGHTS RESERVED.
 // THE AntdUI PROJECT IS AN WINFORM LIBRARY LICENSED UNDER THE Apache-2.0 License.
 // LICENSED UNDER THE Apache License, VERSION 2.0 (THE "License")
 // YOU MAY NOT USE THIS FILE EXCEPT IN COMPLIANCE WITH THE License.
@@ -11,34 +11,39 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
+using System;
 using System.Collections.Concurrent;
-using System.Windows.Forms;
 
 namespace AntdUI
 {
     public static class EventHub
     {
-        static ConcurrentDictionary<Control, IEventListener> dic = new ConcurrentDictionary<Control, IEventListener>();
+        static ConcurrentDictionary<int, WeakReference> dic = new ConcurrentDictionary<int, WeakReference>();
 
-        public static void AddListener(this Control control)
+        public static void AddListener(this IEventListener listener)
         {
-            if (control is IEventListener listener && dic.TryAdd(control, listener))
+            var id = listener.GetHashCode();
+            if (dic.TryAdd(id, new WeakReference(listener)))
             {
-                control.Disposed += (s, e) =>
+                listener.Disposed += (s, e) =>
                 {
-                    dic.TryRemove(control, out _);
+                    dic.TryRemove(id, out _);
                 };
             }
         }
 
         public static void Dispatch(EventType id, object? tag = null)
         {
-            foreach (var item in dic) item.Value.HandleEvent(id, tag);
+            foreach (var item in dic)
+            {
+                if (item.Value.IsAlive && item.Value.Target is IEventListener listener) listener.HandleEvent(id, tag);
+                else dic.TryRemove(item.Key, out _);
+            }
         }
     }
 
@@ -48,6 +53,10 @@ namespace AntdUI
     public interface IEventListener
     {
         void HandleEvent(EventType id, object? tag);
+
+        int GetHashCode();
+
+        event EventHandler? Disposed;
     }
 
     public enum EventType
@@ -61,8 +70,16 @@ namespace AntdUI
         /// </summary>
         THEME = 2,
         /// <summary>
+        /// 语言 改变
+        /// </summary>
+        LANG = 3,
+        /// <summary>
         /// Window 状态改变
         /// </summary>
-        WINDOW_STATE = 70
+        WINDOW_STATE = 70,
+        /// <summary>
+        /// 自定义
+        /// </summary>
+        DIV = 100
     }
 }

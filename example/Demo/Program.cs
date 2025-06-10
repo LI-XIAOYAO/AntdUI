@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -32,58 +32,17 @@ namespace Demo
         {
             ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);
             var command = string.Join(" ", arge);
-            //AntdUI.Localization.Provider = new Localizer();
+            AntdUI.Localization.DefaultLanguage = "zh-CN";
+            var lang = AntdUI.Localization.CurrentLanguage;
+            if (lang.StartsWith("en")) AntdUI.Localization.Provider = new Localizer();
+            AntdUI.Config.TextRenderingHighQuality = true;
             AntdUI.Config.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+            AntdUI.Config.SetEmptyImageSvg(Properties.Resources.icon_empty, Properties.Resources.icon_empty_dark);
+            AntdUI.SvgDb.Emoji = AntdUI.FluentFlat.Emoji;
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
-            Application.SetCompatibleTextRenderingDefault(false);
-            AntdUI.Config.SetCorrectionTextRendering("Microsoft YaHei UI");
             if (command == "m") Application.Run(new Main());
             else if (command == "color") Application.Run(new Colors());
             else Application.Run(new Overview(command == "t"));
-        }
-    }
-    public class Localizer : AntdUI.ILocalization
-    {
-        public string GetLocalizedString(string key)
-        {
-            switch (key)
-            {
-                case "Cancel":
-                    return "キャンセル";
-                case "OK":
-                    return "確認";
-                case "Now":
-                    return "今は";
-                case "ToDay":
-                    return "今日";
-                case "NoData":
-                    return "データが一時的にありません";
-                case "Year":
-                    return "Année";
-                case "Month":
-                    return "Mois";
-
-                case "Mon":
-                    return "Mon";
-                case "Tue":
-                    return "Tue";
-                case "Wed":
-                    return "Wed";
-                case "Thu":
-                    return "Thu";
-                case "Fri":
-                    return "Fri";
-                case "Sat":
-                    return "Sat";
-                case "Sun":
-                    return "Sun";
-                case "ItemsPerPage":
-                    return "Per/Page";
-
-                default:
-                    System.Diagnostics.Debug.WriteLine(key);
-                    return key;
-            }
         }
     }
 }

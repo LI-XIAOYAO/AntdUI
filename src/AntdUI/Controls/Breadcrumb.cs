@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -48,6 +48,7 @@ namespace AntdUI
                 gap = value;
                 ChangeItems();
                 Invalidate();
+                OnPropertyChanged(nameof(Gap));
             }
         }
 
@@ -62,9 +63,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -88,6 +90,7 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -157,21 +160,21 @@ namespace AntdUI
                     ChangeItems();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PauseLayout));
             }
         }
 
         Rectangle[] hs = new Rectangle[0];
         internal void ChangeItems()
         {
-            if (items == null || items.Count == 0) return;
-            if (pauseLayout) return;
+            if ((items == null || items.Count == 0) || pauseLayout) return;
             var _rect = ClientRectangle.PaddingRect(Padding);
             if (_rect.Width == 0 || _rect.Height == 0) return;
             var rect = _rect.PaddingRect(Margin);
             hs = Helper.GDI(g =>
             {
                 var hs = new List<Rectangle>(items.Count);
-                var size_t = g.MeasureString(Config.NullText, Font).Size();
+                var size_t = g.MeasureString(Config.NullText, Font);
                 int sp = (int)(4 * Config.Dpi), sp2 = sp * 2, imgsize = (int)(size_t.Height * .8F), h = size_t.Height + sp, y = rect.Y + (rect.Height - h) / 2, y_img = rect.Y + (rect.Height - imgsize) / 2, _gap = (int)(gap * Config.Dpi);
                 int x = 0, tmpx = 0;
                 foreach (BreadcrumbItem it in items)
@@ -190,7 +193,7 @@ namespace AntdUI
                     }
                     else
                     {
-                        var size = g.MeasureString(it.Text, Font).Size();
+                        var size = g.MeasureText(it.Text, Font);
                         if (it.HasIcon)
                         {
                             int imgw = imgsize + sp2;
@@ -221,13 +224,17 @@ namespace AntdUI
         readonly StringFormat s_f = Helper.SF_ALL();
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (items == null || items.Count == 0) return;
+            if (items == null || items.Count == 0)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
             float _radius = radius * Config.Dpi;
-            using (var brush = new SolidBrush(fore ?? Style.Db.TextSecondary))
-            using (var brush_active = new SolidBrush(ForeActive ?? Style.Db.Text))
+            using (var brush = new SolidBrush(fore ?? Colour.TextSecondary.Get("Breadcrumb", ColorScheme)))
+            using (var brush_active = new SolidBrush(ForeActive ?? Colour.Text.Get("Breadcrumb", ColorScheme)))
             {
-                foreach (var it in hs) g.DrawStr("/", Font, brush, it, s_f);
+                foreach (var it in hs) g.DrawText("/", Font, brush, it, s_f);
                 for (int i = 0; i < items.Count; i++)
                 {
                     var it = items[i];
@@ -236,7 +243,7 @@ namespace AntdUI
                     {
                         //最后一个
                         PaintImg(g, it, brush_active.Color, it.IconSvg, it.Icon);
-                        g.DrawStr(it.Text, Font, brush_active, it.RectText, s_f);
+                        g.DrawText(it.Text, Font, brush_active, it.RectText, s_f);
                     }
                     else
                     {
@@ -244,18 +251,15 @@ namespace AntdUI
                         {
                             using (var path = it.Rect.RoundPath(_radius))
                             {
-                                using (var brush_hover = new SolidBrush(Style.Db.FillSecondary))
-                                {
-                                    g.FillPath(brush_hover, path);
-                                }
+                                g.Fill(Colour.FillSecondary.Get("Breadcrumb", ColorScheme), path);
                             }
                             PaintImg(g, it, brush_active.Color, it.IconSvg, it.Icon);
-                            g.DrawStr(it.Text, Font, brush_active, it.RectText, s_f);
+                            g.DrawText(it.Text, Font, brush_active, it.RectText, s_f);
                         }
                         else
                         {
                             PaintImg(g, it, brush.Color, it.IconSvg, it.Icon);
-                            g.DrawStr(it.Text, Font, brush, it.RectText, s_f);
+                            g.DrawText(it.Text, Font, brush, it.RectText, s_f);
                         }
                     }
                 }
@@ -264,14 +268,12 @@ namespace AntdUI
             base.OnPaint(e);
         }
 
-        bool PaintImg(Graphics g, BreadcrumbItem it, Color color, string? svg, Image? bmp)
+        bool PaintImg(Canvas g, BreadcrumbItem it, Color color, string? svg, Image? bmp)
         {
-            if (svg != null)
-            {
-                if (g.GetImgExtend(svg, it.RectImg, color)) return false;
-            }
-            else if (bmp != null) { g.DrawImage(bmp, it.RectImg); return false; }
-            return true;
+            int count = 0;
+            if (bmp != null) { g.Image(bmp, it.RectImg); count++; }
+            if (svg != null && g.GetImgExtend(svg, it.RectImg, color)) count++;
+            return count == 0;
         }
 
         #endregion
@@ -372,6 +374,7 @@ namespace AntdUI
         /// <summary>
         /// ID
         /// </summary>
+        [Description("ID"), Category("数据"), DefaultValue(null)]
         public string? ID { get; set; }
 
         Image? icon = null;
@@ -409,10 +412,7 @@ namespace AntdUI
         /// <summary>
         /// 是否包含图标
         /// </summary>
-        public bool HasIcon
-        {
-            get => IconSvg != null || Icon != null;
-        }
+        public bool HasIcon => IconSvg != null || Icon != null;
 
         string? text = null;
         /// <summary>
@@ -421,7 +421,7 @@ namespace AntdUI
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public string? Text
         {
-            get => text;
+            get => Localization.GetLangI(LocalizationText, text, new string?[] { "{id}", ID });
             set
             {
                 if (text == value) return;
@@ -429,6 +429,9 @@ namespace AntdUI
                 Invalidates();
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         /// <summary>
         /// 用户定义数据
@@ -451,6 +454,6 @@ namespace AntdUI
             PARENT.Invalidate();
         }
 
-        public override string? ToString() => text;
+        public override string? ToString() => Text;
     }
 }

@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
-using AntdUI;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -44,19 +43,15 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            BreadcrumbItem breadcrumbItem1 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem2 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem3 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem4 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem5 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem6 = new BreadcrumbItem();
-            BreadcrumbItem breadcrumbItem7 = new BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem1 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem2 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem3 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem4 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem5 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem6 = new AntdUI.BreadcrumbItem();
+            AntdUI.BreadcrumbItem breadcrumbItem7 = new AntdUI.BreadcrumbItem();
             header1 = new AntdUI.PageHeader();
             breadcrumb1 = new AntdUI.Breadcrumb();
             breadcrumb2 = new AntdUI.Breadcrumb();
@@ -67,6 +62,8 @@ namespace Demo.Controls
             header1.Description = "显示当前页面在系统层级结构中的位置，并能向上返回。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Breadcrumb.Description";
+            header1.LocalizationText = "Breadcrumb.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -89,8 +86,7 @@ namespace Demo.Controls
             breadcrumb1.Location = new Point(0, 74);
             breadcrumb1.Name = "breadcrumb1";
             breadcrumb1.Size = new Size(740, 40);
-            breadcrumb1.TabIndex = 16;
-            breadcrumb1.Text = "breadcrumb1";
+            breadcrumb1.TabIndex = 1;
             breadcrumb1.ItemClick += breadcrumb1_ItemClick;
             // 
             // breadcrumb2
@@ -106,8 +102,7 @@ namespace Demo.Controls
             breadcrumb2.Location = new Point(0, 114);
             breadcrumb2.Name = "breadcrumb2";
             breadcrumb2.Size = new Size(740, 40);
-            breadcrumb2.TabIndex = 17;
-            breadcrumb2.Text = "breadcrumb2";
+            breadcrumb2.TabIndex = 2;
             breadcrumb2.ItemClick += breadcrumb1_ItemClick;
             // 
             // Breadcrumb
@@ -115,7 +110,7 @@ namespace Demo.Controls
             Controls.Add(breadcrumb2);
             Controls.Add(breadcrumb1);
             Controls.Add(header1);
-            Font = new Font("Microsoft YaHei UI", 11F);
+            Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Breadcrumb";
             Size = new Size(740, 402);
             ResumeLayout(false);

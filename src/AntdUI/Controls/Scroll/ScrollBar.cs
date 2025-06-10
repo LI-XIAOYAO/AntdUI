@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace AntdUI
 {
@@ -32,28 +33,18 @@ namespace AntdUI
 
         public ScrollBar(FlowPanel control, bool enabledY = true, bool enabledX = false)
         {
-            OnInvalidate = ChangeSize = () =>
-            {
-                control.IOnSizeChanged();
-            };
-            Invalidate = rect =>
-            {
-                OnInvalidate?.Invoke();
-            };
+            ColorScheme = control.ColorScheme;
+            OnInvalidate = ChangeSize = () => control.IOnSizeChanged();
+            Invalidate = rect => OnInvalidate?.Invoke();
             EnabledX = enabledX;
             EnabledY = enabledY;
             Init();
         }
         public ScrollBar(StackPanel control)
         {
-            OnInvalidate = ChangeSize = () =>
-            {
-                control.IOnSizeChanged();
-            };
-            Invalidate = rect =>
-            {
-                OnInvalidate?.Invoke();
-            };
+            ColorScheme = control.ColorScheme;
+            OnInvalidate = ChangeSize = () => control.IOnSizeChanged();
+            Invalidate = rect => OnInvalidate?.Invoke();
             if (control.Vertical) EnabledY = true;
             else EnabledX = true;
             Init();
@@ -61,8 +52,10 @@ namespace AntdUI
 
         #endregion
 
+        TAMode ColorScheme;
         public ScrollBar(IControl control, bool enabledY = true, bool enabledX = false, int radius = 0, bool radiusy = false)
         {
+            ColorScheme = control.ColorScheme;
             Radius = radius;
             RB = radiusy;
             Invalidate = rect =>
@@ -71,21 +64,9 @@ namespace AntdUI
                 if (rect.HasValue) control.Invalidate(rect.Value);
                 else control.Invalidate();
             };
-            ChangeSize = () =>
-            {
-                control.IOnSizeChanged();
-            };
+            ChangeSize = () => control.IOnSizeChanged();
             EnabledX = enabledX;
             EnabledY = enabledY;
-            Init();
-        }
-
-        public ScrollBar(Action change, Action<Rectangle?> invalidate, bool enabledY = true, bool enabledX = false)
-        {
-            EnabledX = enabledX;
-            EnabledY = enabledY;
-            ChangeSize = change;
-            Invalidate = invalidate;
             Init();
         }
 
@@ -141,6 +122,7 @@ namespace AntdUI
                 showY = value;
                 Invalidate(null);
                 ChangeSize?.Invoke();
+                ShowYChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -162,6 +144,7 @@ namespace AntdUI
                 if (valueY == value) return;
                 valueY = value;
                 Invalidate(null);
+                ValueYChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -191,7 +174,7 @@ namespace AntdUI
             {
                 if (hoverY == value) return;
                 hoverY = value;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(ScrollBar)))
                 {
                     ThreadHoverY?.Dispose();
                     AnimationHoverY = true;
@@ -253,6 +236,7 @@ namespace AntdUI
                 showX = value;
                 Invalidate(null);
                 ChangeSize?.Invoke();
+                ShowXChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -274,6 +258,7 @@ namespace AntdUI
                 if (valueX == value) return;
                 valueX = value;
                 Invalidate(null);
+                ValueXChanged?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -303,7 +288,7 @@ namespace AntdUI
             {
                 if (hoverX == value) return;
                 hoverX = value;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(ScrollBar)))
                 {
                     ThreadHoverX?.Dispose();
                     AnimationHoverX = true;
@@ -341,12 +326,9 @@ namespace AntdUI
             }
         }
 
-        public void Clear()
-        {
-            valueX = valueY = 0;
-        }
-
         #endregion
+
+        public void Clear() => valueX = valueY = 0;
 
         #region 布局
 
@@ -373,10 +355,7 @@ namespace AntdUI
         #region 设置是否显示
 
         string show_oldx = "", show_oldy = "";
-        void SetShow(int x, int y)
-        {
-            SetShow(x, RectX.Width, y, RectY.Height);
-        }
+        void SetShow(int x, int y) => SetShow(x, RectX.Width, y, RectY.Height);
         void SetShow(int x, int x2, int y, int y2)
         {
             string show_x = x + "_" + x2, show_y = y + "_" + y2;
@@ -427,11 +406,8 @@ namespace AntdUI
 
         #region 渲染
 
-        public virtual void Paint(Graphics g)
-        {
-            Paint(g, Style.Db.TextBase);
-        }
-        public virtual void Paint(Graphics g, Color baseColor)
+        public virtual void Paint(Canvas g) => Paint(g, Colour.TextBase.Get("ScrollBar", ColorScheme));
+        public virtual void Paint(Canvas g, Color baseColor)
         {
             if (Config.ScrollBarHide)
             {
@@ -448,10 +424,10 @@ namespace AntdUI
                                     float radius = Radius * Config.Dpi;
                                     using (var path = Helper.RoundPath(RectY, radius, false, true, RB, false))
                                     {
-                                        g.FillPath(brush, path);
+                                        g.Fill(brush, path);
                                     }
                                 }
-                                else g.FillRectangle(brush, RectY);
+                                else g.Fill(brush, RectY);
                             }
                         }
                         else
@@ -463,10 +439,10 @@ namespace AntdUI
                                     float radius = Radius * Config.Dpi;
                                     using (var path = Helper.RoundPath(new Rectangle(RectX.X, RectX.Y, RectX.Width, RectX.Height), radius, false, false, true, true))
                                     {
-                                        g.FillPath(brush, path);
+                                        g.Fill(brush, path);
                                     }
                                 }
-                                else g.FillRectangle(brush, new Rectangle(RectX.X, RectX.Y, RectX.Width, RectX.Height));
+                                else g.Fill(brush, new Rectangle(RectX.X, RectX.Y, RectX.Width, RectX.Height));
                             }
                         }
                     }
@@ -484,10 +460,10 @@ namespace AntdUI
                                 float radius = Radius * Config.Dpi;
                                 using (var path = Helper.RoundPath(RectY, radius, false, true, RB, false))
                                 {
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                             }
-                            else g.FillRectangle(brush, RectY);
+                            else g.Fill(brush, RectY);
                         }
                     }
                     PaintY(g, baseColor);
@@ -503,10 +479,10 @@ namespace AntdUI
                                 float radius = Radius * Config.Dpi;
                                 using (var path = Helper.RoundPath(new Rectangle(RectX.X, RectX.Y, RectX.Width, RectX.Height), radius, false, false, true, true))
                                 {
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                             }
-                            else g.FillRectangle(brush, RectX);
+                            else g.Fill(brush, RectX);
                         }
                     }
                     PaintX(g, baseColor);
@@ -526,22 +502,21 @@ namespace AntdUI
                                 float radius = Radius * Config.Dpi;
                                 using (var path = Helper.RoundPath(RectY, radius, false, true, RB, false))
                                 {
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                                 if (RB)
                                 {
                                     using (var path = Helper.RoundPath(rectX, radius, false, false, false, true))
                                     {
-                                        g.FillPath(brush, path);
-
+                                        g.Fill(brush, path);
                                     }
                                 }
-                                else g.FillRectangle(brush, rectX);
+                                else g.Fill(brush, rectX);
                             }
                             else
                             {
-                                g.FillRectangle(brush, RectY);
-                                g.FillRectangle(brush, rectX);
+                                g.Fill(brush, RectY);
+                                g.Fill(brush, rectX);
                             }
                         }
                     }
@@ -559,10 +534,10 @@ namespace AntdUI
                                 float radius = Radius * Config.Dpi;
                                 using (var path = Helper.RoundPath(RectY, radius, false, true, RB, false))
                                 {
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                             }
-                            else g.FillRectangle(brush, RectY);
+                            else g.Fill(brush, RectY);
                         }
                     }
                     PaintY(g, baseColor);
@@ -578,10 +553,10 @@ namespace AntdUI
                                 float radius = Radius * Config.Dpi;
                                 using (var path = Helper.RoundPath(new Rectangle(RectX.X, RectX.Y, RectX.Width, RectX.Height), radius, false, false, true, true))
                                 {
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                             }
-                            else g.FillRectangle(brush, RectX);
+                            else g.Fill(brush, RectX);
                         }
                     }
                     PaintX(g, baseColor);
@@ -599,7 +574,7 @@ namespace AntdUI
             if (AnimationHoverX) return new SolidBrush(Color.FromArgb((int)(10 * AnimationHoverXValue), color));
             else return new SolidBrush(Color.FromArgb(10, color));
         }
-        void PaintY(Graphics g, Color color)
+        void PaintY(Canvas g, Color color)
         {
             if (AnimationHoverY)
             {
@@ -608,7 +583,7 @@ namespace AntdUI
                     var slider = RectSliderY();
                     using (var path = slider.RoundPath(slider.Width))
                     {
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                     }
                 }
             }
@@ -617,17 +592,14 @@ namespace AntdUI
                 int alpha;
                 if (SliderDownY) alpha = 172;
                 else alpha = hoverY ? 141 : 110;
-                using (var brush = new SolidBrush(Color.FromArgb(alpha, color)))
+                var slider = RectSliderY();
+                using (var path = slider.RoundPath(slider.Width))
                 {
-                    var slider = RectSliderY();
-                    using (var path = slider.RoundPath(slider.Width))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Color.FromArgb(alpha, color), path);
                 }
             }
         }
-        void PaintX(Graphics g, Color color)
+        void PaintX(Canvas g, Color color)
         {
             if (AnimationHoverX)
             {
@@ -636,7 +608,7 @@ namespace AntdUI
                     var slider = RectSliderX();
                     using (var path = slider.RoundPath(slider.Height))
                     {
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                     }
                 }
             }
@@ -645,13 +617,10 @@ namespace AntdUI
                 int alpha;
                 if (SliderDownX) alpha = 172;
                 else alpha = hoverX ? 141 : 110;
-                using (var brush = new SolidBrush(Color.FromArgb(alpha, color)))
+                var slider = RectSliderX();
+                using (var path = slider.RoundPath(slider.Height))
                 {
-                    var slider = RectSliderX();
-                    using (var path = slider.RoundPath(slider.Height))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Color.FromArgb(alpha, color), path);
                 }
             }
         }
@@ -708,13 +677,13 @@ namespace AntdUI
             {
                 old = e;
                 var slider = RectSliderFullX();
-                if (!slider.Contains(e))
+                if (slider.Contains(e)) SliderX = slider.X;
+                else
                 {
                     float read = RectX.Width - (showY ? SIZE : 0), x = (e.X - slider.Width / 2F) / read;
                     ValueX = (int)Math.Round(x * maxX);
                     SliderX = RectSliderFullX().X;
                 }
-                else SliderX = slider.X;
                 SliderDownX = true;
                 Window.CanHandMessage = false;
                 return false;
@@ -730,13 +699,13 @@ namespace AntdUI
             {
                 old = e;
                 var slider = RectSliderFullY();
-                if (!slider.Contains(e))
+                if (slider.Contains(e)) SliderY = slider.Y;
+                else
                 {
                     float read = RectY.Height - (showX ? SIZE : 0), y = (e.Y - slider.Height / 2F) / read;
                     ValueY = (int)Math.Round(y * maxY);
                     SliderY = RectSliderFullY().Y;
                 }
-                else SliderY = slider.Y;
                 SliderDownY = true;
                 Window.CanHandMessage = false;
                 return false;
@@ -814,11 +783,14 @@ namespace AntdUI
             return true;
         }
 
+        #region 滚动
 
-        public bool MouseWheelX(int delta)
+        public bool MouseWheelX(int Delta)
         {
-            if (EnabledX && ShowX && delta != 0)
+            if (Delta == 0) return false;
+            if (EnabledX && ShowX)
             {
+                int delta = Delta / SystemInformation.MouseWheelScrollDelta * (int)(Config.ScrollStep * Config.Dpi);
                 int value = ValueX - delta;
                 ValueX = value;
                 if (ValueX != value) return false;
@@ -826,11 +798,12 @@ namespace AntdUI
             }
             return false;
         }
-
-        public bool MouseWheelY(int delta)
+        public bool MouseWheelY(int Delta)
         {
-            if (EnabledY && ShowY && delta != 0)
+            if (Delta == 0) return false;
+            if (EnabledY && ShowY)
             {
+                int delta = Delta / SystemInformation.MouseWheelScrollDelta * (int)(Config.ScrollStep * Config.Dpi);
                 int value = ValueY - delta;
                 ValueY = value;
                 if (ValueY != value) return false;
@@ -838,11 +811,18 @@ namespace AntdUI
             }
             return false;
         }
-        public bool MouseWheel(int delta)
+        public bool MouseWheel(int Delta)
         {
-            if (EnabledY)
+            if (Delta == 0) return false;
+            int delta = Delta / SystemInformation.MouseWheelScrollDelta * (int)(Config.ScrollStep * Config.Dpi);
+            if ((Control.ModifierKeys & Keys.Shift) == Keys.Shift && EnabledX && ShowX)
             {
-                if (ShowY && delta != 0)
+                ValueX -= delta;
+                return true;
+            }
+            else if (EnabledY)
+            {
+                if (ShowY)
                 {
                     ValueY -= delta;
                     return true;
@@ -850,7 +830,7 @@ namespace AntdUI
             }
             else if (EnabledX)
             {
-                if (ShowX && delta != 0)
+                if (ShowX)
                 {
                     ValueX -= delta;
                     return true;
@@ -859,10 +839,34 @@ namespace AntdUI
             return false;
         }
 
-        public void Leave()
+        internal bool MouseWheelXCore(int delta)
         {
-            HoverX = HoverY = false;
+            if (delta == 0) return false;
+            if (EnabledX && ShowX)
+            {
+                int value = ValueX - delta;
+                ValueX = value;
+                if (ValueX != value) return false;
+                return true;
+            }
+            return false;
         }
+        internal bool MouseWheelYCore(int delta)
+        {
+            if (delta == 0) return false;
+            if (EnabledY && ShowY)
+            {
+                int value = ValueY - delta;
+                ValueY = value;
+                if (ValueY != value) return false;
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
+        public void Leave() => HoverX = HoverY = false;
 
         #endregion
 
@@ -953,6 +957,15 @@ namespace AntdUI
         ITask? ThreadHoverX = null;
         float AnimationHoverXValue = 0F;
         bool AnimationHoverX = false;
+
+        #endregion
+
+        #region 事件
+
+        public event EventHandler? ShowYChanged;
+        public event EventHandler? ShowXChanged;
+        public event EventHandler? ValueYChanged;
+        public event EventHandler? ValueXChanged;
 
         #endregion
 

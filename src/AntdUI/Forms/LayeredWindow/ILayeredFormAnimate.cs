@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -30,6 +30,7 @@ namespace AntdUI
         internal static Dictionary<string, List<ILayeredFormAnimate>> list = new Dictionary<string, List<ILayeredFormAnimate>>();
 
         internal string key = "";
+        public abstract string name { get; }
         internal virtual TAlignFrom Align => TAlignFrom.TR;
         internal virtual bool ActiveAnimation => true;
 
@@ -95,6 +96,31 @@ namespace AntdUI
 
         bool TopY(Rectangle workingArea, out int result)
         {
+            switch (name)
+            {
+                case nameof(Notification):
+                    if (Notification.MaxCount.HasValue)
+                    {
+                        if (list.TryGetValue(key, out var count) && count.Count + 1 > Notification.MaxCount.Value)
+                        {
+                            if (Config.NoticeOverflowClose) count[0].CloseMe();
+                            result = 0;
+                            return true;
+                        }
+                    }
+                    break;
+                case nameof(Message):
+                    if (Message.MaxCount.HasValue)
+                    {
+                        if (list.TryGetValue(key, out var count) && count.Count + 1 > Message.MaxCount.Value)
+                        {
+                            if (Config.NoticeOverflowClose) count[0].CloseMe();
+                            result = 0;
+                            return true;
+                        }
+                    }
+                    break;
+            }
             int offset = (int)(Config.NoticeWindowOffsetXY * Config.Dpi);
             var y = TopYCore(workingArea, offset);
             if (y < workingArea.Bottom - TargetRect.Height)
@@ -104,6 +130,7 @@ namespace AntdUI
             }
             else
             {
+                if (Config.NoticeOverflowClose && list.TryGetValue(key, out var count) && count.Count > 0) count[0].CloseMe();
                 result = 0;
                 return true;
             }
@@ -124,6 +151,31 @@ namespace AntdUI
         }
         bool BottomY(Rectangle workingArea, out int result)
         {
+            switch (name)
+            {
+                case nameof(Notification):
+                    if (Notification.MaxCount.HasValue)
+                    {
+                        if (list.TryGetValue(key, out var count) && count.Count + 1 > Notification.MaxCount.Value)
+                        {
+                            if (Config.NoticeOverflowClose) count[0].CloseMe();
+                            result = 0;
+                            return true;
+                        }
+                    }
+                    break;
+                case nameof(Message):
+                    if (Message.MaxCount.HasValue)
+                    {
+                        if (list.TryGetValue(key, out var count) && count.Count + 1 > Message.MaxCount.Value)
+                        {
+                            if (Config.NoticeOverflowClose) count[0].CloseMe();
+                            result = 0;
+                            return true;
+                        }
+                    }
+                    break;
+            }
             int offset = (int)(Config.NoticeWindowOffsetXY * Config.Dpi);
             var y = BottomYCore(workingArea, offset) - TargetRect.Height;
             if (y >= 0)
@@ -133,6 +185,7 @@ namespace AntdUI
             }
             else
             {
+                if (Config.NoticeOverflowClose && list.TryGetValue(key, out var count) && count.Count > 0) count[0].CloseMe();
                 result = 0;
                 return true;
             }
@@ -168,7 +221,7 @@ namespace AntdUI
                 SetLocationX(x);
                 start_X = end_X = x;
             }
-            Print();
+            Print(true);
         }
         internal void SetPositionY(int y)
         {
@@ -199,7 +252,7 @@ namespace AntdUI
         Bitmap? bmp_tmp = null;
         public void PlayAnimation()
         {
-            if (Config.Animation)
+            if (Config.HasAnimation(name))
             {
                 var t = Animation.TotalFrames(10, 200);
                 task_start = new ITask(start_X == end_X ? i =>
@@ -217,11 +270,13 @@ namespace AntdUI
                 {
                     DisposeAnimation();
                     SetAnimateValue(end_X, end_Y, 240);
+                    Print(true);
                 });
             }
             else
             {
                 SetAnimateValue(end_X, end_Y, 240);
+                Print(true);
             }
         }
 
@@ -244,10 +299,7 @@ namespace AntdUI
                 var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
                 SetAnimateValueX(end_X - (int)((end_X - start_X) * val), (byte)(240 * (1F - val)));
                 return true;
-            }, 10, t, () =>
-            {
-                DisposeAnimation();
-            });
+            }, 10, t, DisposeAnimation);
         }
         public void DisposeAnimation()
         {
@@ -267,7 +319,7 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Print(bmp_tmp);
+                if (Print(bmp_tmp) == RenderResult.Invalid) bmp_tmp = null;
             }
         }
         void SetAnimateValueY(int y, byte _alpha)
@@ -278,7 +330,7 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Print(bmp_tmp);
+                if (Print(bmp_tmp) == RenderResult.Invalid) bmp_tmp = null;
             }
         }
         internal void SetAnimateValueY(int y)
@@ -288,7 +340,7 @@ namespace AntdUI
                 SetLocationY(y);
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Print(bmp_tmp);
+                if (Print(bmp_tmp) == RenderResult.Invalid) bmp_tmp = null;
             }
         }
         void SetAnimateValue(int x, int y, byte _alpha)
@@ -299,7 +351,7 @@ namespace AntdUI
                 alpha = _alpha;
                 if (bmp_tmp == null) bmp_tmp = PrintBit();
                 if (bmp_tmp == null) return;
-                Print(bmp_tmp);
+                if (Print(bmp_tmp) == RenderResult.Invalid) bmp_tmp = null;
             }
         }
 
@@ -326,7 +378,11 @@ namespace AntdUI
         protected override void Dispose(bool disposing)
         {
             task_start?.Dispose();
-            list[key].Remove(this);
+            if (list.TryGetValue(key, out var layeredFormAnimateList) && layeredFormAnimateList.Contains(this))
+            {
+                if (layeredFormAnimateList.Count == 1) list.Remove(key);
+                else layeredFormAnimateList.Remove(this);
+            }
             base.Dispose(disposing);
         }
     }
@@ -334,7 +390,7 @@ namespace AntdUI
     public static class MsgQueue
     {
         static ManualResetEvent _event = new ManualResetEvent(false);
-        static ConcurrentQueue<object> queue = new ConcurrentQueue<object>(), queue_cache = new ConcurrentQueue<object>();
+        internal static ConcurrentQueue<object> queue = new ConcurrentQueue<object>(), queue_cache = new ConcurrentQueue<object>();
         internal static List<string> volley = new List<string>();
 
         #region 添加队列
@@ -388,9 +444,9 @@ namespace AntdUI
                 }
                 else if (d is ILayeredFormAnimate formAnimate)
                 {
-                    if (Config.Animation) formAnimate.StopAnimation().Wait();
+                    if (Config.HasAnimation(formAnimate.name)) formAnimate.StopAnimation().Wait();
                     formAnimate.IClose(true);
-                    Close(formAnimate.Align, formAnimate.key);
+                    Close(formAnimate.Align, formAnimate.key, formAnimate.name);
                     if (queue_cache.TryDequeue(out var d_cache)) Hand(d_cache);
                 }
             }
@@ -401,7 +457,15 @@ namespace AntdUI
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.ID != null && volley.Contains("N" + config.ID)) return false;
+                if (config.ID != null)
+                {
+                    string key = "N" + config.ID;
+                    if (volley.Contains(key))
+                    {
+                        volley.Remove(key);
+                        return false;
+                    }
+                }
                 bool ishand = false;
                 config.Form.Invoke(new Action(() =>
                 {
@@ -430,7 +494,15 @@ namespace AntdUI
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.ID != null && volley.Contains("M" + config.ID)) return false;
+                if (config.ID != null)
+                {
+                    string key = "M" + config.ID;
+                    if (volley.Contains(key))
+                    {
+                        volley.Remove(key);
+                        return false;
+                    }
+                }
                 bool ishand = false;
                 config.Form.Invoke(new Action(() =>
                 {
@@ -440,7 +512,11 @@ namespace AntdUI
                         from.Dispose();
                         ishand = true;
                     }
-                    else from.Show(config.Form);
+                    else
+                    {
+                        if (config.TopMost) from.Show();
+                        else from.Show(config.Form);
+                    }
                 }));
                 if (ishand)
                 {
@@ -451,35 +527,38 @@ namespace AntdUI
             return false;
         }
 
-        static void Close(TAlignFrom align, string key)
+        static void Close(TAlignFrom align, string key, string name)
         {
             try
             {
-                switch (align)
+                if (ILayeredFormAnimate.list.TryGetValue(key, out var list))
                 {
-                    case TAlignFrom.Bottom:
-                    case TAlignFrom.BL:
-                    case TAlignFrom.BR:
-                        CloseB(key);
-                        break;
-                    case TAlignFrom.Top:
-                    case TAlignFrom.TL:
-                    case TAlignFrom.TR:
-                    default:
-                        CloseT(key);
-                        break;
+                    if (list.Count == 0) return;
+                    switch (align)
+                    {
+                        case TAlignFrom.Bottom:
+                        case TAlignFrom.BL:
+                        case TAlignFrom.BR:
+                            CloseB(key, name, list);
+                            break;
+                        case TAlignFrom.Top:
+                        case TAlignFrom.TL:
+                        case TAlignFrom.TR:
+                        default:
+                            CloseT(key, name, list);
+                            break;
+                    }
                 }
             }
             catch { }
         }
 
-        static void CloseT(string key)
+        static void CloseT(string key, string name, List<ILayeredFormAnimate> list)
         {
             var arr = key.Split('|');
             int y = int.Parse(arr[2]);
             int offset = (int)(Config.NoticeWindowOffsetXY * Config.Dpi);
             int y_temp = y + offset;
-            var list = ILayeredFormAnimate.list[key];
             var dir = new Dictionary<ILayeredFormAnimate, int[]>(list.Count);
             foreach (var it in list)
             {
@@ -489,7 +568,7 @@ namespace AntdUI
             }
             if (dir.Count > 0)
             {
-                if (Config.Animation)
+                if (Config.HasAnimation(name))
                 {
                     var t = Animation.TotalFrames(10, 200);
                     new ITask(i =>
@@ -524,13 +603,12 @@ namespace AntdUI
                 }
             }
         }
-        static void CloseB(string key)
+        static void CloseB(string key, string name, List<ILayeredFormAnimate> list)
         {
             var arr = key.Split('|');
             int b = int.Parse(arr[4]);
             int offset = (int)(Config.NoticeWindowOffsetXY * Config.Dpi);
             int y_temp = b - offset;
-            var list = ILayeredFormAnimate.list[key];
             var dir = new Dictionary<ILayeredFormAnimate, int[]>(list.Count);
             foreach (var it in list)
             {
@@ -540,7 +618,7 @@ namespace AntdUI
             }
             if (dir.Count > 0)
             {
-                if (Config.Animation)
+                if (Config.HasAnimation(name))
                 {
                     var t = Animation.TotalFrames(10, 200);
                     new ITask(i =>

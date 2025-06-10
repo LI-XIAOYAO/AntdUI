@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -35,6 +35,8 @@ namespace AntdUI
     [DefaultEvent("CheckedChanged")]
     public class Switch : IControl
     {
+        public Switch() : base(ControlType.Select) { }
+
         #region 属性
 
         Color? fore;
@@ -48,9 +50,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -68,6 +71,7 @@ namespace AntdUI
                 if (fill == value) return;
                 fill = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Fill));
             }
         }
 
@@ -93,9 +97,8 @@ namespace AntdUI
             {
                 if (_checked == value) return;
                 _checked = value;
-                CheckedChanged?.Invoke(this, new BoolEventArgs(value));
                 ThreadCheck?.Dispose();
-                if (IsHandleCreated && Config.Animation)
+                if (IsHandleCreated && Config.HasAnimation(nameof(Switch)))
                 {
                     AnimationCheck = true;
                     if (value)
@@ -129,13 +132,15 @@ namespace AntdUI
                 }
                 else AnimationCheckValue = value ? 1F : 0F;
                 Invalidate();
+                CheckedChanged?.Invoke(this, new BoolEventArgs(value));
+                OnPropertyChanged(nameof(Checked));
             }
         }
 
         /// <summary>
         /// 点击时自动改变选中状态
         /// </summary>
-        [Description("点击时自动改变选中状态"), Category("行为"), DefaultValue(false)]
+        [Description("点击时自动改变选中状态"), Category("行为"), DefaultValue(true)]
         public bool AutoCheck { get; set; } = true;
 
         /// <summary>
@@ -150,28 +155,87 @@ namespace AntdUI
         string? _checkedText = null, _unCheckedText = null;
 
         [Description("选中时显示的文本"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? CheckedText
         {
-            get => _checkedText;
+            get => this.GetLangI(LocalizationCheckedText, _checkedText);
             set
             {
                 if (_checkedText == value) return;
                 _checkedText = value;
                 if (_checked) Invalidate();
+                OnPropertyChanged(nameof(CheckedText));
             }
         }
 
+        [Description("选中时显示的文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationCheckedText { get; set; }
+
         [Description("未选中时显示的文本"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? UnCheckedText
         {
-            get => _unCheckedText;
+            get => this.GetLangI(LocalizationUnCheckedText, _unCheckedText);
             set
             {
                 if (_unCheckedText == value) return;
                 _unCheckedText = value;
                 if (!_checked) Invalidate();
+                OnPropertyChanged(nameof(UnCheckedText));
             }
         }
+
+        [Description("未选中时显示的文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationUnCheckedText { get; set; }
+
+        #region 加载中
+
+        bool loading = false;
+        /// <summary>
+        /// 加载中
+        /// </summary>
+        [Description("加载中"), Category("外观"), DefaultValue(false)]
+        public bool Loading
+        {
+            get => loading;
+            set
+            {
+                if (loading == value) return;
+                loading = value;
+                if (IsHandleCreated)
+                {
+                    if (loading)
+                    {
+                        bool ProgState = false;
+                        ThreadLoading = new ITask(this, () =>
+                        {
+                            if (ProgState)
+                            {
+                                LineAngle = LineAngle.Calculate(9F);
+                                LineWidth = LineWidth.Calculate(0.6F);
+                                if (LineWidth > 75) ProgState = false;
+                            }
+                            else
+                            {
+                                LineAngle = LineAngle.Calculate(9.6F);
+                                LineWidth = LineWidth.Calculate(-0.6F);
+                                if (LineWidth < 6) ProgState = true;
+                            }
+                            if (LineAngle >= 360) LineAngle = 0;
+                            Invalidate();
+                            return true;
+                        }, 10);
+                    }
+                    else ThreadLoading?.Dispose();
+                }
+                Invalidate();
+            }
+        }
+
+        ITask? ThreadLoading = null;
+        internal float LineWidth = 6, LineAngle = 0;
+
+        #endregion
 
         #endregion
 
@@ -187,76 +251,82 @@ namespace AntdUI
 
         #region 渲染
 
+        bool init = false;
         protected override void OnPaint(PaintEventArgs e)
         {
-            var rect = ClientRectangle;//绘制控件尺寸
+            init = true;
             var g = e.Graphics.High();
-
-            var rect_read = ReadRectangle;//读取控件尺寸
+            var rect = ClientRectangle.PaddingRect(Padding);
+            var rect_read = ReadRectangle;
             bool enabled = Enabled;
             using (var path = rect_read.RoundPath(rect_read.Height))
             {
-                Color _color = fill ?? Style.Db.Primary;
+                Color _color = fill ?? Colour.Primary.Get("Switch", ColorScheme);
                 PaintClick(g, path, rect, rect_read, _color);
-                using (var brush = new SolidBrush(Style.Db.TextQuaternary))
+                if (enabled && hasFocus && WaveSize > 0)
                 {
-                    g.FillPath(brush, path);
-                    if (AnimationHover)
+                    float wave = (WaveSize * Config.Dpi / 2), wave2 = wave * 2;
+                    using (var path_focus = new RectangleF(rect_read.X - wave, rect_read.Y - wave, rect_read.Width + wave2, rect_read.Height + wave2).RoundPath(0, TShape.Round))
                     {
-                        using (var brush2 = new SolidBrush(Helper.ToColorN(AnimationHoverValue, brush.Color)))
-                        {
-                            g.FillPath(brush2, path);
-                        }
+                        g.Draw(Colour.PrimaryBorder.Get("Switch", ColorScheme), wave, path_focus);
                     }
-                    else if (ExtraMouseHover) g.FillPath(brush, path);
                 }
-                float gap = (int)(Gap * Config.Dpi), gap2 = gap * 2F;
+                using (var brush = new SolidBrush(Colour.TextQuaternary.Get("Switch", ColorScheme)))
+                {
+                    g.Fill(brush, path);
+                    if (AnimationHover) g.Fill(Helper.ToColorN(AnimationHoverValue, brush.Color), path);
+                    else if (ExtraMouseHover) g.Fill(brush, path);
+                }
+                int gap = (int)(Gap * Config.Dpi), gap2 = gap * 2;
                 if (AnimationCheck)
                 {
                     var alpha = 255 * AnimationCheckValue;
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha, _color)))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Helper.ToColor(alpha, _color), path);
                     var dot_rect = new RectangleF(rect_read.X + gap + (rect_read.Width - rect_read.Height) * AnimationCheckValue, rect_read.Y + gap, rect_read.Height - gap2, rect_read.Height - gap2);
-                    using (var brush = new SolidBrush(enabled ? Style.Db.BgBase : Color.FromArgb(200, Style.Db.BgBase)))
+                    g.FillEllipse(enabled ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
+                    if (loading)
                     {
-                        g.FillEllipse(brush, dot_rect);
+                        var dot_rect2 = new RectangleF(dot_rect.X + gap, dot_rect.Y + gap, dot_rect.Height - gap2, dot_rect.Height - gap2);
+                        float size = rect_read.Height * .1F;
+                        using (var brush = new Pen(_color, size))
+                        {
+                            brush.StartCap = brush.EndCap = LineCap.Round;
+                            g.DrawArc(brush, dot_rect2, LineAngle, LineWidth * 3.6F);
+                        }
                     }
                 }
                 else if (_checked)
                 {
-                    var colorhover = FillHover ?? Style.Db.PrimaryHover;
-                    using (var brush = new SolidBrush(enabled ? _color : Color.FromArgb(200, _color)))
-                    {
-                        g.FillPath(brush, path);
-                    }
-                    if (AnimationHover)
-                    {
-                        using (var brush2 = new SolidBrush(Helper.ToColorN(AnimationHoverValue, colorhover)))
-                        {
-                            g.FillPath(brush2, path);
-                        }
-                    }
-                    else if (ExtraMouseHover)
-                    {
-                        using (var brush = new SolidBrush(colorhover))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
+                    var colorhover = FillHover ?? Colour.PrimaryHover.Get("Switch", ColorScheme);
+                    g.Fill(enabled ? _color : Color.FromArgb(200, _color), path);
+                    if (AnimationHover) g.Fill(Helper.ToColorN(AnimationHoverValue, colorhover), path);
+                    else if (ExtraMouseHover) g.Fill(colorhover, path);
                     var dot_rect = new RectangleF(rect_read.X + gap + rect_read.Width - rect_read.Height, rect_read.Y + gap, rect_read.Height - gap2, rect_read.Height - gap2);
-                    using (var brush = new SolidBrush(enabled ? Style.Db.BgBase : Color.FromArgb(200, Style.Db.BgBase)))
+                    g.FillEllipse(enabled ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
+                    if (loading)
                     {
-                        g.FillEllipse(brush, dot_rect);
+                        var dot_rect2 = new RectangleF(dot_rect.X + gap, dot_rect.Y + gap, dot_rect.Height - gap2, dot_rect.Height - gap2);
+                        float size = rect_read.Height * .1F;
+                        using (var brush = new Pen(_color, size))
+                        {
+                            brush.StartCap = brush.EndCap = LineCap.Round;
+                            g.DrawArc(brush, dot_rect2, LineAngle, LineWidth * 3.6F);
+                        }
                     }
                 }
                 else
                 {
                     var dot_rect = new RectangleF(rect_read.X + gap, rect_read.Y + gap, rect_read.Height - gap2, rect_read.Height - gap2);
-                    using (var brush = new SolidBrush(enabled ? Style.Db.BgBase : Color.FromArgb(200, Style.Db.BgBase)))
+                    g.FillEllipse(enabled ? Colour.BgBase.Get("Switch", ColorScheme) : Color.FromArgb(200, Colour.BgBase.Get("Switch", ColorScheme)), dot_rect);
+                    if (loading)
                     {
-                        g.FillEllipse(brush, dot_rect);
+                        var dot_rect2 = new RectangleF(dot_rect.X + gap, dot_rect.Y + gap, dot_rect.Height - gap2, dot_rect.Height - gap2);
+                        float size = rect_read.Height * .1F;
+                        using (var brush = new Pen(_color, size))
+                        {
+                            brush.StartCap = brush.EndCap = LineCap.Round;
+                            g.DrawArc(brush, dot_rect2, LineAngle, LineWidth * 3.6F);
+                        }
                     }
                 }
 
@@ -264,41 +334,35 @@ namespace AntdUI
                 string? textToRender = Checked ? CheckedText : UnCheckedText;
                 if (textToRender != null)
                 {
-                    Color _fore = fore ?? Style.Db.PrimaryColor;
+                    Color _fore = fore ?? Colour.PrimaryColor.Get("Switch", ColorScheme);
                     using (var brush = new SolidBrush(_fore))
                     {
                         var textSize = g.MeasureString(textToRender, Font);
                         var textRect = Checked
-                            ? new RectangleF(rect_read.X + (rect_read.Width - rect_read.Height + gap2) / 2 - textSize.Width / 2, rect_read.Y + rect_read.Height / 2 - textSize.Height / 2, textSize.Width, textSize.Height)
-                            : new RectangleF(rect_read.X + (rect_read.Height - gap + (rect_read.Width - rect_read.Height + gap) / 2 - textSize.Width / 2), rect_read.Y + rect_read.Height / 2 - textSize.Height / 2, textSize.Width, textSize.Height);
-                        g.DrawStr(textToRender, Font, brush, textRect);
+                            ? new Rectangle(rect_read.X + (rect_read.Width - rect_read.Height + gap2) / 2 - textSize.Width / 2, rect_read.Y + rect_read.Height / 2 - textSize.Height / 2, textSize.Width, textSize.Height)
+                            : new Rectangle(rect_read.X + (rect_read.Height - gap + (rect_read.Width - rect_read.Height + gap) / 2 - textSize.Width / 2), rect_read.Y + rect_read.Height / 2 - textSize.Height / 2, textSize.Width, textSize.Height);
+                        g.String(textToRender, Font, brush, textRect);
                     }
                 }
             }
             this.PaintBadge(g);
             base.OnPaint(e);
         }
-        internal void PaintClick(Graphics g, GraphicsPath path, Rectangle rect, RectangleF rect_read, Color color)
+        internal void PaintClick(Canvas g, GraphicsPath path, Rectangle rect, RectangleF rect_read, Color color)
         {
-            if (AnimationClick)
+            if (AnimationClick || true)
             {
-                float maxw = rect_read.Width + ((rect.Width - rect_read.Width) * AnimationClickValue), maxh = rect_read.Height + ((rect.Height - rect_read.Height) * AnimationClickValue),
-                    alpha = 100 * (1F - AnimationClickValue);
-                using (var brush = new SolidBrush(Helper.ToColor(alpha, color)))
+                float alpha = 100 * (1F - AnimationClickValue),
+                    maxw = rect_read.Width + ((rect.Width - rect_read.Width) * AnimationClickValue), maxh = rect_read.Height + ((rect.Height - rect_read.Height) * AnimationClickValue);
+                using (var path_click = new RectangleF(rect.X + (rect.Width - maxw) / 2F, rect.Y + (rect.Height - maxh) / 2F, maxw, maxh).RoundPath(maxh))
                 {
-                    using (var path_click = new RectangleF((rect.Width - maxw) / 2F, (rect.Height - maxh) / 2F, maxw, maxh).RoundPath(maxh))
-                    {
-                        path_click.AddPath(path, false);
-                        g.FillPath(brush, path_click);
-                    }
+                    path_click.AddPath(path, false);
+                    g.Fill(Helper.ToColor(alpha, color), path_click);
                 }
             }
         }
 
-        public override Rectangle ReadRectangle
-        {
-            get => ClientRectangle.PaddingRect(Padding, WaveSize * Config.Dpi);
-        }
+        public override Rectangle ReadRectangle => ClientRectangle.PaddingRect(Padding, WaveSize * Config.Dpi);
 
         public override GraphicsPath RenderRegion
         {
@@ -321,8 +385,19 @@ namespace AntdUI
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
+            init = false;
             Focus();
             base.OnMouseDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            if (e.KeyCode is Keys.Space || e.KeyCode is Keys.Enter)
+            {
+                OnClick(EventArgs.Empty);
+                e.Handled = true;
+            }
         }
 
         float AnimationHoverValue = 0;
@@ -339,7 +414,7 @@ namespace AntdUI
                 SetCursor(value && enabled);
                 if (enabled)
                 {
-                    if (Config.Animation)
+                    if (Config.HasAnimation(nameof(Switch)))
                     {
                         ThreadHover?.Dispose();
                         AnimationHover = true;
@@ -385,6 +460,7 @@ namespace AntdUI
             ThreadClick?.Dispose();
             ThreadCheck?.Dispose();
             ThreadHover?.Dispose();
+            ThreadLoading?.Dispose();
             base.Dispose(disposing);
         }
         ITask? ThreadHover = null;
@@ -396,7 +472,7 @@ namespace AntdUI
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (Config.Animation && e.Button == MouseButtons.Left)
+            if (Config.HasAnimation(nameof(Switch)) && e.Button == MouseButtons.Left)
             {
                 ThreadClick?.Dispose();
                 AnimationClickValue = 0;
@@ -432,6 +508,40 @@ namespace AntdUI
         {
             base.OnLeave(e);
             ExtraMouseHover = false;
+        }
+
+        #endregion
+
+        #region 焦点
+
+        bool hasFocus = false;
+        /// <summary>
+        /// 是否存在焦点
+        /// </summary>
+        [Browsable(false)]
+        [Description("是否存在焦点"), Category("行为"), DefaultValue(false)]
+        public bool HasFocus
+        {
+            get => hasFocus;
+            private set
+            {
+                if (value && _mouseHover) value = false;
+                if (hasFocus == value) return;
+                hasFocus = value;
+                Invalidate();
+            }
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            if (init) HasFocus = true;
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            HasFocus = false;
         }
 
         #endregion

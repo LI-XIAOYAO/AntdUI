@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -69,6 +65,8 @@ namespace Demo.Controls
             header1.Description = "屏幕边缘滑出的浮层面板。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Divider.Description";
+            header1.LocalizationText = "Divider.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -93,7 +91,7 @@ namespace Demo.Controls
             panel2.Controls.Add(panel3);
             panel2.Controls.Add(button1);
             panel2.Dock = DockStyle.Top;
-            panel2.Location = new Point(0, 22);
+            panel2.Location = new Point(0, 28);
             panel2.Name = "panel2";
             panel2.Size = new Size(543, 71);
             panel2.TabIndex = 2;
@@ -112,11 +110,10 @@ namespace Demo.Controls
             // 
             // radio2
             // 
-            radio2.AutoCheck = true;
             radio2.AutoSizeMode = AntdUI.TAutoSize.Width;
             radio2.Checked = true;
             radio2.Dock = DockStyle.Left;
-            radio2.Location = new Point(256, 0);
+            radio2.Location = new Point(258, 0);
             radio2.Name = "radio2";
             radio2.Size = new Size(86, 46);
             radio2.TabIndex = 1;
@@ -124,10 +121,9 @@ namespace Demo.Controls
             // 
             // radio4
             // 
-            radio4.AutoCheck = true;
             radio4.AutoSizeMode = AntdUI.TAutoSize.Width;
             radio4.Dock = DockStyle.Left;
-            radio4.Location = new Point(182, 0);
+            radio4.Location = new Point(184, 0);
             radio4.Name = "radio4";
             radio4.Size = new Size(74, 46);
             radio4.TabIndex = 3;
@@ -135,23 +131,21 @@ namespace Demo.Controls
             // 
             // radio3
             // 
-            radio3.AutoCheck = true;
             radio3.AutoSizeMode = AntdUI.TAutoSize.Width;
             radio3.Dock = DockStyle.Left;
-            radio3.Location = new Point(75, 0);
+            radio3.Location = new Point(76, 0);
             radio3.Name = "radio3";
-            radio3.Size = new Size(107, 46);
+            radio3.Size = new Size(108, 46);
             radio3.TabIndex = 2;
             radio3.Text = "bottom";
             // 
             // radio1
             // 
-            radio1.AutoCheck = true;
             radio1.AutoSizeMode = AntdUI.TAutoSize.Width;
             radio1.Dock = DockStyle.Left;
             radio1.Location = new Point(0, 0);
             radio1.Name = "radio1";
-            radio1.Size = new Size(75, 46);
+            radio1.Size = new Size(76, 46);
             radio1.TabIndex = 0;
             radio1.Text = "top";
             // 
@@ -170,11 +164,12 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Drawer.{id}";
             divider1.Location = new Point(0, 0);
             divider1.Margin = new Padding(10);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(543, 22);
+            divider1.Size = new Size(543, 28);
             divider1.TabIndex = 0;
             divider1.Text = "基本";
             // 

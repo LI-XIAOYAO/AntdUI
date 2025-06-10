@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,9 +43,10 @@ namespace AntdUI
         /// 显示的水印文本
         /// </summary>
         [Description("显示的水印文本S"), Category("行为"), DefaultValue(null)]
+        [Localizable(true)]
         public string? PlaceholderStart
         {
-            get => placeholderS;
+            get => this.GetLangI(LocalizationPlaceholderStart, placeholderS);
             set
             {
                 if (placeholderS == value) return;
@@ -54,13 +55,17 @@ namespace AntdUI
             }
         }
 
+        [Description("显示的水印文本S"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationPlaceholderStart { get; set; }
+
         /// <summary>
         /// 显示的水印文本
         /// </summary>
         [Description("显示的水印文本E"), Category("行为"), DefaultValue(null)]
+        [Localizable(true)]
         public string? PlaceholderEnd
         {
-            get => placeholderE;
+            get => this.GetLangI(LocalizationPlaceholderEnd, placeholderE);
             set
             {
                 if (placeholderE == value) return;
@@ -68,6 +73,9 @@ namespace AntdUI
                 Invalidate();
             }
         }
+
+        [Description("显示的水印文本E"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationPlaceholderEnd { get; set; }
 
         /// <summary>
         /// 水印文本
@@ -102,11 +110,18 @@ namespace AntdUI
             get => _value;
             set
             {
+                if (_value == value) return;
                 _value = value;
                 ValueChanged?.Invoke(this, new DateTimesEventArgs(value));
-                if (value == null) Text = "";
-                else Text = value[0].ToString(Format) + "\t" + value[1].ToString(Format);
+                SetText(value);
+                OnPropertyChanged(nameof(Value));
             }
+        }
+
+        void SetText(DateTime[]? value)
+        {
+            if (value == null) Text = "";
+            else Text = value[0].ToString(Format) + "\t" + value[1].ToString(Format);
         }
 
         /// <summary>
@@ -120,6 +135,12 @@ namespace AntdUI
         /// </summary>
         [Description("最大日期"), Category("数据"), DefaultValue(null)]
         public DateTime? MaxDate { get; set; }
+
+        /// <summary>
+        /// 时间值水平对齐
+        /// </summary>
+        [Description("时间值水平对齐"), Category("外观"), DefaultValue(false)]
+        public bool ValueTimeHorizontal { get; set; }
 
         protected override void OnTextChanged(EventArgs e)
         {
@@ -212,7 +233,7 @@ namespace AntdUI
 
         protected override void OnHandleCreated(EventArgs e)
         {
-            if (_value != null) Text = _value[0].ToString(Format) + "\t" + _value[1].ToString(Format);
+            SetText(_value);
             base.OnHandleCreated(e);
         }
 
@@ -240,14 +261,14 @@ namespace AntdUI
             get => showicon;
         }
 
-        protected override void PaintRIcon(Graphics g, Rectangle rect_r)
+        protected override void PaintRIcon(Canvas g, Rectangle rect_r)
         {
             if (showicon)
             {
-                using (var bmp = SvgDb.IcoDate.SvgToBmp(rect_r.Width, rect_r.Height, Style.Db.TextQuaternary))
+                using (var bmp = SvgDb.IcoDate.SvgToBmp(rect_r.Width, rect_r.Height, Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
                 {
                     if (bmp == null) return;
-                    g.DrawImage(bmp, rect_r);
+                    g.Image(bmp, rect_r);
                 }
             }
         }
@@ -274,7 +295,9 @@ namespace AntdUI
         /// <summary>
         /// 展开下拉菜单
         /// </summary>
-        bool ExpandDrop
+        [Browsable(false)]
+        [Description("展开下拉菜单"), Category("行为"), DefaultValue(false)]
+        public bool ExpandDrop
         {
             get => expandDrop;
             set
@@ -287,13 +310,7 @@ namespace AntdUI
                     {
                         if (ShowTime)
                         {
-                            subForm = new LayeredFormCalendarTimeRange(this, ReadRectangle, _value, date =>
-                            {
-                                Value = date;
-                            }, btn =>
-                            {
-                                PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn));
-                            }, BadgeAction);
+                            subForm = new LayeredFormCalendarTimeRange(this, ReadRectangle, _value, EndFocused, date => Value = date, btn => PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn)), BadgeAction);
                             subForm.Disposed += (a, b) =>
                             {
                                 subForm = null;
@@ -303,13 +320,7 @@ namespace AntdUI
                         }
                         else
                         {
-                            subForm = new LayeredFormCalendarRange(this, ReadRectangle, _value, date =>
-                            {
-                                Value = date;
-                            }, btn =>
-                            {
-                                PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn));
-                            }, BadgeAction);
+                            subForm = new LayeredFormCalendarRange(this, ReadRectangle, _value, EndFocused, date => Value = date, btn => PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn)), BadgeAction);
                             subForm.Disposed += (a, b) =>
                             {
                                 subForm = null;
@@ -338,17 +349,18 @@ namespace AntdUI
             AnimationBarValue = RectangleF.Empty;
             if (IsHandleCreated)
             {
+                if (IsTextEmpty)
+                {
+                    Value = null;
+                    return;
+                }
                 string text = Text;
                 int index = text.IndexOf("\t");
                 if (index > 0)
                 {
                     string stext = text.Substring(0, index), etext = text.Substring(index + 1);
                     if (DateTime.TryParse(stext, out var date_s) && DateTime.TryParse(etext, out var date_e)) Value = new DateTime[] { date_s, date_e };
-                    else
-                    {
-                        if (_value == null) Text = "";
-                        else Text = _value[0].ToString(Format) + "\t" + _value[1].ToString(Format);
-                    }
+                    SetText(_value);
                 }
             }
         }
@@ -378,16 +390,8 @@ namespace AntdUI
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            if (keyData == Keys.Escape && subForm != null)
-            {
-                subForm.IClose();
-                return true;
-            }
-            else if (keyData == Keys.Down && subForm == null)
-            {
-                ExpandDrop = true;
-                return true;
-            }
+            if (keyData == Keys.Escape && subForm != null) subForm.IClose();
+            else if (keyData == Keys.Down && subForm == null) ExpandDrop = true;
             else if (keyData == Keys.Enter)
             {
                 if (StartFocused || EndFocused)
@@ -451,7 +455,6 @@ namespace AntdUI
                             }
                         }
                     }
-                    return true;
                 }
             }
             return base.ProcessCmdKey(ref msg, keyData);
@@ -511,36 +514,34 @@ namespace AntdUI
                 }
             }
         }
-        protected override void PaintOtherBor(Graphics g, RectangleF rect_read, float radius, Color back, Color borderColor, Color borderActive)
+        protected override void PaintOtherBor(Canvas g, RectangleF rect_read, float radius, Color back, Color borderColor, Color borderActive)
         {
+            string? placeholderS = PlaceholderStart, placeholderE = PlaceholderEnd;
             if ((showS && placeholderS != null) || (showE && placeholderE != null))
             {
-                using (var fore = new SolidBrush(Style.Db.TextQuaternary))
+                using (var fore = new SolidBrush(Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
                 {
-                    if (showS && placeholderS != null) g.DrawStr(placeholderS, Font, fore, rect_d_l, sf_placeholder);
-                    if (showE && placeholderE != null) g.DrawStr(placeholderE, Font, fore, rect_d_r, sf_placeholder);
+                    if (showS && placeholderS != null) g.String(placeholderS, Font, fore, rect_d_l, sf_placeholder);
+                    if (showE && placeholderE != null) g.String(placeholderE, Font, fore, rect_d_r, sf_placeholder);
                 }
             }
             if (AnimationBar)
             {
                 float h = rect_text.Height * 0.14F;
-                var BarColor = BorderActive ?? Style.Db.Primary;
-                using (var brush = new SolidBrush(BarColor))
-                {
-                    g.FillRectangle(brush, new RectangleF(AnimationBarValue.X, rect_read.Bottom - h, AnimationBarValue.Width, h));
-                }
+                var BarColor = BorderActive ?? Colour.Primary.Get("DatePicker", ColorScheme);
+                g.Fill(BarColor, new RectangleF(AnimationBarValue.X, rect_read.Bottom - h, AnimationBarValue.Width, h));
             }
             else if (StartFocused || EndFocused)
             {
                 float h = rect_text.Height * 0.14F;
-                var BarColor = BorderActive ?? Style.Db.Primary;
+                var BarColor = BorderActive ?? Colour.Primary.Get("DatePicker", ColorScheme);
                 using (var brush = new SolidBrush(BarColor))
                 {
-                    if (StartFocused) g.FillRectangle(brush, new RectangleF(rect_d_l.X, rect_read.Bottom - h, rect_d_l.Width, h));
-                    else g.FillRectangle(brush, new RectangleF(rect_d_r.X, rect_read.Bottom - h, rect_d_r.Width, h));
+                    if (StartFocused) g.Fill(brush, new RectangleF(rect_d_l.X, rect_read.Bottom - h, rect_d_l.Width, h));
+                    else g.Fill(brush, new RectangleF(rect_d_r.X, rect_read.Bottom - h, rect_d_r.Width, h));
                 }
             }
-            g.GetImgExtend(swapSvg ?? SvgDb.IcoSwap, rect_d_ico, Style.Db.TextQuaternary);
+            g.GetImgExtend(swapSvg ?? SvgDb.IcoSwap, rect_d_ico, Colour.TextQuaternary.Get("DatePicker", ColorScheme));
         }
 
         #endregion
@@ -559,7 +560,7 @@ namespace AntdUI
             if (StartEndFocusedTmp == temp) return;
             StartEndFocusedTmp = temp;
 
-            if (Config.Animation && (s || e))
+            if (Config.HasAnimation(nameof(DatePicker)) && (s || e))
             {
                 RectangleF NewValue;
                 if (s) NewValue = rect_d_l;

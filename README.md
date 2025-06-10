@@ -4,12 +4,12 @@
 
 <h1>AntdUI</h1>
 
-[![AntDesign](https://img.shields.io/badge/AntDesign%20-5.0-1677ff?style=for-the-badge&logo=antdesign)](https://ant-design.antgroup.com/components/overview-cn)
-[![NuGet](https://img.shields.io/nuget/v/AntdUI.svg?style=for-the-badge&label=AntdUI&logo=nuget)](https://www.nuget.org/packages/AntdUI)
-[![Download](https://img.shields.io/nuget/dt/antdui?style=for-the-badge)](https://www.nuget.org/packages/AntdUI)
-[![License](https://img.shields.io/badge/license-Apache%202.0-4EB1BA.svg?style=for-the-badge)](http://www.apache.org/licenses/LICENSE-2.0)
+[![NuGet](https://img.shields.io/nuget/v/AntdUI.svg?style=flat-square&label=AntdUI&logo=nuget)](https://www.nuget.org/packages/AntdUI)
+[![AntDesign](https://img.shields.io/badge/AntDesign%20-5.0-1677ff?style=flat-square&logo=antdesign)](https://ant-design.antgroup.com/components/overview-cn)
+[![Download](https://img.shields.io/nuget/dt/antdui?style=flat-square)](https://www.nuget.org/packages/AntdUI)
+[![License](https://img.shields.io/badge/license-Apache%202.0-4EB1BA.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0)
 
-[中文](README.md)・English・[Document](doc/wiki/en/Home.md)・[Demo](https://gitee.com/mubaiyanghua/antdui-demo)
+[中文](README-zh.md)・English・[Document](doc/wiki/en/Home.md)・[UpdateLog](doc/wiki/en/UpdateLog.md)・[Demo](https://gitee.com/mubaiyanghua/antdui-demo)
 
 </div>
 
@@ -33,9 +33,10 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 
 ### 🖥 Requirements
 
-- .NET 6.0 and higher.
-- .NET Framework4.8 and above.
-- .NET Framework4.0 and above.
+- .NET 9.0
+- .NET 6.0
+- .NET Framework4.8
+- .NET Framework4.0 and above
 
 ### 🌴 Control
 
@@ -44,11 +45,12 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 ➡️| [**Button**](doc/wiki/en/Control/Button.md) | ✅ | ✅ |
 ➡️| [**FloatButton**](doc/wiki/en/Control/FloatButton.md) | ✅ | ❎ |
 ||||
-⬇️| Layout `4` | Animation | Disable |
+⬇️| Layout `5` | Animation | Disable |
 ➡️| [**Divider**](doc/wiki/en/Control/Divider.md) | ❎ | ❎ |
 ➡️| [**StackPanel**](doc/wiki/en/Control/StackPanel.md) | ❎ | ❎ |
 ➡️| [**FlowPanel**](doc/wiki/en/Control/FlowPanel.md) | ❎ | ❎ |
 ➡️| [**GridPanel**](doc/wiki/en/Control/GridPanel.md) | ❎ | ❎ |
+➡️| [**Splitter**](doc/wiki/zh/Control/Splitter.md) | ❎ | ❎ |
 ||||
 ⬇️| Navigation `6` | Animation | Disable |
 ➡️| [**Breadcrumb**](doc/wiki/en/Control/Breadcrumb.md) | ✅ | ❎ |
@@ -73,7 +75,7 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 ➡️| [**TimePicker**](doc/wiki/en/Control/TimePicker.md) | ✅ | ✅ |
 ➡️| [**UploadDragger**](doc/wiki/en/Control/UploadDragger.md) | ✅ | ❎ |
 ||||
-⬇️| Data Display `16` | Animation | Disable |
+⬇️| Data Display `18` | Animation | Disable |
 ➡️| [**Avatar**](doc/wiki/en/Control/Avatar.md) | ❎ | ❎ |
 ➡️| [**Badge**](doc/wiki/en/Control/Badge.md) | ✅ | ❎ |
 ➡️| [**Calendar**](doc/wiki/en/Control/Calendar.md) | ✅ | ❎ |
@@ -88,8 +90,10 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 ➡️| [**Tag**](doc/wiki/en/Control/Tag.md) | ✅ | ❎ |
 ➡️| [**Timeline**](doc/wiki/en/Control/Timeline.md) | ❎ | ❎ |
 ➡️| [**Tooltip**](doc/wiki/en/Control/Tooltip.md) | ✅ | ❎ |
+➡️| [**Tour**](doc/wiki/en/Control/Tour.md) | ✅ | ❎ |
 ➡️| [**Tree**](doc/wiki/en/Control/Tree.md) | ✅ | ✅ |
 ➡️| [**Label**](doc/wiki/en/Control/Label.md) | ✅ | ❎ |
+➡️| [**LabelTime**](doc/wiki/zh/Control/LabelTime.md) | ✅ | ❎ |
 ||||
 ⬇️| Feedback `7` | Animation | Disable |
 ➡️| [**Alert**](doc/wiki/en/Control/Alert.md) | ✅ | ❎ |
@@ -103,14 +107,13 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 ➡️| **MsgList** Friend message list | ✅ | ❎ |
 ➡️| **ChatList** Chat bubble list | ✅ | ❎ |
 ||||
-⬇️| Other `5` | Animation | Disable |
-➡️| [**WindowBar**](doc/wiki/en/Control/WindowBar.md) | ✅ | ❎ |
+⬇️| Other `4` | Animation | Disable |
 ➡️| [**Battery**](doc/wiki/en/Control/Battery.md) | ✅ | ❎ |
 ➡️| [**Signal**](doc/wiki/en/Control/Signal.md) | ✅ | ❎ |
 ➡️| [**ContextMenuStrip**](doc/wiki/en/Control/ContextMenuStrip.md) | ✅ | ❎ |
 ➡️| **Image3D** | ✅ | ❎ |
 
-### 🐿️ Donation 🥣💲🐖👚
+### 🐿️ Donation
 ![Payment](doc/pre/Payment.png)
 
 ### 🎨 Screenshot
@@ -120,29 +123,5 @@ Ant Design for WinForms, reimagines desktop app aesthetics with modern frontend 
 > Pure GDI drawing (without inheriting from `TextBox`)
 
 ![ChatUI](doc/screenshot/ChatUI.gif)
-
-#### Control
-
-| **Button** | **Badge** |
-| :--: | :--: |
-| ![Button](doc/screenshot/Button.gif) | ![Badge](doc/screenshot/Badge.gif) |
-| **Carousel** | **Input** |
-| ![Carousel](doc/screenshot/Carousel.gif) | ![Input](doc/screenshot/Input.gif) |
-| **Progress** | **Avatar** |
-| ![Progress](doc/screenshot/Progress.gif) | ![Avatar](doc/screenshot/Avatar.gif) |
-| **Checkbox** | **Radio** |
-| ![Checkbox](doc/screenshot/Checkbox.gif) | ![Radio](doc/screenshot/Radio.gif) |
-| **Tooltip** | **Panel** |
-| ![Tooltip](doc/screenshot/Tooltip.gif) | ![Panel](doc/screenshot/Panel.gif) |
-| **Tabs** | **Alert** |
-| ![Tabs](doc/screenshot/Tabs.gif) | ![Alert](doc/screenshot/Alert.gif) |
-| **Segmented** | **Menu** |
-| ![Segmented](doc/screenshot/Segmented.gif) | ![Menu](doc/screenshot/Menu.gif) |
-| **Divider** | **Slider** |
-| ![Divider](doc/screenshot/Divider.gif) | ![Slider](doc/screenshot/Slider.gif) |
-| **Message** | **Notification** |
-| ![Message](doc/screenshot/Message.gif) | ![Notification](doc/screenshot/Notification.gif) |
-| **Switch** | **Table** |
-| ![Switch](doc/screenshot/Switch.gif) | ![Table](doc/screenshot/Table.gif) |
 
 🦦

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Design;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace AntdUI
@@ -53,6 +54,7 @@ namespace AntdUI
                 dateFormat = value;
                 ShowTime = dateFormat.Contains("H");
                 Text = _value.HasValue ? _value.Value.ToString(dateFormat) : "";
+                OnPropertyChanged(nameof(Format));
             }
         }
 
@@ -66,11 +68,15 @@ namespace AntdUI
             get => _value;
             set
             {
+                if (_value == value) return;
                 _value = value;
                 ValueChanged?.Invoke(this, new DateTimeNEventArgs(value));
-                Text = value.HasValue ? value.Value.ToString(Format) : "";
+                SetText(value);
+                OnPropertyChanged(nameof(Value));
             }
         }
+
+        void SetText(DateTime? value) => Text = value.HasValue ? value.Value.ToString(Format) : "";
 
         /// <summary>
         /// 最小日期
@@ -113,14 +119,44 @@ namespace AntdUI
         public TAlignFrom Placement { get; set; } = TAlignFrom.BL;
 
         /// <summary>
+        /// 时间值水平对齐
+        /// </summary>
+        [Description("时间值水平对齐"), Category("外观"), DefaultValue(false)]
+        public bool ValueTimeHorizontal { get; set; }
+
+        /// <summary>
+        /// 显示今天
+        /// </summary>
+        [Description("显示今天"), Category("外观"), DefaultValue(true)]
+        public bool ShowButtonToDay { get; set; } = true;
+
+        /// <summary>
         /// 下拉箭头是否显示
         /// </summary>
         [Description("下拉箭头是否显示"), Category("外观"), DefaultValue(false)]
-        public bool DropDownArrow { get; set; } = false;
+        public bool DropDownArrow { get; set; }
+
+        TDatePicker picker = TDatePicker.Date;
+        /// <summary>
+        /// 设置选择器类型
+        /// </summary>
+        [Description("设置选择器类型"), Category("外观"), DefaultValue(TDatePicker.Date)]
+        public TDatePicker Picker
+        {
+            get => picker;
+            set
+            {
+                if (picker == value) return;
+                picker = value;
+                if (picker == TDatePicker.Month) Format = "yyyy-MM";
+                else if (picker == TDatePicker.Year) Format = "yyyy";
+                else Format = "yyyy-MM-dd";
+            }
+        }
 
         protected override void OnHandleCreated(EventArgs e)
         {
-            if (_value.HasValue) Text = _value.Value.ToString(Format);
+            SetText(_value);
             base.OnHandleCreated(e);
         }
 
@@ -143,19 +179,16 @@ namespace AntdUI
             }
         }
 
-        public override bool HasSuffix
-        {
-            get => showicon;
-        }
+        public override bool HasSuffix => showicon;
 
-        protected override void PaintRIcon(Graphics g, Rectangle rect_r)
+        protected override void PaintRIcon(Canvas g, Rectangle rect_r)
         {
             if (showicon)
             {
-                using (var bmp = SvgDb.IcoDate.SvgToBmp(rect_r.Width, rect_r.Height, Style.Db.TextQuaternary))
+                using (var bmp = SvgDb.IcoDate.SvgToBmp(rect_r.Width, rect_r.Height, Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
                 {
                     if (bmp == null) return;
-                    g.DrawImage(bmp, rect_r);
+                    g.Image(bmp, rect_r);
                 }
             }
         }
@@ -181,7 +214,9 @@ namespace AntdUI
         /// <summary>
         /// 展开下拉菜单
         /// </summary>
-        bool ExpandDrop
+        [Browsable(false)]
+        [Description("展开下拉菜单"), Category("行为"), DefaultValue(false)]
+        public bool ExpandDrop
         {
             get => expandDrop;
             set
@@ -192,13 +227,7 @@ namespace AntdUI
                 {
                     if (subForm == null)
                     {
-                        subForm = new LayeredFormCalendar(this, ReadRectangle, _value, date =>
-                        {
-                            Value = date;
-                        }, btn =>
-                        {
-                            PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn));
-                        }, BadgeAction);
+                        subForm = new LayeredFormCalendar(this, ReadRectangle, _value, Picker, date => Value = date, btn => PresetsClickChanged?.Invoke(this, new ObjectNEventArgs(btn)), BadgeAction);
                         subForm.Disposed += (a, b) =>
                         {
                             subForm = null;
@@ -217,7 +246,12 @@ namespace AntdUI
             ExpandDrop = false;
             if (IsHandleCreated)
             {
-                if (DateTime.TryParse(Text, out var _d))
+                if (IsTextEmpty)
+                {
+                    Value = null;
+                    return;
+                }
+                if (DateTime.TryParseExact(Text, Format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var _d))
                 {
                     Value = _d;
                     if (subForm != null)
@@ -226,11 +260,7 @@ namespace AntdUI
                         subForm.Print();
                     }
                 }
-                else
-                {
-                    if (_value.HasValue) Text = _value.Value.ToString(Format);
-                    else Text = "";
-                }
+                SetText(_value);
             }
         }
 
@@ -259,16 +289,8 @@ namespace AntdUI
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            if (keyData == Keys.Escape && subForm != null)
-            {
-                subForm.IClose();
-                return true;
-            }
-            else if (keyData == Keys.Down && subForm == null)
-            {
-                ExpandDrop = true;
-                return true;
-            }
+            if (keyData == Keys.Escape && subForm != null) subForm.IClose();
+            else if (keyData == Keys.Down && subForm == null) ExpandDrop = true;
             else if (keyData == Keys.Enter && DateTime.TryParse(Text, out var _d))
             {
                 Value = _d;
@@ -298,15 +320,29 @@ namespace AntdUI
             Date = date;
             Fill = fill;
         }
+        public DateBadge(string date, string content)
+        {
+            Date = date;
+            Content = content;
+        }
         public DateBadge(string date, int count)
         {
+            Round = true;
             Date = date;
-            Count = count;
+            if (count > 0)
+            {
+                if (count == 999) Content = "999";
+                else if (count > 1000) Content = (count / 1000).ToString().Substring(0, 1) + "K+";
+                else if (count > 99) Content = "99+";
+                else Content = count.ToString();
+            }
         }
-        public DateBadge(string date, int count, Color fill)
+        public DateBadge(string date, int count, Color fill) : this(date, count)
         {
-            Date = date;
-            Count = count;
+            Fill = fill;
+        }
+        public DateBadge(string date, string content, Color fill) : this(date, content)
+        {
             Fill = fill;
         }
         /// <summary>
@@ -315,13 +351,37 @@ namespace AntdUI
         public string Date { get; set; }
 
         /// <summary>
-        /// 徽标计数 0是点
+        /// 徽标内容 空字符串是点
         /// </summary>
-        public int Count { get; set; }
+        public string? Content { get; set; }
 
         /// <summary>
         /// 填充颜色
         /// </summary>
         public Color? Fill { get; set; }
+
+        public bool Round { get; set; }
+
+        public int Radius { get; set; } = 6;
+
+        /// <summary>
+        /// 徽标方向
+        /// </summary>
+        public TAlign Align { get; set; } = TAlign.TR;
+
+        /// <summary>
+        /// 徽标比例
+        /// </summary>
+        public float Size { get; set; } = .6F;
+
+        /// <summary>
+        /// 徽标偏移X
+        /// </summary>
+        public int OffsetX { get; set; } = 2;
+
+        /// <summary>
+        /// 徽标偏移Y
+        /// </summary>
+        public int OffsetY { get; set; } = 2;
     }
 }

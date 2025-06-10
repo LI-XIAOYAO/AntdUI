@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -40,6 +40,11 @@ namespace AntdUI
         public VirtualPanel()
         {
             ScrollBar = new ScrollBar(this);
+            invalidate = (it, rect) =>
+            {
+                if (rect.HasValue) Invalidate(new Rectangle(it.RECT.X + rect.Value.X - ScrollBar.ValueX, it.RECT.Y + rect.Value.Y - ScrollBar.ValueY, rect.Value.Width, rect.Value.Height));
+                else Invalidate(new Rectangle(it.RECT.X - ScrollBar.ValueX, it.RECT.Y - ScrollBar.ValueY, it.RECT.Width, it.RECT.Height));
+            };
             new Thread(LongTask)
             {
                 IsBackground = true
@@ -81,6 +86,21 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
+            }
+        }
+
+        TAlignRound radiusAlign = TAlignRound.ALL;
+        [Description("圆角方向"), Category("外观"), DefaultValue(TAlignRound.ALL)]
+        public TAlignRound RadiusAlign
+        {
+            get => radiusAlign;
+            set
+            {
+                if (radiusAlign == value) return;
+                radiusAlign = value;
+                Invalidate();
+                OnPropertyChanged(nameof(RadiusAlign));
             }
         }
 
@@ -100,6 +120,7 @@ namespace AntdUI
                 shadow = value;
                 DisposeShadow();
                 LoadLayout();
+                OnPropertyChanged(nameof(Shadow));
             }
         }
 
@@ -118,6 +139,7 @@ namespace AntdUI
                 shadowColor = value;
                 DisposeShadow();
                 LoadLayout();
+                OnPropertyChanged(nameof(ShadowColor));
             }
         }
 
@@ -135,6 +157,7 @@ namespace AntdUI
                 shadowOffsetX = value;
                 DisposeShadow();
                 LoadLayout();
+                OnPropertyChanged(nameof(ShadowOffsetX));
             }
         }
 
@@ -152,6 +175,7 @@ namespace AntdUI
                 shadowOffsetY = value;
                 DisposeShadow();
                 LoadLayout();
+                OnPropertyChanged(nameof(ShadowOffsetY));
             }
         }
 
@@ -170,6 +194,7 @@ namespace AntdUI
                 else if (value > 1) value = 1;
                 shadowOpacity = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ShadowOpacity));
             }
         }
 
@@ -194,6 +219,7 @@ namespace AntdUI
                 else if (value > 1) value = 1;
                 shadowOpacityHover = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ShadowOpacityHover));
             }
         }
 
@@ -208,6 +234,7 @@ namespace AntdUI
                 shadowAlign = value;
                 DisposeShadow();
                 LoadLayout();
+                OnPropertyChanged(nameof(ShadowAlign));
             }
         }
 
@@ -238,6 +265,7 @@ namespace AntdUI
                 gap = value;
                 LoadLayout();
                 Invalidate();
+                OnPropertyChanged(nameof(Gap));
             }
         }
 
@@ -246,10 +274,11 @@ namespace AntdUI
         bool isEmpty = false;
 
         [Description("是否显示空样式"), Category("外观"), DefaultValue(false)]
-        public bool Empty { get; set; } = false;
+        public bool Empty { get; set; }
 
         string? emptyText;
         [Description("数据为空显示文字"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? EmptyText
         {
             get => emptyText;
@@ -258,6 +287,7 @@ namespace AntdUI
                 if (emptyText == value) return;
                 emptyText = value;
                 Invalidate();
+                OnPropertyChanged(nameof(EmptyText));
             }
         }
 
@@ -369,6 +399,7 @@ namespace AntdUI
                     LoadLayout();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PauseLayout));
             }
         }
 
@@ -404,21 +435,20 @@ namespace AntdUI
                 if (controls.Count > 0)
                 {
                     isEmpty = false;
-                    int val = HandLayout(controls);
-                    ScrollBar.SetVrSize(val);
+                    HandLayout(controls);
                 }
                 else isEmpty = true;
             }
         }
 
         internal int CellCount = -1;
-        int HandLayout(List<VirtualItem> items)
+        Action<VirtualItem, Rectangle?> invalidate;
+        void HandLayout(List<VirtualItem> items)
         {
             var _rect = ClientRectangle;
-            if (_rect.Width == 0 || _rect.Height == 0) return 0;
-            ScrollBar.SizeChange(_rect);
+            if (_rect.Width == 0 || _rect.Height == 0) return;
             var rect = _rect.PaddingRect(Padding);
-            return Helper.GDI(g =>
+            var val = Helper.GDI(g =>
             {
                 int gap = (int)Math.Round(Gap * Config.Dpi), use_x = rect.X, use_y = rect.Y + gap, last_len = 0, max_height = 0;
                 int shadow = (int)(Shadow * Config.Dpi), shadow2 = shadow * 2, r = (int)(radius * Config.Dpi);
@@ -429,6 +459,7 @@ namespace AntdUI
                     var size = it.Size(g, new VirtualPanelArgs(this, rect, r));
                     it.WIDTH = size.Width;
                     it.HEIGHT = size.Height;
+                    it.invalidate = invalidate;
                 }
                 if (waterfall)
                 {
@@ -466,23 +497,10 @@ namespace AntdUI
                     if (max_height < it.HEIGHT) max_height = it.HEIGHT;
                     if (it is VirtualShadowItem virtualShadow)
                     {
-                        it.RECT.Width = it.WIDTH - shadow2;
-                        it.RECT.Height = it.HEIGHT - shadow2;
-                        it.RECT.X = use_x + shadow;
-                        it.RECT.Y = use_y + shadow;
-
-                        virtualShadow.RECT_S.Width = it.WIDTH;
-                        virtualShadow.RECT_S.Height = it.HEIGHT;
-                        virtualShadow.RECT_S.X = use_x;
-                        virtualShadow.RECT_S.Y = use_y;
+                        it.SetRECT(use_x + shadow, use_y + shadow, it.WIDTH - shadow2, it.HEIGHT - shadow2);
+                        virtualShadow.SetRECTS(use_x, use_y, it.WIDTH, it.HEIGHT);
                     }
-                    else
-                    {
-                        it.RECT.Width = it.WIDTH;
-                        it.RECT.Height = it.HEIGHT;
-                        it.RECT.X = use_x;
-                        it.RECT.Y = use_y;
-                    }
+                    else it.SetRECT(use_x, use_y, it.WIDTH, it.HEIGHT);
                     use_x += it.WIDTH + gap;
                     last_len = use_y + it.HEIGHT + gap;
                     it.SHOW = true;
@@ -706,6 +724,8 @@ namespace AntdUI
 
                 return last_len + gap * 2;
             });
+            ScrollBar.SetVrSize(val);
+            ScrollBar.SizeChange(_rect);
         }
 
         #region 瀑布流
@@ -919,7 +939,8 @@ namespace AntdUI
         {
             if (items == null || items.Count == 0 || isEmpty)
             {
-                if (Empty) PaintEmpty(e.Graphics.High(), ClientRectangle);
+                if (Empty) e.Graphics.High().PaintEmpty(ClientRectangle, Font, Colour.Text.Get("VirtualPanel", ColorScheme), EmptyText, EmptyImage);
+                base.OnPaint(e);
                 return;
             }
             var g = e.Graphics.High();
@@ -946,27 +967,8 @@ namespace AntdUI
             }
             g.ResetTransform();
             ScrollBar.Paint(g);
-            if (Config.Animation && BlurBar != null) _event.SetWait();
+            if (Config.HasAnimation(nameof(VirtualPanel)) && BlurBar != null) _event.SetWait();
             base.OnPaint(e);
-        }
-
-        StringFormat stringCenter = Helper.SF_NoWrap();
-        void PaintEmpty(Graphics g, Rectangle rect)
-        {
-            using (var fore = new SolidBrush(Style.Db.Text))
-            {
-                string emptytext = EmptyText ?? Localization.Provider?.GetLocalizedString("NoData") ?? "暂无数据";
-                if (EmptyImage == null) g.DrawStr(emptytext, Font, fore, rect, stringCenter);
-                else
-                {
-                    int _gap = (int)(gap * Config.Dpi);
-                    var size = g.MeasureString(emptytext, Font).Size();
-                    Rectangle rect_img = new Rectangle(rect.X + (rect.Width - EmptyImage.Width) / 2, rect.Y + (rect.Height - EmptyImage.Height) / 2 - size.Height, EmptyImage.Width, EmptyImage.Height),
-                        rect_font = new Rectangle(rect.X, rect_img.Bottom + _gap, rect.Width, size.Height);
-                    g.DrawImage(EmptyImage, rect_img);
-                    g.DrawStr(emptytext, Font, fore, rect_font, stringCenter);
-                }
-            }
         }
 
         #region 模糊标题
@@ -1006,7 +1008,7 @@ namespace AntdUI
 
                                 using (var brush = new SolidBrush(Color.FromArgb(45, BlurBar.BackColor)))
                                 {
-                                    g.FillRectangle(brush, 0, 0, bmp.Width, bmp.Height);
+                                    g.Fill(brush, 0, 0, bmp.Width, bmp.Height);
                                 }
                             }
                             Helper.Blur(bmp, BlurBarHeight * 6);
@@ -1023,11 +1025,11 @@ namespace AntdUI
 
         void IBlurBar(Control BlurBar, Bitmap? bmp)
         {
-            Invoke(new Action(() =>
+            Invoke(() =>
             {
                 BlurBar.BackgroundImage?.Dispose();
                 BlurBar.BackgroundImage = bmp;
-            }));
+            });
         }
 
         protected override void Dispose(bool disposing)
@@ -1044,6 +1046,7 @@ namespace AntdUI
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+            LoadLayout();
             this.AddListener();
         }
         public void HandleEvent(EventType id, object? tag)
@@ -1051,7 +1054,7 @@ namespace AntdUI
             switch (id)
             {
                 case EventType.THEME:
-                    if (Config.Animation && BlurBar != null) _event.SetWait();
+                    if (Config.HasAnimation(nameof(VirtualPanel)) && BlurBar != null) _event.SetWait();
                     break;
             }
         }
@@ -1062,7 +1065,7 @@ namespace AntdUI
         /// <summary>
         /// 绘制阴影
         /// </summary>
-        void DrawShadow(VirtualShadowItem it, Graphics g, float radius)
+        void DrawShadow(VirtualShadowItem it, Canvas g, float radius)
         {
             if (shadow > 0)
             {
@@ -1072,9 +1075,9 @@ namespace AntdUI
                     if (!shadow_dir_tmp.ContainsKey(id))
                     {
                         int shadow = (int)(Shadow * Config.Dpi);
-                        using (var path = new Rectangle(shadow, shadow, it.RECT.Width, it.RECT.Height).RoundPath(radius, shadowAlign))
+                        using (var path = new Rectangle(shadow, shadow, it.RECT.Width, it.RECT.Height).RoundPath(radius, shadowAlign, radiusAlign))
                         {
-                            shadow_dir_tmp.Add(id, path.PaintShadow(it.RECT_S.Width, it.RECT_S.Height, shadowColor ?? Style.Db.TextBase, shadow));
+                            shadow_dir_tmp.Add(id, path.PaintShadowO(it.RECT_S.Width, it.RECT_S.Height, shadowColor ?? Colour.TextBase.Get("VirtualPanel", ColorScheme), shadow));
                         }
                     }
                     if (shadow_dir_tmp.TryGetValue(id, out var shadow_temp))
@@ -1086,7 +1089,7 @@ namespace AntdUI
                             else if (it.Hover) matrix.Matrix33 = shadowOpacityHover;
                             else matrix.Matrix33 = shadowOpacity;
                             attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                            g.DrawImage(shadow_temp, new Rectangle(it.RECT_S.X + shadowOffsetX, it.RECT_S.Y + shadowOffsetY, it.RECT_S.Width, it.RECT_S.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
+                            g.Image(shadow_temp, new Rectangle(it.RECT_S.X + shadowOffsetX, it.RECT_S.Y + shadowOffsetY, it.RECT_S.Width, it.RECT_S.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
                         }
                     }
                 }
@@ -1165,7 +1168,7 @@ namespace AntdUI
         {
             if (Enabled && ShadowOpacityAnimation && shadow > 0 && shadowOpacityHover > 0 && it is VirtualShadowItem virtualShadow && shadowOpacityHover > shadowOpacity)
             {
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(VirtualPanel)))
                 {
                     virtualShadow.ThreadHover?.Dispose();
                     virtualShadow.AnimationHover = true;
@@ -1247,7 +1250,6 @@ namespace AntdUI
                     SetHover(it, false);
                 }
             }
-
             if (count > 0) Invalidate();
         }
 
@@ -1256,8 +1258,8 @@ namespace AntdUI
             ScrollBar.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
-        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
-        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
+        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelXCore(value);
+        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelYCore(value);
 
         #endregion
     }
@@ -1286,6 +1288,14 @@ namespace AntdUI
         internal ITask? ThreadHover = null;
         internal float AnimationHoverValue = 0.1F;
         internal bool AnimationHover = false;
+
+        internal void SetRECTS(int x, int y, int w, int h)
+        {
+            RECT_S.Width = w;
+            RECT_S.Height = h;
+            RECT_S.X = x;
+            RECT_S.Y = y;
+        }
     }
     public abstract class VirtualItem
     {
@@ -1293,15 +1303,39 @@ namespace AntdUI
         public bool CanClick { get; set; } = true;
         public bool Hover { get; set; }
         public object? Tag { get; set; }
-        public abstract Size Size(Graphics g, VirtualPanelArgs e);
-        public abstract void Paint(Graphics g, VirtualPanelArgs e);
+        public abstract Size Size(Canvas g, VirtualPanelArgs e);
+        public abstract void Paint(Canvas g, VirtualPanelArgs e);
         public virtual bool MouseMove(VirtualPanel sender, VirtualPanelMouseArgs e) => true;
         public virtual void MouseLeave(VirtualPanel sender, VirtualPanelMouseArgs e) { }
         public virtual void MouseClick(VirtualPanel sender, VirtualPanelMouseArgs e) { }
 
-        internal bool SHOW = false;
-        internal bool SHOW_RECT = false;
-        internal Rectangle RECT;
+        public void Invalidate() => invalidate?.Invoke(this, null);
+        public void Invalidate(Rectangle rect) => invalidate?.Invoke(this, rect);
+
+        /// <summary>
+        /// 是否显示
+        /// </summary>
+        public bool SHOW = false;
+
+        /// <summary>
+        /// 是否在容器中渲染
+        /// </summary>
+        public bool SHOW_RECT = false;
+
+        /// <summary>
+        /// 渲染区域
+        /// </summary>
+        public Rectangle RECT;
+
+        internal void SetRECT(int x, int y, int w, int h)
+        {
+            RECT.Width = w;
+            RECT.Height = h;
+            RECT.X = x;
+            RECT.Y = y;
+        }
+
+        internal Action<VirtualItem, Rectangle?>? invalidate;
         internal int WIDTH;
         internal int HEIGHT;
     }

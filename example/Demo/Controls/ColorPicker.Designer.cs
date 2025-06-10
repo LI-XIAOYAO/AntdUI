@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -61,6 +57,8 @@ namespace Demo.Controls
             header1.Description = "提供颜色选取的组件。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "ColorPicker.Description";
+            header1.LocalizationText = "ColorPicker.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -95,7 +93,7 @@ namespace Demo.Controls
             colorPicker1.Location = new Point(56, 3);
             colorPicker1.Name = "colorPicker1";
             colorPicker1.ShowText = true;
-            colorPicker1.Size = new Size(133, 47);
+            colorPicker1.Size = new Size(134, 47);
             colorPicker1.TabIndex = 26;
             colorPicker1.Value = Color.FromArgb(22, 119, 255);
             // 

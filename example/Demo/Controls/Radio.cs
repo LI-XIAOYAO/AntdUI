@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -27,6 +27,20 @@ namespace Demo.Controls
         {
             form = _form;
             InitializeComponent();
+        }
+
+        private void button1_Click(object sender, System.EventArgs e) => radio9.Checked = !radio9.Checked;
+
+        private void button2_Click(object sender, System.EventArgs e) => radio9.Enabled = !radio9.Enabled;
+
+        private void radio9_CheckedChanged(object sender, AntdUI.BoolEventArgs e) => SetText();
+        private void radio9_EnabledChanged(object sender, System.EventArgs e) => SetText();
+
+        void SetText()
+        {
+            radio9.Text = (radio9.Checked ? "Checked" : "Unchecked") + "-" + (radio9.Enabled ? "Enabled" : "Disabled");
+            button1.Text = radio9.Checked ? "Uncheck" : "Check";
+            button2.Text = radio9.Enabled ? "Disable" : "Enable";
         }
     }
 }

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -103,12 +103,12 @@ namespace AntdUI
                             using (var g = Graphics.FromImage(bmpo).High())
                             {
                                 if (shadow > 0 && shadowOpacity > 0) g.PaintShadow(this, _rect, rect, _radius, round);
-                                g.PaintImg(rect, image, imageFit, _radius, round);
+                                g.Image(rect, image, imageFit, _radius, round);
                             }
                             using (var g = Graphics.FromImage(bmpo2).High())
                             {
                                 if (shadow > 0 && shadowOpacity > 0) g.PaintShadow(this, _rect, rect, _radius, round);
-                                g.PaintImg(rect, value, imageFit, _radius, round);
+                                g.Image(rect, value, imageFit, _radius, round);
                             }
                             var images = new List<Bitmap>(t);
                             if (Vertical)
@@ -202,7 +202,7 @@ namespace AntdUI
         /// 是否竖向
         /// </summary>
         [Description("是否竖向"), Category("动画"), DefaultValue(false)]
-        public bool Vertical { get; set; } = false;
+        public bool Vertical { get; set; }
 
         /// <summary>
         /// 速度
@@ -302,16 +302,21 @@ namespace AntdUI
         protected override void OnPaint(PaintEventArgs e)
         {
             var _rect = ClientRectangle;
-            if (image == null || _rect.Width == 0 || _rect.Height == 0) return;
+            if (_rect.Width == 0 || _rect.Height == 0) return;
+            if (image == null)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
             var rect = _rect.PaddingRect(Padding);
             float _radius = radius * Config.Dpi;
             FillRect(g, rect, back, _radius, round);
-            if (run != null && run.Tag is PointF point) g.DrawImage(run, point.X, point.Y, run.Width, run.Height);
+            if (run != null && run.Tag is PointF point) g.Image(run, point.X, point.Y, run.Width, run.Height);
             else
             {
                 if (shadow > 0 && shadowOpacity > 0) g.PaintShadow(this, _rect, rect, _radius, round);
-                g.PaintImg(rect, image, imageFit, _radius, round);
+                g.Image(rect, image, imageFit, _radius, round);
             }
             this.PaintBadge(g);
             base.OnPaint(e);
@@ -319,26 +324,20 @@ namespace AntdUI
 
         #region 渲染帮助
 
-        void FillRect(Graphics g, RectangleF rect, Color color, float radius, bool round)
+        void FillRect(Canvas g, RectangleF rect, Color color, float radius, bool round)
         {
-            using (var brush = new SolidBrush(color))
+            if (round)
             {
-                if (round)
+                g.FillEllipse(color, rect);
+            }
+            else if (radius > 0)
+            {
+                using (var path = rect.RoundPath(radius))
                 {
-                    g.FillEllipse(brush, rect);
-                }
-                else if (radius > 0)
-                {
-                    using (var path = rect.RoundPath(radius))
-                    {
-                        g.FillPath(brush, path);
-                    }
-                }
-                else
-                {
-                    g.FillRectangle(brush, rect);
+                    g.Fill(color, path);
                 }
             }
+            else g.Fill(color, rect);
         }
 
         #endregion

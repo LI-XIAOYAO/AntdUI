@@ -1,37 +1,44 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## Label
+👚
 
-Label 文本 👚
+> Display a piece of text.
 
-> 显示一段文本。
+- DefaultProperty：Text
+- DefaultEvent：Click
 
-- 默认属性：Text
-- 默认事件：Click
+### Property
 
-### 属性
-
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**ForeColor** | 文字颜色 | Color`?` | `null` |
+**AutoSize** | Auto Size | bool | false |
+**AutoSizeMode** | Auto size mode | [TAutoSize](Enum.md#tautosize) | None |
 ||||
-**Text** | 文本 | string ||
-**TextAlign** | 文本位置 | ContentAlignment | MiddleLeft |
-**AutoEllipsis** | 文本超出自动处理 | bool | false |
-**TextMultiLine** | 是否多行 | bool | true |
+**ForeColor** | Text color | Color`?` | `null` |
+**ColorExtend** | Text gradient color | string`?` | `null` |
 ||||
-**IconRatio** 🔴 | 图标比例 | float | 0.7F |
-**Prefix** | 前缀 | string`?` | `null` |
-**PrefixSvg** 🔴 | 前缀SVG | string`?` | `null` |
-**PrefixColor** | 前缀颜色 | Color`?` | `null` |
-**Suffix** | 后缀文本 | string`?` | `null` |
-**SuffixSvg** 🔴 | 后缀SVG | string`?` | `null` |
-**SuffixColor** | 后缀颜色 | Color`?` | `null` |
-**Highlight** 🔴 | 缀标完全展示 | bool | true |
-**ShowTooltip** 🔴 | 超出文字显示 Tooltip | bool | true |
+**Text** | Text | string ||
+🌏 **LocalizationText** | International Text | string`?` | `null` |
+**TextAlign** | Text position | ContentAlignment | MiddleLeft |
+**AutoEllipsis** | Text exceeds automatic processing | bool | false |
+**TextMultiLine** | Multiple lines | bool | true |
 ||||
-**Shadow** | 阴影大小 | int | 0 |
-**ShadowColor** | 阴影颜色 | Color`?` | `null` |
-**ShadowOpacity** | 阴影透明度 | float | 0.3F |
-**ShadowOffsetX** | 阴影偏移X | int | 0 |
-**ShadowOffsetY** | 阴影偏移Y | int | 0 |
+**IconRatio** | Icon Scale | float | 0.7F |
+**Prefix** | Prefix text | string`?` | `null` |
+🌏 **LocalizationPrefix** | International Prefix | string`?` | `null` |
+**PrefixSvg** | Prefix SVG | string`?` | `null` |
+**PrefixColor** | Prefix color | Color`?` | `null` |
+**Suffix** | Suffix text | string`?` | `null` |
+🌏 **LocalizationSuffix** | International Suffix | string`?` | `null` |
+**SuffixSvg** | Suffix SVG | string`?` | `null` |
+**SuffixColor** | Suffix color | Color`?` | `null` |
+**Highlight** | Full display of tags | bool | true |
+**ShowTooltip** | Exceeding text display Tooltip | bool | true |
+**Rotate** 🔴 | Rotate | [TRotate](Enum.md#trotate) | None |
+||||
+**Shadow** | Shadow size | int | 0 |
+**ShadowColor** | Shadow color | Color`?` | `null` |
+**ShadowOpacity** | Shadow Transparency | float | 0.3F |
+**ShadowOffsetX** | Shadow offset X | int | 0 |
+**ShadowOffsetY** | Shadow offset Y | int | 0 |

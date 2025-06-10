@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -36,11 +36,9 @@ namespace AntdUI
     [DefaultEvent("TextChanged")]
     public partial class Input : IControl
     {
-        public Input()
+        public Input() : base(ControlType.Select)
         {
             base.BackColor = Color.Transparent;
-            SetStyle(ControlStyles.Selectable, true);
-            UpdateStyles();
             CaretInfo = new ICaret(this);
         }
 
@@ -67,9 +65,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -89,6 +88,7 @@ namespace AntdUI
                 if (back == value) return;
                 back = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackColor));
             }
         }
 
@@ -105,6 +105,7 @@ namespace AntdUI
                 if (backExtend == value) return;
                 backExtend = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackExtend));
             }
         }
 
@@ -121,6 +122,7 @@ namespace AntdUI
                 if (backImage == value) return;
                 backImage = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackgroundImage));
             }
         }
 
@@ -137,6 +139,7 @@ namespace AntdUI
                 if (backFit == value) return;
                 backFit = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackgroundImageLayout));
             }
         }
 
@@ -155,6 +158,7 @@ namespace AntdUI
                 if (selection == value) return;
                 selection = value;
                 Invalidate();
+                OnPropertyChanged(nameof(SelectionColor));
             }
         }
 
@@ -189,7 +193,9 @@ namespace AntdUI
             {
                 if (borderWidth == value) return;
                 borderWidth = value;
+                CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(BorderWidth));
             }
         }
 
@@ -207,6 +213,7 @@ namespace AntdUI
                 if (borderColor == value) return;
                 borderColor = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BorderColor));
             }
         }
 
@@ -245,6 +252,7 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -262,6 +270,7 @@ namespace AntdUI
                 round = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(Round));
             }
         }
 
@@ -278,6 +287,7 @@ namespace AntdUI
                 if (status == value) return;
                 status = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Status));
             }
         }
 
@@ -297,6 +307,25 @@ namespace AntdUI
                 iconratio = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(IconRatio));
+            }
+        }
+
+        float icongap = .25F;
+        /// <summary>
+        /// 图标与文字间距比例
+        /// </summary>
+        [Description("图标与文字间距比例"), Category("外观"), DefaultValue(.25F)]
+        public float IconGap
+        {
+            get => icongap;
+            set
+            {
+                if (icongap == value) return;
+                icongap = value;
+                CalculateRect();
+                Invalidate();
+                OnPropertyChanged(nameof(IconGap));
             }
         }
 
@@ -314,6 +343,7 @@ namespace AntdUI
                 prefix = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(Prefix));
             }
         }
 
@@ -331,22 +361,28 @@ namespace AntdUI
                 prefixSvg = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(PrefixSvg));
             }
         }
 
         string? prefixText = null;
         [Description("前缀文本"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? PrefixText
         {
-            get => prefixText;
+            get => this.GetLangI(LocalizationPrefixText, prefixText);
             set
             {
                 if (prefixText == value) return;
                 prefixText = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(PrefixText));
             }
         }
+
+        [Description("前缀文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationPrefixText { get; set; }
 
         Color? prefixFore;
         /// <summary>
@@ -362,6 +398,7 @@ namespace AntdUI
                 if (prefixFore == value) return;
                 prefixFore = value;
                 if (HasPrefix) Invalidate();
+                OnPropertyChanged(nameof(PrefixFore));
             }
         }
 
@@ -384,6 +421,7 @@ namespace AntdUI
                 suffix = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(Suffix));
             }
         }
 
@@ -401,22 +439,28 @@ namespace AntdUI
                 suffixSvg = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(SuffixSvg));
             }
         }
 
         string? suffixText = null;
         [Description("后缀文本"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? SuffixText
         {
-            get => suffixText;
+            get => this.GetLangI(LocalizationSuffixText, suffixText);
             set
             {
                 if (suffixText == value) return;
                 suffixText = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(SuffixText));
             }
         }
+
+        [Description("后缀文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationSuffixText { get; set; }
 
         Color? suffixFore;
         /// <summary>
@@ -432,6 +476,7 @@ namespace AntdUI
                 if (suffixFore == value) return;
                 suffixFore = value;
                 if (HasSuffix) Invalidate();
+                OnPropertyChanged(nameof(SuffixFore));
             }
         }
 
@@ -442,17 +487,39 @@ namespace AntdUI
 
         #endregion
 
+        #region 组合
+
+        TJoinMode joinMode = TJoinMode.None;
+        /// <summary>
+        /// 组合模式
+        /// </summary>
+        [Description("组合模式"), Category("外观"), DefaultValue(TJoinMode.None)]
+        public TJoinMode JoinMode
+        {
+            get => joinMode;
+            set
+            {
+                if (joinMode == value) return;
+                joinMode = value;
+                CalculateRect();
+                Invalidate();
+                OnPropertyChanged(nameof(JoinMode));
+            }
+        }
+
         /// <summary>
         /// 连接左边
         /// </summary>
-        [Description("连接左边"), Category("外观"), DefaultValue(false)]
-        public bool JoinLeft { get; set; } = false;
+        [Obsolete("use JoinMode"), Browsable(false), Description("连接左边"), Category("外观"), DefaultValue(false)]
+        public bool JoinLeft { get; set; }
 
         /// <summary>
         /// 连接右边
         /// </summary>
-        [Description("连接右边"), Category("外观"), DefaultValue(false)]
-        public bool JoinRight { get; set; } = false;
+        [Obsolete("use JoinMode"), Browsable(false), Description("连接右边"), Category("外观"), DefaultValue(false)]
+        public bool JoinRight { get; set; }
+
+        #endregion
 
         bool allowclear = false, is_clear = false, is_clear_down = false;
         bool is_prefix_down = false, is_suffix_down = false;
@@ -468,6 +535,7 @@ namespace AntdUI
                 if (allowclear == value) return;
                 allowclear = value;
                 OnAllowClear();
+                OnPropertyChanged(nameof(AllowClear));
             }
         }
 
@@ -489,8 +557,15 @@ namespace AntdUI
                 if (autoscroll == value) return;
                 autoscroll = value;
                 Invalidate();
+                OnPropertyChanged(nameof(AutoScroll));
             }
         }
+
+        /// <summary>
+        /// 处理快捷键
+        /// </summary>
+        [Description("处理快捷键"), Category("行为"), DefaultValue(true)]
+        public bool HandShortcutKeys { get; set; } = true;
 
         #endregion
 
@@ -499,32 +574,47 @@ namespace AntdUI
         #region 文本
 
         internal bool isempty = true;
+
+        /// <summary>
+        /// 文本是否为空
+        /// </summary>
+        public bool IsTextEmpty => isempty;
+
         string _text = "";
         [Description("文本"), Category("外观"), DefaultValue("")]
         [Editor(typeof(System.ComponentModel.Design.MultilineStringEditor), typeof(UITypeEditor))]
         public override string Text
         {
-            get => _text;
-            set
+            get => this.GetLangIN(LocalizationText, _text);
+            set => SetText(value);
+        }
+
+        void SetText(string value, bool changed = true)
+        {
+            if (value is null) value = "";
+            if (_text == value) return;
+            _text = value;
+            isempty = string.IsNullOrEmpty(_text);
+            FixFontWidth();
+            OnAllowClear();
+            if (isempty)
             {
-                if (value is null) value = "";
-                if (_text == value) return;
-                _text = value;
-                isempty = string.IsNullOrEmpty(_text);
-                FixFontWidth();
-                OnAllowClear();
-                if (isempty)
-                {
-                    if (selectionStart > 0) SelectionStart = 0;
-                }
-                else if (cache_font != null)
-                {
-                    if (selectionStart > cache_font.Length) SelectionStart = cache_font.Length;
-                }
-                Invalidate();
+                if (selectionStart > 0) SelectionStart = 0;
+            }
+            else if (cache_font != null)
+            {
+                if (selectionStart > cache_font.Length) SelectionStart = cache_font.Length;
+            }
+            Invalidate();
+            if (changed)
+            {
                 OnTextChanged(EventArgs.Empty);
+                OnPropertyChanged(nameof(Text));
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         #endregion
 
@@ -546,12 +636,13 @@ namespace AntdUI
                 if (imeMode == value) return;
                 imeMode = value;
                 SetImeMode(value);
+                OnPropertyChanged(nameof(ImeMode));
             }
         }
 
         void SetImeMode(ImeMode value)
         {
-            if (InvokeRequired) Invoke(new Action(() => SetImeMode(value)));
+            if (InvokeRequired) Invoke(() => SetImeMode(value));
             else base.ImeMode = value;
         }
 
@@ -565,16 +656,28 @@ namespace AntdUI
             get => selectionStart;
             set
             {
-                if (value < 0) value = 0;
-                else if (value > 0)
-                {
-                    if (cache_font == null) value = 0;
-                    else if (value > cache_font.Length) value = cache_font.Length;
-                }
-                if (selectionStart == value) return;
-                selectionStart = selectionStartTemp = value;
-                SetCaretPostion(value);
+                SpeedScrollTo = true;
+                SetSelectionStart(value);
+                SpeedScrollTo = false;
             }
+        }
+
+        void SetSelectionStart(int value)
+        {
+            if (value < 0) value = 0;
+            else if (value > 0)
+            {
+                if (cache_font == null) value = 0;
+                else if (value > cache_font.Length) value = cache_font.Length;
+            }
+            if (selectionStart == value)
+            {
+                SetCaretPostion(value);
+                return;
+            }
+            selectionStart = selectionStartTemp = value;
+            SetCaretPostion(value);
+            OnPropertyChanged(nameof(SelectionStart));
         }
 
         /// <summary>
@@ -589,6 +692,7 @@ namespace AntdUI
                 if (selectionLength == value) return;
                 selectionLength = value;
                 Invalidate();
+                OnPropertyChanged(nameof(SelectionLength));
             }
         }
 
@@ -598,7 +702,7 @@ namespace AntdUI
         /// 多行编辑是否允许输入制表符
         /// </summary>
         [Description("多行编辑是否允许输入制表符"), Category("行为"), DefaultValue(false)]
-        public bool AcceptsTab { get; set; } = false;
+        public bool AcceptsTab { get; set; }
 
         /// <summary>
         /// 焦点离开清空选中
@@ -619,6 +723,7 @@ namespace AntdUI
                 if (readOnly == value) return;
                 readOnly = value;
                 SetImeMode(value ? ImeMode.Disable : imeMode);
+                OnPropertyChanged(nameof(ReadOnly));
             }
         }
 
@@ -646,6 +751,7 @@ namespace AntdUI
                 }
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(Multiline));
             }
         }
 
@@ -660,6 +766,7 @@ namespace AntdUI
                 lineheight = value;
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(LineHeight));
             }
         }
 
@@ -678,6 +785,7 @@ namespace AntdUI
                 textalign.SetAlignment(ref sf_placeholder);
                 CalculateRect();
                 Invalidate();
+                OnPropertyChanged(nameof(TextAlign));
             }
         }
 
@@ -688,16 +796,21 @@ namespace AntdUI
         /// 水印文本
         /// </summary>
         [Description("水印文本"), Category("行为"), DefaultValue(null)]
+        [Localizable(true)]
         public virtual string? PlaceholderText
         {
-            get => placeholderText;
+            get => this.GetLangI(LocalizationPlaceholderText, placeholderText);
             set
             {
                 if (placeholderText == value) return;
                 placeholderText = value;
                 if (isempty && ShowPlaceholder) Invalidate();
+                OnPropertyChanged(nameof(PlaceholderText));
             }
         }
+
+        [Description("水印文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationPlaceholderText { get; set; }
 
         Color? placeholderColor = null;
         /// <summary>
@@ -713,6 +826,7 @@ namespace AntdUI
                 if (placeholderColor == value) return;
                 placeholderColor = value;
                 if (isempty && ShowPlaceholder) Invalidate();
+                OnPropertyChanged(nameof(PlaceholderColor));
             }
         }
 
@@ -729,6 +843,7 @@ namespace AntdUI
                 if (placeholderColorExtend == value) return;
                 placeholderColorExtend = value;
                 if (isempty && ShowPlaceholder) Invalidate();
+                OnPropertyChanged(nameof(PlaceholderColorExtend));
             }
         }
 
@@ -739,6 +854,12 @@ namespace AntdUI
         /// </summary>
         [Description("文本最大长度"), Category("行为"), DefaultValue(32767)]
         public int MaxLength { get; set; } = 32767;
+
+        /// <summary>
+        /// 形态
+        /// </summary>
+        [Description("形态"), Category("外观"), DefaultValue(TVariant.Outlined)]
+        public TVariant Variant { get; set; }
 
         #region 密码框
 
@@ -758,6 +879,7 @@ namespace AntdUI
                 if (useSystemPasswordChar == value) return;
                 useSystemPasswordChar = value;
                 SetPassWord();
+                OnPropertyChanged(nameof(UseSystemPasswordChar));
             }
         }
 
@@ -774,6 +896,7 @@ namespace AntdUI
                 if (passwordChar == value) return;
                 passwordChar = value;
                 SetPassWord();
+                OnPropertyChanged(nameof(PasswordChar));
             }
         }
 
@@ -827,18 +950,12 @@ namespace AntdUI
         /// <summary>
         /// 清除所有文本
         /// </summary>
-        public void Clear()
-        {
-            Text = "";
-        }
+        public void Clear() => Text = "";
 
         /// <summary>
         /// 清除撤消缓冲区信息
         /// </summary>
-        public void ClearUndo()
-        {
-            history_Log.Clear();
-        }
+        public void ClearUndo() => history_Log.Clear();
 
         /// <summary>
         /// 复制
@@ -876,16 +993,13 @@ namespace AntdUI
             {
                 if (Verify(key, out var change)) chars.Add(change ?? key.ToString());
             }
-            if (chars.Count > 0) EnterText(string.Join("", chars), false);
+            if (chars.Count > 0) EnterText(string.Join("", chars));
         }
 
         /// <summary>
         /// 取消全部选中
         /// </summary>
-        public void DeselectAll()
-        {
-            SelectionLength = 0;
-        }
+        public void DeselectAll() => SelectionLength = 0;
 
         /// <summary>
         /// 撤消
@@ -944,6 +1058,97 @@ namespace AntdUI
             SelectionLength = length;
         }
 
+        TextStyle[]? styles;
+        /// <summary>
+        /// 样式
+        /// </summary>
+        /// <param name="start">第一个字符的位置</param>
+        /// <param name="length">字符长度</param>
+        /// <param name="font">字体</param>
+        /// <param name="fore">文本颜色</param>
+        /// <param name="back">背景颜色</param>
+        public void SetStyle(int start, int length, Font? font = null, Color? fore = null, Color? back = null)
+        {
+            var data = new TextStyle(start, length, font, fore, back);
+            if (styles == null) styles = new TextStyle[] { data };
+            else
+            {
+                var tmp = new List<TextStyle>(styles.Length + 1);
+                tmp.AddRange(styles);
+                tmp.Add(data);
+                styles = tmp.ToArray();
+            }
+            if (SetStyle(data)) Invalidate();
+        }
+
+        void SetStyle()
+        {
+            if (styles == null) return;
+            foreach (var it in styles) SetStyle(it);
+        }
+        bool SetStyle(TextStyle style)
+        {
+            if (cache_font == null) return false;
+            int len = style.Start + style.Length;
+            if (style.Start < 0 || len > cache_font.Length) return false;
+            for (int i = style.Start; i < len; i++)
+            {
+                var it = cache_font[i];
+                it.font = style.Font;
+                it.fore = style.Fore;
+                it.back = style.Back;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 清空样式
+        /// </summary>
+        public void ClearStyle(bool r = true)
+        {
+            if (styles == null) return;
+            styles = null;
+            if (cache_font == null) return;
+            for (int i = 0; i < cache_font.Length; i++)
+            {
+                var it = cache_font[i];
+                it.font = null;
+                it.fore = null;
+                it.back = null;
+            }
+            if (r) Invalidate();
+        }
+
+        public class TextStyle
+        {
+            public TextStyle(int start, int length, Font? font, Color? fore, Color? back)
+            {
+                Start = start;
+                Length = length;
+                Font = font;
+                Fore = fore;
+                Back = back;
+            }
+
+            public int Start { get; set; }
+            public int Length { get; set; }
+
+            /// <summary>
+            /// 字体
+            /// </summary>
+            public Font? Font { get; set; }
+
+            /// <summary>
+            /// 文本颜色
+            /// </summary>
+            public Color? Fore { get; set; }
+
+            /// <summary>
+            /// 背景色
+            /// </summary>
+            public Color? Back { get; set; }
+        }
+
         /// <summary>
         /// 选择所有文本
         /// </summary>
@@ -956,57 +1161,114 @@ namespace AntdUI
             }
         }
 
-        void EnterText(string text, bool ismax = true)
+        /// <summary>
+        /// 当前位置插入文本
+        /// </summary>
+        /// <param name="text">文本</param>
+        /// <param name="ismax">是否限制MaxLength</param>
+        public void EnterText(string text, bool ismax = true)
         {
             if (ReadOnly || BanInput) return;
-            AddHistoryRecord();
-            int len = 0;
-            GraphemeSplitter.Each(text, 0, (str, nStart, nLen) =>
-            {
-                len++;
-                return true;
-            });
+            int offset = 0;
             if (cache_font == null)
             {
-                if (ismax && text.Length > MaxLength) text = text.Substring(0, MaxLength);
-                Text = text;
-                SelectionStart = len;
+                if (ismax && text.Length > MaxLength)
+                {
+                    text = text.Substring(0, MaxLength);
+                    if (text.Length == 0) return;
+                }
+                AddHistoryRecord();
+                SetText(text, false);
             }
             else
             {
                 if (selectionLength > 0)
                 {
-                    int start = selectionStartTemp, end = selectionLength;
+                    int start = selectionStartTemp, end = selectionLength, end_temp = start + end;
+                    if (ismax && (cache_font.Length - end + text.Length) > MaxLength)
+                    {
+                        text = text.Substring(0, end);
+                        if (text.Length == 0) return;
+                    }
                     AddHistoryRecord();
-                    int end_temp = start + end;
                     var texts = new List<string>(end);
                     foreach (var it in cache_font)
                     {
-                        if (it.i < start || it.i >= end_temp)
-                            texts.Add(it.text);
+                        if (it.i < start || it.i >= end_temp) texts.Add(it.text);
                     }
                     texts.Insert(start, text);
-                    var tmp = string.Join("", texts);
-                    if (ismax && tmp.Length > MaxLength) tmp = tmp.Substring(0, MaxLength);
-                    Text = tmp;
+                    SetText(string.Join("", texts), false);
                     SelectionLength = 0;
-                    SelectionStart = start + len;
+                    offset = start;
                 }
                 else
                 {
                     int start = selectionStart - 1;
+                    if (ismax && (cache_font.Length + text.Length) > MaxLength)
+                    {
+                        text = text.Substring(0, MaxLength - cache_font.Length);
+                        if (text.Length == 0) return;
+                    }
+                    AddHistoryRecord();
                     var texts = new List<string>(cache_font.Length);
                     foreach (var it in cache_font) texts.Add(it.text);
+                    if (LineBreakNumber.Contains(CaretInfo.Y) && !CaretInfo.Place && !CaretInfo.FirstRet && start > 0 && cache_font.Length - 1 != start && !cache_font[start].ret)
+                    {
+                        start++;
+                        CaretInfo.Place = true;
+                    }
                     texts.Insert(start + 1, text);
-                    var tmp = string.Join("", texts);
-                    if (ismax && tmp.Length > MaxLength) tmp = tmp.Substring(0, MaxLength);
-                    Text = tmp;
-                    SelectionStart = start + 1 + len;
+                    SetText(string.Join("", texts), false);
+                    if (CaretInfo.FirstRet)
+                    {
+                        CaretInfo.Place = true;
+                        CaretInfo.FirstRet = false;
+                    }
+                    offset = start + 1;
+                }
+            }
+            int len = 0;
+            GraphemeSplitter.Each(text, 0, (str, nStart, nLen, nType) =>
+            {
+                len++;
+                return true;
+            });
+            SpeedScrollTo = true;
+            SetSelectionStart(offset + len);
+            OnTextChanged(EventArgs.Empty);
+            OnPropertyChanged(nameof(Text));
+            SpeedScrollTo = false;
+        }
+
+        /// <summary>
+        /// 获取设置当前选中文本
+        /// </summary>
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        [Description("获取设置当前选中文本"), Category("数据"), DefaultValue(null)]
+        public virtual string? SelectedText
+        {
+            get => GetSelectionText();
+            set
+            {
+                if (value == null || string.IsNullOrEmpty(value)) SelectionLength = 0;
+                else
+                {
+                    int index = _text.IndexOf(value);
+                    if (index > -1)
+                    {
+                        SelectionLength = value.Length;
+                        SelectionStart = index;
+                        Invalidate();
+                    }
                 }
             }
         }
 
-        string? GetSelectionText()
+        /// <summary>
+        /// 获取当前选中文本
+        /// </summary>
+        public string? GetSelectionText()
         {
             if (cache_font == null) return null;
             else
@@ -1044,10 +1306,7 @@ namespace AntdUI
         /// <summary>
         /// 内容滚动到最下面
         /// </summary>
-        public void ScrollToEnd()
-        {
-            ScrollY = ScrollYMax;
-        }
+        public void ScrollToEnd() => ScrollY = ScrollYMax;
 
         #endregion
 
@@ -1063,7 +1322,13 @@ namespace AntdUI
 
         bool AnimationFocus = false;
         int AnimationFocusValue = 0;
-        public bool HasFocus { get; internal set; }
+
+        /// <summary>
+        /// 是否存在焦点
+        /// </summary>
+        [Browsable(false)]
+        [Description("是否存在焦点"), Category("行为"), DefaultValue(false)]
+        public bool HasFocus { get; private set; }
         protected override void OnGotFocus(EventArgs e)
         {
             base.OnGotFocus(e);
@@ -1090,17 +1355,33 @@ namespace AntdUI
         {
             switch (m.Msg)
             {
+                case 0x0102:
+                case 0x0109:
+                    IKeyPress((char)m.WParam.ToInt32());
+                    break;
+                //case 0x0286:
+                //    break;
+                case 0x100://WM_KEYDOWN
+                    if (HandKeyDown(GetKeyBoard(m.WParam.ToInt32()))) return;
+                    break;
+                case 0x101://WM_KEYUP
+                    if (HandKeyUp(GetKeyBoard(m.WParam.ToInt32()))) return;
+                    break;
                 case Win32.WM_IME_STARTCOMPOSITION:
                     m_hIMC = Win32.ImmGetContext(Handle);
                     OnImeStartPrivate(m_hIMC);
                     break;
                 case Win32.WM_IME_ENDCOMPOSITION:
-                    OnImeEndPrivate(m_hIMC);
+                    Win32.ImmReleaseContext(Handle, m_hIMC);
                     break;
                 case Win32.WM_IME_COMPOSITION:
                     if (((int)m.LParam & Win32.GCS_RESULTSTR) == Win32.GCS_RESULTSTR)
                     {
+#if NET40 || NET46 || NET48 || NET6_0
                         m.Result = (IntPtr)1;
+#else
+                        m.Result = 1;
+#endif
                         OnImeResultStrPrivate(m_hIMC, Win32.ImmGetCompositionString(m_hIMC, Win32.GCS_RESULTSTR));
                         return;
                     }
@@ -1126,7 +1407,8 @@ namespace AntdUI
         /// </summary>
         protected virtual bool ShowPlaceholder => true;
         protected virtual bool HasLeft() => false;
-        protected virtual int UseLeft(Rectangle rect, bool delgap) => 0;
+        protected virtual int[] UseLeft(Rectangle rect, int font_height, bool delgap) => new int[] { 0, 0 };
+        protected virtual void UseLeftAutoHeight(int height, int y) { }
 
         protected virtual void IBackSpaceKey() { }
 
@@ -1166,13 +1448,18 @@ namespace AntdUI
         /// </summary>
         int GetCaretPostion(int x, int y)
         {
+            if (TakePaint != null)
+            {
+                x += Left;
+                y += Top;
+            }
             CaretInfo.Place = false;
             if (cache_font == null) return 0;
             else
             {
                 foreach (var it in cache_font)
                 {
-                    if (it.rect.X <= x && it.rect.Right >= x && it.rect.Y <= y && it.rect.Bottom >= y)
+                    if (HasRect(it.rect, x, y))
                     {
                         if (x > it.rect.X + it.rect.Width / 2)
                         {
@@ -1183,8 +1470,14 @@ namespace AntdUI
                         }
                         return it.i;
                     }
+                    else if (it.rect2.HasValue && HasRect(it.rect2.Value, x, y))
+                    {
+                        CaretInfo.Place = false;
+                        return it.i;
+                    }
                 }
-                var nearest = FindNearestFont(x, y, cache_font);
+                var nearest = FindNearestFont(x, y, cache_font, out bool two);
+                CaretInfo.FirstRet = two;
                 if (nearest == null)
                 {
                     if (x > cache_font[cache_font.Length - 1].rect.Right) return cache_font.Length;
@@ -1192,6 +1485,7 @@ namespace AntdUI
                 }
                 else
                 {
+                    if (two) return nearest.i;
                     if (x > nearest.rect.X + nearest.rect.Width / 2)
                     {
                         int i = nearest.i + 1;
@@ -1207,18 +1501,13 @@ namespace AntdUI
         /// <summary>
         /// 寻找最近的矩形和距离的辅助方法
         /// </summary>
-        CacheFont? FindNearestFont(int x, int y, CacheFont[] cache_font)
+        CacheFont? FindNearestFont(int x, int y, CacheFont[] cache_font, out bool two)
         {
+            two = false;
             CacheFont first = cache_font[0], last = cache_font[cache_font.Length - 1];
-            if (x < first.rect.X && y < first.rect.Y)
-            {
-                return first;
-            }
-            else if (x > last.rect.X && y > last.rect.Y)
-            {
-                return last;
-            }
-            var findy = FindNearestFontY(y, cache_font);
+            if (x < first.rect.X && y < first.rect.Y) return first;
+            else if (x > last.rect.X && y > last.rect.Y) return last;
+            var findy = FindNearestFontY(y, cache_font, out two);
             CacheFont? result = null;
             if (findy == null)
             {
@@ -1241,20 +1530,54 @@ namespace AntdUI
             }
             else
             {
-                int ry = findy.rect.Y;
-                int minDistance = int.MaxValue;
-                for (int i = 0; i < cache_font.Length; i++)
+                if (two && findy.rect2.HasValue)
                 {
-                    var it = cache_font[i];
-                    if (it.rect.Y == ry)
+                    int ry = findy.rect2.Value.Y;
+                    int minDistance = int.MaxValue;
+                    for (int i = 0; i < cache_font.Length; i++)
                     {
-                        // 计算点到矩形四个边的最近距离，取最小值作为当前矩形的最近距离
-                        int currentMinDistance = Math.Abs(x - (it.rect.X + it.rect.Width / 2));
-                        // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
-                        if (currentMinDistance < minDistance)
+                        var it = cache_font[i];
+                        if (it.rect2.HasValue && it.rect2.Value.Y == ry)
                         {
-                            minDistance = currentMinDistance;
-                            result = it;
+                            // 计算点到矩形四个边的最近距离，取最小值作为当前矩形的最近距离
+                            int currentMinDistance = Math.Abs(x - (it.rect2.Value.X + it.rect2.Value.Width / 2));
+                            // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
+                            if (currentMinDistance < minDistance)
+                            {
+                                minDistance = currentMinDistance;
+                                result = it;
+                            }
+                        }
+                        else if (it.rect.Y == ry)
+                        {
+                            // 计算点到矩形四个边的最近距离，取最小值作为当前矩形的最近距离
+                            int currentMinDistance = Math.Abs(x - (it.rect.X + it.rect.Width / 2));
+                            // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
+                            if (currentMinDistance < minDistance)
+                            {
+                                minDistance = currentMinDistance;
+                                result = it;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    int ry = findy.rect.Y;
+                    int minDistance = int.MaxValue;
+                    for (int i = 0; i < cache_font.Length; i++)
+                    {
+                        var it = cache_font[i];
+                        if (it.rect.Y == ry)
+                        {
+                            // 计算点到矩形四个边的最近距离，取最小值作为当前矩形的最近距离
+                            int currentMinDistance = Math.Abs(x - (it.rect.X + it.rect.Width / 2));
+                            // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
+                            if (currentMinDistance < minDistance || (result != null && result.ret))
+                            {
+                                minDistance = currentMinDistance;
+                                result = it;
+                            }
                         }
                     }
                 }
@@ -1262,8 +1585,9 @@ namespace AntdUI
             if (result == null) return result;
             return result;
         }
-        CacheFont? FindNearestFontY(int y, CacheFont[] cache_font)
+        CacheFont? FindNearestFontY(int y, CacheFont[] cache_font, out bool two)
         {
+            two = false;
             int minDistance = int.MaxValue;
             CacheFont? result = null;
             for (int i = 0; i < cache_font.Length; i++)
@@ -1272,22 +1596,33 @@ namespace AntdUI
                 // 计算点到矩形四个边的最近距离，取最小值作为当前矩形的最近距离
                 int currentMinDistance = Math.Abs(y - (it.rect.Y + it.rect.Height / 2));
                 // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
-                if (currentMinDistance < minDistance)
+                if (currentMinDistance < minDistance || (currentMinDistance == minDistance && result != null && result.ret))
                 {
+                    two = false;
                     minDistance = currentMinDistance;
                     result = it;
+                }
+                if (it.rect2.HasValue)
+                {
+                    currentMinDistance = Math.Abs(y - (it.rect2.Value.Y + it.rect2.Value.Height / 2));
+                    // 如果当前矩形的最近距离比之前找到的最近距离小，更新最近距离和最近矩形信息
+                    if (currentMinDistance < minDistance)
+                    {
+                        two = true;
+                        minDistance = currentMinDistance;
+                        result = it;
+                    }
                 }
             }
             return result;
         }
 
+        bool HasRect(Rectangle rect, int x, int y) => rect.X <= x && rect.Right >= x && rect.Y <= y && rect.Bottom >= y;
+
         #endregion
 
         int CurrentPosIndex = 0;
-        internal void SetCaretPostion()
-        {
-            SetCaretPostion(CurrentPosIndex);
-        }
+        internal void SetCaretPostion() => SetCaretPostion(CurrentPosIndex);
         internal void SetCaretPostion(int PosIndex)
         {
             CurrentPosIndex = PosIndex;
@@ -1317,54 +1652,65 @@ namespace AntdUI
 
         void OnImeStartPrivate(IntPtr hIMC)
         {
-            var point = CaretInfo.Rect.Location;
-            point.Offset(0, -scrolly);
-            var CandidateForm = new Win32.CANDIDATEFORM()
+            try
             {
-                dwStyle = Win32.CFS_CANDIDATEPOS,
-                ptCurrentPos = point,
-            };
-            Win32.ImmSetCandidateWindow(hIMC, ref CandidateForm);
-            var CompositionForm = new Win32.COMPOSITIONFORM()
-            {
-                dwStyle = Win32.CFS_FORCE_POSITION,
-                ptCurrentPos = point,
-            };
-            Win32.ImmSetCompositionWindow(hIMC, ref CompositionForm);
-            var logFont = new Win32.LOGFONT()
-            {
-                lfHeight = CaretInfo.Rect.Height,
-                lfFaceName = Font.Name + "\0"
-            };
-            Win32.ImmSetCompositionFont(hIMC, ref logFont);
-        }
-        void OnImeEndPrivate(IntPtr hIMC)
-        {
-            Win32.ImmReleaseContext(Handle, hIMC);
+                var point = CaretInfo.Rect.Location;
+                point.Offset(0, -scrolly);
+                var CandidateForm = new Win32.CANDIDATEFORM()
+                {
+                    dwStyle = Win32.CFS_CANDIDATEPOS,
+                    ptCurrentPos = point,
+                };
+                Win32.ImmSetCandidateWindow(hIMC, ref CandidateForm);
+                var CompositionForm = new Win32.COMPOSITIONFORM()
+                {
+                    dwStyle = Win32.CFS_FORCE_POSITION,
+                    ptCurrentPos = point,
+                };
+                Win32.ImmSetCompositionWindow(hIMC, ref CompositionForm);
+                var logFont = new Win32.LOGFONT()
+                {
+                    lfHeight = CaretInfo.Rect.Height,
+                    lfFaceName = Font.Name + "\0"
+                };
+                Win32.ImmSetCompositionFont(hIMC, ref logFont);
+            }
+            catch { }
         }
         void OnImeResultStrPrivate(IntPtr hIMC, string? strResult)
         {
-            var CompositionForm = new Win32.COMPOSITIONFORM()
+            try
             {
-                dwStyle = Win32.CFS_FORCE_POSITION,
-                ptCurrentPos = CaretInfo.Rect.Location
-            };
-            Win32.ImmSetCompositionWindow(hIMC, ref CompositionForm);
-            if (strResult != null && !string.IsNullOrEmpty(strResult))
-            {
-                var chars = new List<string>(strResult.Length);
-                foreach (char key in strResult)
+                var CompositionForm = new Win32.COMPOSITIONFORM()
                 {
-                    if (Verify(key, out var change)) chars.Add(change ?? key.ToString());
+                    dwStyle = Win32.CFS_FORCE_POSITION,
+                    ptCurrentPos = CaretInfo.Rect.Location
+                };
+                Win32.ImmSetCompositionWindow(hIMC, ref CompositionForm);
+                if (strResult != null && !string.IsNullOrEmpty(strResult))
+                {
+                    var chars = new List<string>(strResult.Length);
+                    foreach (char key in strResult)
+                    {
+                        if (Verify(key, out var change)) chars.Add(change ?? key.ToString());
+                    }
+                    if (chars.Count > 0) EnterText(string.Join("", chars));
                 }
-                if (chars.Count > 0) EnterText(string.Join("", chars));
             }
+            catch { }
         }
 
         protected virtual bool Verify(char key, out string? change)
         {
-            change = null;
-            return true;
+            if (VerifyChar == null)
+            {
+                change = null;
+                return true;
+            }
+            var args = new InputVerifyCharEventArgs(key);
+            VerifyChar(this, args);
+            change = args.ReplaceText;
+            return args.Result;
         }
 
         internal class ICaret
@@ -1372,12 +1718,27 @@ namespace AntdUI
             Input control;
             public ICaret(Input input) { control = input; }
 
-            public Rectangle Rect = new Rectangle(-1, -1000, (int)(1 * Config.Dpi), 0);
+            public Rectangle Rect = new Rectangle(-1, -1000, (int)Config.Dpi, 0);
 
-            public bool Place = false;
+            public bool Place = false, FirstRet = false;
 
             public Rectangle SetXY(CacheFont[] cache_font, int i)
             {
+                if (FirstRet)
+                {
+                    Rectangle? r;
+                    if (i >= cache_font.Length) r = cache_font[cache_font.Length - 1].rect2;
+                    else
+                    {
+                        if (i > 0) r = cache_font[i - 1].rect2;
+                        else r = cache_font[i].rect2;
+                    }
+                    if (r.HasValue)
+                    {
+                        SetXY(r.Value.X, r.Value.Y);
+                        return r.Value;
+                    }
+                }
                 if (i >= cache_font.Length)
                 {
                     var r = cache_font[cache_font.Length - 1].rect;
@@ -1478,11 +1839,99 @@ namespace AntdUI
 
         #endregion
 
+        #region 闪烁动画
+
+        Color? colorBlink;
+        ITask? ThreadAnimateBlink = null;
+        /// <summary>
+        /// 闪烁动画状态
+        /// </summary>
+        public bool AnimationBlinkState = false;
+
+        /// <summary>
+        /// 开始闪烁动画
+        /// </summary>
+        /// <param name="interval">动画间隔时长（毫秒）</param>
+        /// <param name="colors">色彩值</param>
+        public void AnimationBlink(int interval, params Color[] colors)
+        {
+            ThreadAnimateBlink?.Dispose();
+            if (colors.Length > 1)
+            {
+                AnimationBlinkState = true;
+                int index = 0, len = colors.Length;
+                ThreadAnimateBlink = new ITask(this, () =>
+                {
+                    colorBlink = colors[index];
+                    index++;
+                    if (index > len - 1) index = 0;
+                    Invalidate();
+                    return AnimationBlinkState;
+                }, interval, Invalidate);
+            }
+        }
+
+        /// <summary>
+        /// 开始闪烁动画（颜色过度动画）
+        /// </summary>
+        /// <param name="interval">动画间隔时长（毫秒）</param>
+        /// <param name="colors">色彩值</param>
+        public void AnimationBlinkTransition(int interval, params Color[] colors) => AnimationBlinkTransition(interval, 10, AnimationType.Liner, colors);
+
+        /// <summary>
+        /// 开始闪烁动画（颜色过度动画）
+        /// </summary>
+        /// <param name="interval">动画间隔时长（毫秒）</param>
+        /// <param name="transition_interval">过度动画间隔时长（毫秒）</param>
+        /// <param name="animationType">过度动画类型</param>
+        /// <param name="colors">色彩值</param>
+        public void AnimationBlinkTransition(int interval, int transition_interval, AnimationType animationType, params Color[] colors)
+        {
+            ThreadAnimateBlink?.Dispose();
+            if (colors.Length > 1 && interval > transition_interval)
+            {
+                AnimationBlinkState = true;
+                int index = 0, len = colors.Length;
+                Color tmp = colors[index];
+                index++;
+                if (index > len - 1) index = 0;
+                var t = Animation.TotalFrames(transition_interval, interval);
+                ThreadAnimateBlink = new ITask(this, () =>
+                {
+                    Color start = tmp, end = colors[index];
+                    index++;
+                    if (index > len - 1) index = 0;
+                    tmp = end;
+                    new ITask(i =>
+                    {
+                        var prog = Animation.Animate(i, t, 1F, animationType);
+                        colorBlink = start.BlendColors(Helper.ToColorN(prog, end));
+                        Invalidate();
+                        return AnimationBlinkState;
+                    }, transition_interval, t, () =>
+                    {
+                        colorBlink = end;
+                        Invalidate();
+                    }).Wait();
+                    return AnimationBlinkState;
+                });
+            }
+        }
+
+        public void StopAnimationBlink()
+        {
+            AnimationBlinkState = false;
+            ThreadAnimateBlink?.Dispose();
+        }
+
+        #endregion
+
         protected override void Dispose(bool disposing)
         {
             ThreadFocus?.Dispose();
             ThreadHover?.Dispose();
             CaretInfo.Dispose();
+            ThreadAnimateBlink?.Dispose();
             base.Dispose(disposing);
         }
         ITask? ThreadHover = null;

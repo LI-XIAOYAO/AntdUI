@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -30,10 +30,12 @@ namespace AntdUI
         /// <summary>
         /// 循环任务
         /// </summary>
+        /// <param name="control">委托对象</param>
         /// <param name="action">回调</param>
         /// <param name="interval">间隔</param>
         /// <param name="max">最大值</param>
         /// <param name="add">更新量</param>
+        /// <param name="end">结束回调</param>
         public ITask(Control control, Func<int, bool> action, int interval, int max, int add, Action? end = null)
         {
             bool ok = true;
@@ -56,12 +58,22 @@ namespace AntdUI
                         else return;
                     }
                 }
-            }).ContinueWith((action =>
+            }).ContinueWith(action =>
             {
-                Dispose();
                 if (ok && end != null) end();
-            }));
+                Dispose();
+            });
         }
+
+        /// <summary>
+        /// 循环任务
+        /// </summary>
+        /// <param name="control">委托对象</param>
+        /// <param name="action">回调</param>
+        /// <param name="interval">间隔</param>
+        /// <param name="max">最大值</param>
+        /// <param name="add">更新量</param>
+        /// <param name="end">结束回调</param>
         public ITask(Control control, Action<float> action, int interval, float max, float add, Action? end = null)
         {
             bool ok = true;
@@ -84,13 +96,21 @@ namespace AntdUI
                         Thread.Sleep(interval);
                     }
                 }
-            }).ContinueWith((action =>
+            }).ContinueWith(action =>
             {
-                Dispose();
                 if (ok && end != null) end();
-            }));
+                Dispose();
+            });
         }
 
+        /// <summary>
+        /// 循环任务
+        /// </summary>
+        /// <param name="control">委托对象</param>
+        /// <param name="action">回调</param>
+        /// <param name="interval">间隔</param>
+        /// <param name="end">结束回调</param>
+        /// <param name="sleep">运行前睡眠</param>
         public ITask(Control control, Func<bool> action, int interval, Action? end = null, int sleep = 0)
         {
             bool ok = true;
@@ -111,12 +131,37 @@ namespace AntdUI
                         else return;
                     }
                 }
-            }).ContinueWith((action =>
+            }).ContinueWith(action =>
             {
-                Dispose();
                 if (ok && end != null) end();
-            }));
+                Dispose();
+            });
         }
+        public ITask(Control control, Func<bool> action)
+        {
+            IsRun = true;
+            task = Run(() =>
+            {
+                while (true)
+                {
+                    if (token.Wait(control)) return;
+                    else
+                    {
+                        if (action()) { }
+                        else return;
+                    }
+                }
+            }).ContinueWith(action => Dispose());
+        }
+
+        /// <summary>
+        /// 循环任务
+        /// </summary>
+        /// <param name="action">回调</param>
+        /// <param name="interval">间隔</param>
+        /// <param name="totalFrames">总帧数</param>
+        /// <param name="end">结束回调</param>
+        /// <param name="sleep">运行前睡眠</param>
         public ITask(Func<int, bool> action, int interval, int totalFrames, Action end, int sleep = 0)
         {
             IsRun = true;
@@ -137,11 +182,11 @@ namespace AntdUI
                         else return;
                     }
                 }
-            }).ContinueWith((action =>
+            }).ContinueWith(action =>
             {
-                Dispose();
                 if (ok) end();
-            }));
+                Dispose();
+            });
         }
         public ITask(bool _is, int interval, int totalFrames, float cold, AnimationType type, Action<int, float> action, Action end)
         {
@@ -196,24 +241,21 @@ namespace AntdUI
                 }
             }).ContinueWith((action =>
             {
-                Dispose();
                 if (ok)
                 {
                     Tag = null;
                     end();
                 }
+                Dispose();
             }));
         }
 
         Task task;
         public void Wait() => task.Wait();
 
-        public object? Tag { get; set; } = null;
+        public object? Tag { get; set; }
 
-        public void Cancel()
-        {
-            token?.Cancel();
-        }
+        public void Cancel() => token?.Cancel();
 
         public void Dispose()
         {
@@ -224,6 +266,7 @@ namespace AntdUI
                 token = null;
             }
             IsRun = false;
+            GC.SuppressFinalize(this);
         }
 
         CancellationTokenSource? token = new CancellationTokenSource();
@@ -242,6 +285,25 @@ namespace AntdUI
             return Task.Factory.StartNew(action).ContinueWith(action => { end(); });
 #else
             return Task.Run(action).ContinueWith(action => { end(); });
+#endif
+        }
+
+        public static Task<TResult> Run<TResult>(Func<TResult> action)
+        {
+#if NET40
+            return Task.Factory.StartNew(action);
+#else
+            return Task.Run(action);
+#endif
+        }
+
+        public static T? Invoke<T>(Control control, Func<T> method)
+        {
+            if (control.IsDisposed || control.Disposing) return default;
+#if NET40 || NET46 || NET48
+            return (T)control.Invoke(method);
+#else
+            return control.Invoke(method);
 #endif
         }
     }

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -48,7 +48,8 @@ namespace AntdUI
                 autoscroll = value;
                 if (autoscroll) ScrollBar = new ScrollBar(this);
                 else ScrollBar = null;
-                IOnSizeChanged();
+                if (IsHandleCreated) IOnSizeChanged();
+                OnPropertyChanged(nameof(AutoScroll));
             }
         }
 
@@ -85,7 +86,8 @@ namespace AntdUI
                 layoutengine.Vertical = value;
                 if (autoscroll) ScrollBar = new ScrollBar(this);
                 else ScrollBar = null;
-                IOnSizeChanged();
+                if (IsHandleCreated) IOnSizeChanged();
+                OnPropertyChanged(nameof(Vertical));
             }
         }
 
@@ -100,7 +102,8 @@ namespace AntdUI
             {
                 if (layoutengine.ItemSize == value) return;
                 layoutengine.ItemSize = value;
-                IOnSizeChanged();
+                if (IsHandleCreated) IOnSizeChanged();
+                OnPropertyChanged(nameof(ItemSize));
             }
         }
 
@@ -115,9 +118,29 @@ namespace AntdUI
             {
                 if (layoutengine.Gap == value) return;
                 layoutengine.Gap = value;
-                IOnSizeChanged();
+                if (IsHandleCreated) IOnSizeChanged();
+                OnPropertyChanged(nameof(Gap));
             }
         }
+
+        bool pauseLayout = false;
+        [Browsable(false), Description("暂停布局"), Category("行为"), DefaultValue(false)]
+        public bool PauseLayout
+        {
+            get => pauseLayout;
+            set
+            {
+                if (pauseLayout == value) return;
+                pauseLayout = value;
+                if (!value)
+                {
+                    Invalidate();
+                    IOnSizeChanged();
+                }
+                OnPropertyChanged(nameof(PauseLayout));
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             ScrollBar?.Paint(e.Graphics.High());
@@ -126,11 +149,18 @@ namespace AntdUI
 
         #region 布局
 
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            IOnSizeChanged();
+            base.OnHandleCreated(e);
+        }
+
         protected override void OnSizeChanged(EventArgs e)
         {
             var rect = ClientRectangle;
-            ScrollBar?.SizeChange(rect);
             base.OnSizeChanged(e);
+            if (rect.Width == 0 || rect.Height == 0) return;
+            ScrollBar?.SizeChange(rect);
         }
 
         StackLayout layoutengine = new StackLayout();
@@ -140,7 +170,7 @@ namespace AntdUI
             /// <summary>
             /// 是否垂直方向
             /// </summary>
-            public bool Vertical { get; set; } = false;
+            public bool Vertical { get; set; }
             /// <summary>
             /// 内容大小
             /// </summary>
@@ -153,8 +183,9 @@ namespace AntdUI
 
             public override bool Layout(object container, LayoutEventArgs layoutEventArgs)
             {
-                if (container is StackPanel parent && parent.Controls.Count > 0)
+                if (container is StackPanel parent && parent.IsHandleCreated && parent.Controls.Count > 0)
                 {
+                    if (parent.PauseLayout) return false;
                     var controls = new List<Control>(parent.Controls.Count);
                     foreach (Control it in parent.Controls)
                     {
@@ -175,7 +206,7 @@ namespace AntdUI
                         {
                             bool old = parent.ScrollBar.Show;
                             parent.ScrollBar.SetVrSize(val);
-                            if (old != parent.ScrollBar.Show) parent.BeginInvoke(new Action(parent.IOnSizeChanged));
+                            if (old != parent.ScrollBar.Show) parent.BeginInvoke(parent.IOnSizeChanged);
                         }
                     }
                 }
@@ -326,13 +357,57 @@ namespace AntdUI
         }
         protected override bool OnTouchScrollX(int value)
         {
-            if (ScrollBar != null && ScrollBar.EnabledX) return ScrollBar.MouseWheelX(value);
+            if (ScrollBar != null && ScrollBar.EnabledX) return ScrollBar.MouseWheelXCore(value);
             return false;
         }
         protected override bool OnTouchScrollY(int value)
         {
-            if (ScrollBar != null && ScrollBar.EnabledY) return ScrollBar.MouseWheelY(value);
+            if (ScrollBar != null && ScrollBar.EnabledY) return ScrollBar.MouseWheelYCore(value);
             return false;
+        }
+
+        #endregion
+
+        #region 控件添加和移除
+
+        protected override void OnControlAdded(ControlEventArgs e)
+        {
+            base.OnControlAdded(e);
+            e.Control!.GotFocus += Control_GotFocus;
+        }
+
+        protected override void OnControlRemoved(ControlEventArgs e)
+        {
+            base.OnControlRemoved(e);
+            e.Control!.GotFocus -= Control_GotFocus;
+        }
+
+        private void Control_GotFocus(object? sender, EventArgs e)
+        {
+            if (sender is Control control) ScrollControlIntoView(control);
+        }
+
+        #endregion
+
+        #region 滚动控件到视图
+
+        public void ScrollControlIntoView(Control activeControl)
+        {
+            if (ScrollBar == null) return;
+            if (ScrollBar.Show)
+            {
+                Rectangle clientRect = ClientRectangle, controlRect = activeControl.Bounds;
+                if (Vertical)
+                {
+                    if (controlRect.Top < clientRect.Top) ScrollBar.ValueY = Math.Max(0, ScrollBar.ValueY + controlRect.Top - clientRect.Top);
+                    else if (controlRect.Bottom > clientRect.Bottom) ScrollBar.ValueY = Math.Min(ScrollBar.MaxY, ScrollBar.ValueY + controlRect.Bottom - clientRect.Bottom);
+                }
+                else
+                {
+                    if (controlRect.Left < clientRect.Left) ScrollBar.ValueX = Math.Max(0, ScrollBar.ValueX + controlRect.Left - clientRect.Left);
+                    else if (controlRect.Right > clientRect.Right) ScrollBar.ValueX = Math.Min(ScrollBar.MaxX, ScrollBar.ValueX + controlRect.Right - clientRect.Right);
+                }
+            }
         }
 
         #endregion

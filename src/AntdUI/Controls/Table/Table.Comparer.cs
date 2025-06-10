@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -23,9 +23,15 @@ namespace AntdUI
     ///</summary>
     internal class FilesNameComparerClass
     {
-        public static int Compare(SortModel x, SortModel y)
+        public static int Compare(string x, string y)
         {
-            string fileA = x.v.ToString() ?? string.Empty, fileB = y.v.ToString() ?? string.Empty;
+            if (int.TryParse(x, out var _x) && int.TryParse(y, out var _y))
+            {
+                if (_x == _y) return 0;
+                else if (_x > _y) return 1;
+                else return -1;
+            }
+            string fileA = x, fileB = y;
             char[] arr1 = fileA.ToCharArray();
             char[] arr2 = fileB.ToCharArray();
             int i = 0, j = 0;
@@ -62,6 +68,7 @@ namespace AntdUI
             else return arr1.Length > arr2.Length ? 1 : -1;
         }
     }
+
     internal class SortModel
     {
         public SortModel(int _i, string? _v) { i = _i; v = _v ?? ""; }

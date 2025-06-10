@@ -1,54 +1,73 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## Modal
 
-Modal 对话框
-
-> 模态对话框。
+> Display a modal dialog box, providing a title, content area, and action buttons.
 
 ### Modal.Config
 
-> 配置对话框
+> Configure Modal
 
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**Form** | 所属窗口 | Form`?` | `为空无法使用Mask` |
-**Title** | 标题 | string | `必填` |
-**Content** | 控件/内容 | object | `必填` |
-**Width** | 消息框宽度 | int | 416 |
-**Font** | 字体 | Font`?` | `null` |
-**Icon** | 图标 | [TType](Enum#ttype) | None |
-**Keyboard** | 是否支持键盘 esc 关闭 | bool | true |
-**Mask** | 是否展示遮罩 | bool | true |
-**MaskClosable** | 点击蒙层是否允许关闭 | bool | true |
-**CloseIcon** | 是否显示关闭图标 | bool | false |
-**Tag** | 用户定义数据 | object`?` | `null` |
+**Form** | Belonging window | Form`?` | `Cannot use mask when empty` |
+**Title** | Title | string | `Required` |
+**Content** | Control/Content | object | `Required` |
+**Width** | Modal width | int | 416 |
+**Font** | Font | Font`?` | `null` |
+**Icon** | Icon | [TType](Enum.md#ttype) | None |
+**Keyboard** | Does it support disabling keyboard ESC | bool | true |
+**Mask** | Display Mask | bool | true |
+**MaskClosable** | Click whether to allow the mask to be closed | bool | true |
+**CloseIcon** | Display close icon | bool | false |
+**Tag** | User defined data | object`?` | `null` |
 ||||
-**Padding** 🔴 | 边距 | Size | 24, 20 |
-**BtnHeight** 🔴 | 按钮栏高度 | int | 38 |
-**CancelText** | 取消按钮文字 | string | "取消" |
-**CancelFont** 🔴 | 取消按钮字体 | Font`?` | `null` |
-**OkText** | 确认按钮文字 | string | "确定" |
-**OkType** | 确认按钮类型 | [TTypeMini](Enum#ttypemini) | Primary |
-**OkFont** 🔴 | 确认按钮字体 | Font`?` | `null` |
-**OnOk** | 确定回调 | `Func<Config, bool>?` | `null` |
+**Padding** | Padding | Size | 24, 20 |
+**BtnHeight** | Button bar height | int | 38 |
+**CancelText** | Cancel button text | string | "Cancel" |
+**CancelFont** | Cancel button font | Font`?` | `null` |
+**OkText** | Confirm button text | string | "OK" |
+**OkType** | Confirm button type | [TTypeMini](Enum.md#ttypemini) | Primary |
+**OkFont** | Confirm button Font | Font`?` | `null` |
+**OnOk** | Confirm callback | `Func<Config, bool>?` | `null` |
 ||||
-**Btns** | 自定义按钮 | [Btn[]](#modal.btn) | `null` |
-**OnBtns** | 自定义按钮回调 | Action<[Button](#button)> | `null` |
+**Btns** | Custom button | [Btn[]](#modal.btn) | `null` |
+**OnBtns** | Custom button callback | Action<[Button](#button)> | `null` |
+**OnButtonStyle** | Custom button style callback | Action<string, [Button](Button)> | `null` |
 ||||
-**LoadingDisableCancel** 🔴 | 加载时禁用取消按钮 | bool | false |
-||||
-**OnButtonStyle** 🔴 | 自定义按钮样式回调 | Action<string, [Button](Button)> | `null` |
+**LoadingDisableCancel** | Disable the cancel button during loading | bool | false |
+**Draggable** | Drag and drop window | bool | true |
+**Close()** | Active close | void | |
 
 ### Modal.Btn
 
-> 配置自定义按钮
+> Configure Button
 
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**Name** | 按钮名称 | string | `必填` |
-**Text** | 按钮文字 | string | `必填` |
-**Type** | 按钮类型 | [TTypeMini](Enum#ttypemini) | Default |
-**Fore** | 文字颜色 | Color`?` | `null` |
-**Back** | 背景颜色 | Color`?` | `null` |
-**Tag** | 用户定义数据 | object`?` | `null` |
+**Name** | Button name | string | `Required` |
+**Text** | Button text | string | `Required` |
+**Type** | Button type | [TTypeMini](Enum.md#ttypemini) | Default |
+**Fore** | Text color | Color`?` | `null` |
+**Back** | background color | Color`?` | `null` |
+**Tag** | User defined data | object`?` | `null` |
+
+***
+
+### UserControl Monitoring Load Example
+
+~~~csharp
+public partial class UserControl1 : UserControl, AntdUI.ControlEvent
+{
+    public void LoadCompleted()
+    {
+        System.Diagnostics.Debug.WriteLine("Load");
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        System.Diagnostics.Debug.WriteLine("Close");
+    }
+}
+~~~

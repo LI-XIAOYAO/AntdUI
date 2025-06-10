@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -35,7 +35,7 @@ namespace AntdUI
     [DefaultEvent("ValueChanged")]
     public class ColorPicker : IControl, SubLayeredForm
     {
-        public ColorPicker()
+        public ColorPicker() : base(ControlType.Select)
         {
             base.BackColor = Color.Transparent;
         }
@@ -63,7 +63,7 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
             }
@@ -147,7 +147,7 @@ namespace AntdUI
         [Description("波浪大小"), Category("外观"), DefaultValue(4)]
         public int WaveSize { get; set; } = 4;
 
-        internal int radius = 6;
+        int radius = 6;
         /// <summary>
         /// 圆角
         /// </summary>
@@ -179,18 +179,20 @@ namespace AntdUI
             }
         }
 
-        Color _value = Style.Db.Primary;
+        Color _value = Colour.Primary.Get("ColorPicker");
         [Description("颜色的值"), Category("值"), DefaultValue(typeof(Color), "Transparent")]
         public Color Value
         {
             get => _value;
             set
             {
+                hasvalue = true;
                 if (value == _value) return;
                 if (DisabledAlpha && value.A != 255) value = Color.FromArgb(255, value);
                 _value = value;
-                ValueChanged?.Invoke(this, new ColorEventArgs(value));
                 if (BeforeAutoSize()) Invalidate();
+                ValueChanged?.Invoke(this, new ColorEventArgs(value));
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -215,6 +217,77 @@ namespace AntdUI
         /// </summary>
         [Description("禁用透明度"), Category("行为"), DefaultValue(false)]
         public bool DisabledAlpha { get; set; }
+
+        bool allowclear = false;
+        /// <summary>
+        /// 支持清除
+        /// </summary>
+        [Description("支持清除"), Category("行为"), DefaultValue(false)]
+        public bool AllowClear
+        {
+            get => allowclear;
+            set
+            {
+                if (allowclear == value) return;
+                allowclear = value;
+                Invalidate();
+            }
+        }
+
+        /// <summary>
+        /// 显示关闭按钮
+        /// </summary>
+        [Description("显示关闭按钮"), Category("行为"), DefaultValue(false)]
+        public bool ShowClose { get; set; }
+
+        bool hasvalue = false;
+        /// <summary>
+        /// 是否包含值
+        /// </summary>
+        public bool HasValue
+        {
+            get
+            {
+                if (allowclear) return hasvalue;
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// 获取颜色值
+        /// </summary>
+        public Color? ValueClear
+        {
+            get
+            {
+                if (allowclear && !hasvalue) return null;
+                return _value;
+            }
+        }
+
+        /// <summary>
+        /// 清空值
+        /// </summary>
+        public void ClearValue() => ClearValue(Colour.Primary.Get("ColorPicker", ColorScheme));
+
+        /// <summary>
+        /// 清空值
+        /// </summary>
+        /// <param name="def">默认色</param>
+        public void ClearValue(Color def)
+        {
+            if (allowclear)
+            {
+                if (hasvalue)
+                {
+                    hasvalue = false;
+                    _value = def;
+                    Invalidate();
+                    ValueChanged?.Invoke(this, new ColorEventArgs(_value));
+                }
+                else _value = def;
+            }
+        }
 
         TColorMode mode = TColorMode.Hex;
         /// <summary>
@@ -250,11 +323,30 @@ namespace AntdUI
         [Description("下拉箭头是否显示"), Category("外观"), DefaultValue(true)]
         public bool DropDownArrow { get; set; } = true;
 
+        #region 组合
+
+        TJoinMode joinMode = TJoinMode.None;
+        /// <summary>
+        /// 组合模式
+        /// </summary>
+        [Description("组合模式"), Category("外观"), DefaultValue(TJoinMode.None)]
+        public TJoinMode JoinMode
+        {
+            get => joinMode;
+            set
+            {
+                if (joinMode == value) return;
+                joinMode = value;
+                if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(JoinMode));
+            }
+        }
+
         bool joinLeft = false;
         /// <summary>
         /// 连接左边
         /// </summary>
-        [Description("连接左边"), Category("外观"), DefaultValue(false)]
+        [Obsolete("use JoinMode"), Browsable(false), Description("连接左边"), Category("外观"), DefaultValue(false)]
         public bool JoinLeft
         {
             get => joinLeft;
@@ -263,6 +355,7 @@ namespace AntdUI
                 if (joinLeft == value) return;
                 joinLeft = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(JoinLeft));
             }
         }
 
@@ -270,7 +363,7 @@ namespace AntdUI
         /// <summary>
         /// 连接右边
         /// </summary>
-        [Description("连接右边"), Category("外观"), DefaultValue(false)]
+        [Obsolete("use JoinMode"), Browsable(false), Description("连接右边"), Category("外观"), DefaultValue(false)]
         public bool JoinRight
         {
             get => joinRight;
@@ -279,8 +372,11 @@ namespace AntdUI
                 if (joinRight == value) return;
                 joinRight = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(JoinRight));
             }
         }
+
+        #endregion
 
         #endregion
 
@@ -302,138 +398,120 @@ namespace AntdUI
 
         #region 渲染
 
+        bool init = false;
         internal StringFormat stringLeft = Helper.SF_NoWrap(lr: StringAlignment.Near);
         protected override void OnPaint(PaintEventArgs e)
         {
+            init = true;
             var rect = ClientRectangle.PaddingRect(Padding);
             var g = e.Graphics.High();
             var rect_read = ReadRectangle;
             float _radius = round ? rect_read.Height : radius * Config.Dpi;
-
-            bool enabled = Enabled;
-
             using (var path = Path(rect_read, _radius))
             {
-                Color _fore = fore ?? Style.Db.Text, _back = back ?? Style.Db.BgContainer,
-                    _border = borderColor ?? Style.Db.BorderColor,
-                    _borderHover = BorderHover ?? Style.Db.PrimaryHover,
-                _borderActive = BorderActive ?? Style.Db.Primary;
-                PaintClick(g, path, rect, _borderActive, radius);
-                int size_color = (int)(rect_read.Height * 0.75F);
-                if (enabled)
+                Color _fore = fore ?? Colour.Text.Get("ColorPicker", ColorScheme), _back = back ?? Colour.BgContainer.Get("ColorPicker", ColorScheme),
+                    _border = borderColor ?? Colour.BorderColor.Get("ColorPicker", ColorScheme),
+                    _borderHover = BorderHover ?? Colour.PrimaryHover.Get("ColorPicker", ColorScheme),
+                _borderActive = BorderActive ?? Colour.Primary.Get("ColorPicker", ColorScheme);
+                PaintClick(g, path, rect, _borderActive, _radius);
+                int size_color = (int)(rect_read.Height * .75F);
+                if (Enabled)
                 {
-                    using (var brush = new SolidBrush(_back))
+                    if (hasFocus && WaveSize > 0)
                     {
-                        g.FillPath(brush, path);
+                        float wave = (WaveSize * Config.Dpi / 2), wave2 = wave * 2;
+                        using (var path_focus = new RectangleF(rect_read.X - wave, rect_read.Y - wave, rect_read.Width + wave2, rect_read.Height + wave2).RoundPath(_radius + wave))
+                        {
+                            g.Draw(Colour.PrimaryBorder.Get("ColorPicker", ColorScheme), wave, path_focus);
+                        }
                     }
+                    g.Fill(_back, path);
                     if (borderWidth > 0)
                     {
-                        if (AnimationHover)
-                        {
-                            using (var brush = new Pen(_border, borderWidth))
-                            {
-                                g.DrawPath(brush, path);
-                            }
-                            using (var brush = new Pen(Helper.ToColor(AnimationHoverValue, _borderHover), borderWidth))
-                            {
-                                g.DrawPath(brush, path);
-                            }
-                        }
-                        else if (ExtraMouseDown)
-                        {
-                            using (var brush = new Pen(_borderActive, borderWidth))
-                            {
-                                g.DrawPath(brush, path);
-                            }
-                        }
-                        else if (ExtraMouseHover)
-                        {
-                            using (var brush = new Pen(_borderHover, borderWidth))
-                            {
-                                g.DrawPath(brush, path);
-                            }
-                        }
-                        else
-                        {
-                            using (var brush = new Pen(_border, borderWidth))
-                            {
-                                g.DrawPath(brush, path);
-                            }
-                        }
+                        var borWidth = borderWidth * Config.Dpi;
+                        if (AnimationHover) g.Draw(_border.BlendColors(AnimationHoverValue, _borderHover), borWidth, path);
+                        else if (ExtraMouseDown) g.Draw(_borderActive, borWidth, path);
+                        else if (ExtraMouseHover) g.Draw(_borderHover, borWidth, path);
+                        else g.Draw(_border, borWidth, path);
                     }
                 }
                 else
                 {
-                    using (var brush = new SolidBrush(Style.Db.FillTertiary))
-                    {
-                        g.FillPath(brush, path);
-                    }
-                    if (borderWidth > 0)
-                    {
-                        using (var brush = new Pen(_border, borderWidth))
-                        {
-                            g.DrawPath(brush, path);
-                        }
-                    }
+                    _fore = Colour.TextQuaternary.Get("ColorPicker", ColorScheme);
+                    g.Fill(Colour.FillTertiary.Get("ColorPicker", ColorScheme), path);
+                    if (borderWidth > 0) g.Draw(_border, borderWidth * Config.Dpi, path);
                 }
-                var r = _radius * 0.75F;
+                var r = _radius * .75F;
                 if (showText)
                 {
                     int gap = (rect_read.Height - size_color) / 2;
                     var rect_color = new Rectangle(rect_read.X + gap, rect_read.Y + gap, size_color, size_color);
-                    using (var path_color = rect_color.RoundPath(r))
-                    {
-                        PaintAlpha(g, r, rect_color);
-                        using (var brush = new SolidBrush(_value))
-                        {
-                            g.FillPath(brush, path_color);
-                        }
-                    }
+                    PaintValue(g, r, rect_color);
                     using (var brush = new SolidBrush(_fore))
                     {
                         var wi = gap * 2 + size_color;
                         if (ValueFormatChanged == null)
                         {
-                            switch (mode)
+                            if (HasValue)
                             {
-                                case TColorMode.Hex:
-                                    g.DrawStr("#" + _value.ToHex(), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
-                                    break;
-                                case TColorMode.Rgb:
-                                    if (_value.A == 255) g.DrawStr(string.Format("rgb({0},{1},{2})", _value.R, _value.G, _value.B), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
-                                    else g.DrawStr(string.Format("rgba({0},{1},{2},{3})", _value.R, _value.G, _value.B, Math.Round(_value.A / 255D, 2)), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
-                                    break;
+                                switch (mode)
+                                {
+                                    case TColorMode.Hex:
+                                        g.String("#" + _value.ToHex(), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
+                                        break;
+                                    case TColorMode.Rgb:
+                                        if (_value.A == 255) g.String(string.Format("rgb({0},{1},{2})", _value.R, _value.G, _value.B), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
+                                        else g.String(string.Format("rgba({0},{1},{2},{3})", _value.R, _value.G, _value.B, Math.Round(_value.A / 255D, 2)), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
+                                        break;
+                                }
                             }
+                            else g.String("Transparent", Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
                         }
-                        else g.DrawStr(ValueFormatChanged(this, new ColorEventArgs(_value)), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
+                        else g.String(ValueFormatChanged(this, new ColorEventArgs(_value)), Font, brush, new Rectangle(rect_read.X + wi, rect_read.Y, rect_read.Width - wi, rect_read.Height), stringLeft);
                     }
                 }
                 else
                 {
-                    int size_colorw = (int)(rect_read.Width * 0.75F);
-                    var rect_color = new Rectangle(rect_read.X + (rect_read.Width - size_colorw) / 2, rect_read.Y + (rect_read.Height - size_color) / 2, size_colorw, size_color);
-                    using (var path_color = rect_color.RoundPath(r))
-                    {
-                        PaintAlpha(g, r, rect_color);
-                        using (var brush = new SolidBrush(_value))
-                        {
-                            g.FillPath(brush, path_color);
-                        }
-                    }
+                    int size_colorw = (int)(rect_read.Width * .75F);
+                    var rect_color = new RectangleF(rect_read.X + (rect_read.Width - size_colorw) / 2F, rect_read.Y + (rect_read.Height - size_color) / 2F, size_colorw, size_color);
+                    PaintValue(g, r, rect_color);
                 }
             }
             this.PaintBadge(g);
             base.OnPaint(e);
         }
 
+        void PaintValue(Canvas g, float r, RectangleF rect_color)
+        {
+            using (var path = rect_color.RoundPath(r))
+            {
+                var has = HasValue;
+                if (allowclear && !hasvalue)
+                {
+                    g.SetClip(path);
+                    using (var pen = new Pen(Color.FromArgb(245, 34, 45), rect_color.Height * .12F))
+                    {
+                        g.DrawLine(pen, new PointF(rect_color.X, rect_color.Bottom), new PointF(rect_color.Right, rect_color.Y));
+                    }
+                    g.ResetClip();
+                    g.Draw(Colour.Split.Get("ColorPicker", ColorScheme), Config.Dpi, path);
+                }
+                else
+                {
+                    PaintAlpha(g, r, rect_color);
+                    g.Fill(_value, path);
+                }
+            }
+        }
+
         Bitmap? bmp_alpha = null;
-        void PaintAlpha(Graphics g, float radius, Rectangle rect)
+        void PaintAlpha(Canvas g, float radius, RectangleF rect)
         {
             if (bmp_alpha == null || bmp_alpha.Width != rect.Width || bmp_alpha.Height != rect.Height)
             {
                 bmp_alpha?.Dispose();
-                bmp_alpha = new Bitmap(rect.Width, rect.Height);
-                using (var tmp = new Bitmap(rect.Width, rect.Height))
+                bmp_alpha = new Bitmap((int)rect.Width, (int)rect.Height);
+                using (var tmp = new Bitmap(bmp_alpha.Width, bmp_alpha.Height))
                 {
                     using (var g2 = Graphics.FromImage(tmp).High())
                     {
@@ -441,26 +519,26 @@ namespace AntdUI
                     }
                     using (var g2 = Graphics.FromImage(bmp_alpha).High())
                     {
-                        Helper.PaintImg(g2, new Rectangle(0, 0, rect.Width, rect.Height), tmp, TFit.Fill, radius, false);
+                        g2.Image(new Rectangle(0, 0, bmp_alpha.Width, bmp_alpha.Height), tmp, TFit.Fill, radius, false);
                     }
                 }
             }
-            g.DrawImage(bmp_alpha, rect);
+            g.Image(bmp_alpha, rect);
         }
 
-        void PaintAlpha(Graphics g, Rectangle rect)
+        void PaintAlpha(Canvas g, RectangleF rect)
         {
-            int u_y = 0, size = rect.Height / 4;
+            float u_y = 0, size = rect.Height / 4;
             bool ad = false;
-            using (var brush = new SolidBrush(Style.Db.FillSecondary))
+            using (var brush = new SolidBrush(Colour.FillSecondary.Get("ColorPicker", ColorScheme)))
             {
                 while (u_y < rect.Height)
                 {
-                    int u_x = 0;
+                    float u_x = 0;
                     bool adsub = ad;
                     while (u_x < rect.Width)
                     {
-                        if (adsub) g.FillRectangle(brush, new Rectangle(u_x, u_y, size, size));
+                        if (adsub) g.Fill(brush, new RectangleF(u_x, u_y, size, size));
                         u_x += size;
                         adsub = !adsub;
                     }
@@ -472,41 +550,51 @@ namespace AntdUI
 
         #region 渲染帮助
 
-        internal GraphicsPath Path(Rectangle rect_read, float _radius)
+        internal GraphicsPath Path(Rectangle rect, float radius)
         {
-            if (JoinLeft && JoinRight) return rect_read.RoundPath(0);
-            else if (JoinRight) return rect_read.RoundPath(_radius, true, false, false, true);
-            else if (JoinLeft) return rect_read.RoundPath(_radius, false, true, true, false);
-            return rect_read.RoundPath(_radius);
+            switch (joinMode)
+            {
+                case TJoinMode.Left:
+                    return rect.RoundPath(radius, true, false, false, true);
+                case TJoinMode.Right:
+                    return rect.RoundPath(radius, false, true, true, false);
+                case TJoinMode.LR:
+                case TJoinMode.TB:
+                    return rect.RoundPath(0);
+                case TJoinMode.Top:
+                    return rect.RoundPath(radius, true, true, false, false);
+                case TJoinMode.Bottom:
+                    return rect.RoundPath(radius, false, false, true, true);
+                case TJoinMode.None:
+                default:
+                    if (joinLeft && joinRight) return rect.RoundPath(0);
+                    else if (joinRight) return rect.RoundPath(radius, true, false, false, true);
+                    else if (joinLeft) return rect.RoundPath(radius, false, true, true, false);
+                    return rect.RoundPath(radius);
+            }
         }
 
         #region 点击动画
 
-        internal void PaintClick(Graphics g, GraphicsPath path, Rectangle rect, Color color, float radius)
+        internal void PaintClick(Canvas g, GraphicsPath path, Rectangle rect, Color color, float radius)
         {
             if (AnimationFocus)
             {
                 if (AnimationFocusValue > 0)
                 {
-                    using (var brush = new SolidBrush(Helper.ToColor(AnimationFocusValue, color)))
+                    using (var path_click = rect.RoundPath(radius, round))
                     {
-                        using (var path_click = rect.RoundPath(radius, round))
-                        {
-                            path_click.AddPath(path, false);
-                            g.FillPath(brush, path_click);
-                        }
+                        path_click.AddPath(path, false);
+                        g.Fill(Helper.ToColor(AnimationFocusValue, color), path_click);
                     }
                 }
             }
             else if (ExtraMouseDown && WaveSize > 0)
             {
-                using (var brush = new SolidBrush(Color.FromArgb(30, color)))
+                using (var path_click = rect.RoundPath(radius, round))
                 {
-                    using (var path_click = rect.RoundPath(radius, round))
-                    {
-                        path_click.AddPath(path, false);
-                        g.FillPath(brush, path_click);
-                    }
+                    path_click.AddPath(path, false);
+                    g.Fill(Color.FromArgb(30, color), path_click);
                 }
             }
         }
@@ -515,17 +603,14 @@ namespace AntdUI
 
         #endregion
 
-        public override Rectangle ReadRectangle
-        {
-            get => ClientRectangle.PaddingRect(Padding).ReadRect((WaveSize + borderWidth / 2F) * Config.Dpi, JoinLeft, JoinRight);
-        }
+        public override Rectangle ReadRectangle => ClientRectangle.PaddingRect(Padding).ReadRect((WaveSize + borderWidth / 2F) * Config.Dpi, joinMode, joinLeft, joinRight);
 
         public override GraphicsPath RenderRegion
         {
             get
             {
                 var rect_read = ReadRectangle;
-                float _radius = round ? rect_read.Height : radius;
+                float _radius = round ? rect_read.Height : radius * Config.Dpi;
                 return Path(rect_read, _radius);
             }
         }
@@ -536,12 +621,43 @@ namespace AntdUI
 
         bool AnimationFocus = false;
         int AnimationFocusValue = 0;
+        bool hasFocus = false;
+        /// <summary>
+        /// 是否存在焦点
+        /// </summary>
+        [Browsable(false)]
+        [Description("是否存在焦点"), Category("行为"), DefaultValue(false)]
+        public bool HasFocus
+        {
+            get => hasFocus;
+            private set
+            {
+                if (value && (_mouseDown || _mouseHover)) value = false;
+                if (hasFocus == value) return;
+                hasFocus = value;
+                Invalidate();
+            }
+        }
+
+        protected override void OnGotFocus(EventArgs e)
+        {
+            base.OnGotFocus(e);
+            if (init) HasFocus = true;
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            base.OnLostFocus(e);
+            HasFocus = false;
+        }
 
         #endregion
 
         #region 鼠标
 
         internal bool _mouseDown = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseDown
         {
             get => _mouseDown;
@@ -549,7 +665,7 @@ namespace AntdUI
             {
                 if (_mouseDown == value) return;
                 _mouseDown = value;
-                if (Config.Animation && WaveSize > 0)
+                if (Config.HasAnimation(nameof(ColorPicker)) && WaveSize > 0)
                 {
                     ThreadFocus?.Dispose();
                     AnimationFocus = true;
@@ -589,6 +705,8 @@ namespace AntdUI
         internal int AnimationHoverValue = 0;
         internal bool AnimationHover = false;
         internal bool _mouseHover = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseHover
         {
             get => _mouseHover;
@@ -598,7 +716,7 @@ namespace AntdUI
                 _mouseHover = value;
                 if (Enabled)
                 {
-                    if (Config.Animation && !ExtraMouseDown)
+                    if (Config.HasAnimation(nameof(ColorPicker)) && !ExtraMouseDown)
                     {
                         ThreadHover?.Dispose();
                         AnimationHover = true;
@@ -664,11 +782,24 @@ namespace AntdUI
         {
             if (e.Button == MouseButtons.Left && Trigger == Trigger.Click)
             {
+                init = false;
                 ImeMode = ImeMode.Disable;
                 Focus();
                 ClickDown();
             }
             base.OnMouseClick(e);
+        }
+
+        protected override void OnMouseDoubleClick(MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && Trigger == Trigger.DoubleClick)
+            {
+                init = false;
+                ImeMode = ImeMode.Disable;
+                Focus();
+                ClickDown();
+            }
+            base.OnMouseDoubleClick(e);
         }
 
         void ClickDown()
@@ -758,7 +889,7 @@ namespace AntdUI
             return PSize;
         }
 
-        internal Size PSize
+        public Size PSize
         {
             get
             {
@@ -767,18 +898,22 @@ namespace AntdUI
                     Size font_size;
                     if (ValueFormatChanged == null)
                     {
-                        switch (mode)
+                        if (HasValue)
                         {
-                            case TColorMode.Rgb:
-                                font_size = g.MeasureString(_value.A == 255 ? "rgb(255,255,255)" : "rgba(255,255,255,0.99)", Font).Size();
-                                break;
-                            case TColorMode.Hex:
-                            default:
-                                font_size = g.MeasureString(_value.A == 255 ? "#DDDCCC" : "#DDDDCCCC", Font).Size();
-                                break;
+                            switch (mode)
+                            {
+                                case TColorMode.Rgb:
+                                    font_size = g.MeasureString(_value.A == 255 ? "rgb(255,255,255)" : "rgba(255,255,255,0.99)", Font);
+                                    break;
+                                case TColorMode.Hex:
+                                default:
+                                    font_size = g.MeasureString(_value.A == 255 ? "#DDDCCC" : "#DDDDCCCC", Font);
+                                    break;
+                            }
                         }
+                        else font_size = g.MeasureString("Transparent", Font);
                     }
-                    else font_size = g.MeasureString(ValueFormatChanged(this, new ColorEventArgs(_value)), Font).Size();
+                    else font_size = g.MeasureString(ValueFormatChanged(this, new ColorEventArgs(_value)), Font);
                     int gap = (int)((20 + WaveSize) * Config.Dpi);
                     if (showText)
                     {
@@ -800,18 +935,10 @@ namespace AntdUI
             base.OnResize(e);
         }
 
-        internal bool BeforeAutoSize()
+        bool BeforeAutoSize()
         {
             if (autoSize == TAutoSize.None) return true;
-            if (InvokeRequired)
-            {
-                bool flag = false;
-                Invoke(new Action(() =>
-                {
-                    flag = BeforeAutoSize();
-                }));
-                return flag;
-            }
+            if (InvokeRequired) return ITask.Invoke(this, BeforeAutoSize);
             var PS = PSize;
             switch (autoSize)
             {
@@ -836,12 +963,12 @@ namespace AntdUI
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            if (subForm != null) return subForm.IProcessCmdKey(ref msg, keyData);
+            subForm?.IProcessCmdKey(ref msg, keyData);
             return base.ProcessCmdKey(ref msg, keyData);
         }
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
-            if (subForm != null) subForm.IKeyPress(e);
+            subForm?.IKeyPress(e);
             base.OnKeyPress(e);
         }
     }

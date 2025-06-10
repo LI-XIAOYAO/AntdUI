@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -60,6 +60,7 @@ namespace AntdUI
             var dir = new Dictionary<Control, AnchorDock>(controls.Count);
             foreach (Control control in controls)
             {
+                if (control is Splitter) continue;
                 if (control.Dock != DockStyle.None || control.Anchor != (AnchorStyles.Left | AnchorStyles.Top)) dir.Add(control, new AnchorDock(control));
                 if (controls.Count > 0) DpiSuspend(ref dir, control.Controls);
             }
@@ -69,6 +70,7 @@ namespace AntdUI
         {
             foreach (Control control in controls)
             {
+                if (control is Splitter) continue;
                 if (control.Dock != DockStyle.None || control.Anchor != (AnchorStyles.Left | AnchorStyles.Top)) dir.Add(control, new AnchorDock(control));
                 if (controls.Count > 0) DpiSuspend(ref dir, control.Controls);
             }
@@ -91,9 +93,8 @@ namespace AntdUI
         {
             var size = new Size((int)(control.Width * dpi), (int)(control.Height * dpi));
             var point = new Point((int)(control.Left * dpi), (int)(control.Top * dpi));
-
-            if (!control.MinimumSize.IsEmpty) control.MinimumSize = new Size((int)(control.MinimumSize.Width * dpi), (int)(control.MinimumSize.Height * dpi));
             if (!control.MaximumSize.IsEmpty) control.MaximumSize = new Size((int)(control.MaximumSize.Width * dpi), (int)(control.MaximumSize.Height * dpi));
+            if (!control.MinimumSize.IsEmpty) control.MinimumSize = new Size((int)(control.MinimumSize.Width * dpi), (int)(control.MinimumSize.Height * dpi));
             control.Padding = SetPadding(dpi, control.Padding);
             control.Margin = SetPadding(dpi, control.Margin);
             control.Size = size;
@@ -109,13 +110,17 @@ namespace AntdUI
                     if (it.SizeType == SizeType.Absolute) it.Height = it.Height * dpi;
                 }
             }
-            else if (control is TabControl tab && tab.ItemSize.Width > 1 && tab.ItemSize.Height > 1)
+            else if (control is TabControl tab && tab.ItemSize.Width > 1 && tab.ItemSize.Height > 1) tab.ItemSize = new Size((int)(tab.ItemSize.Width * dpi), (int)(tab.ItemSize.Height * dpi));
+            else if (control is SplitContainer splitContainer)
             {
-                tab.ItemSize = new Size((int)(tab.ItemSize.Width * dpi), (int)(tab.ItemSize.Height * dpi));
+                splitContainer.SplitterWidth = (int)(splitContainer.SplitterWidth * dpi);
+                if (splitContainer.Panel1MinSize > 0) splitContainer.Panel1MinSize = (int)(splitContainer.Panel1MinSize * dpi);
+                if (splitContainer.Panel2MinSize > 0) splitContainer.Panel2MinSize = (int)(splitContainer.Panel2MinSize * dpi);
             }
             else if (control is Panel panel) panel.padding = SetPadding(dpi, panel.padding);
             DpiLSS(dpi, control);
         }
+
         static void DpiLS(float dpi, Form form)
         {
             if (form is Window window)
@@ -160,8 +165,8 @@ namespace AntdUI
                 if (point.X < 0 || point.Y < 0) point = form.Location;
             }
             if (form.StartPosition == FormStartPosition.CenterScreen) point = new Point(screen.X + (screen.Width - size.Width) / 2, screen.Y + (screen.Height - size.Height) / 2);
-            if (!form.MinimumSize.IsEmpty) form.MinimumSize = new Size((int)(form.MinimumSize.Width * dpi), (int)(form.MinimumSize.Height * dpi));
             if (!form.MaximumSize.IsEmpty) form.MaximumSize = new Size((int)(form.MaximumSize.Width * dpi), (int)(form.MaximumSize.Height * dpi));
+            if (!form.MinimumSize.IsEmpty) form.MinimumSize = new Size((int)(form.MinimumSize.Width * dpi), (int)(form.MinimumSize.Height * dpi));
             form.Padding = SetPadding(dpi, form.Padding);
             form.Margin = SetPadding(dpi, form.Margin);
 
@@ -182,6 +187,14 @@ namespace AntdUI
             if (padding.All == 0) return padding;
             else if (padding.All > 0) return new Padding((int)(padding.All * dpi));
             else return new Padding((int)(padding.Left * dpi), (int)(padding.Top * dpi), (int)(padding.Right * dpi), (int)(padding.Bottom * dpi));
+        }
+
+        internal static void ControlEvent(this Control control)
+        {
+            if (control is GridPanel gridpanel) gridpanel.IOnSizeChanged();
+            else if (control is FlowPanel flowpanel) flowpanel.IOnSizeChanged();
+            else if (control is StackPanel stackpanel) stackpanel.IOnSizeChanged();
+            foreach (Control it in control.Controls) ControlEvent(it);
         }
     }
 }

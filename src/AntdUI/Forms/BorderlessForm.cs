@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -20,7 +20,6 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
-using Vanara.PInvoke;
 using static Vanara.PInvoke.DwmApi;
 using static Vanara.PInvoke.User32;
 
@@ -153,6 +152,23 @@ namespace AntdUI
             }
         }
 
+        /// <summary>
+        /// 确定窗体是否出现在 Windows 任务栏中
+        /// </summary>
+        [Description("确定窗体是否出现在 Windows 任务栏中"), Category("行为"), DefaultValue(true)]
+        public new bool ShowInTaskbar
+        {
+            get => base.ShowInTaskbar;
+            set
+            {
+                if (base.ShowInTaskbar == value) return;
+                if (InvokeRequired) { Invoke(() => base.ShowInTaskbar = value); }
+                else base.ShowInTaskbar = value;
+                oldmargin = 0;
+                DwmArea();
+            }
+        }
+
         #endregion
 
         #region 重载事件
@@ -210,7 +226,6 @@ namespace AntdUI
             base.OnSizeChanged(e);
         }
 
-        internal HWND handle { get; private set; }
         readonly IntPtr TRUE = new IntPtr(1);
 
         protected override void WndProc(ref System.Windows.Forms.Message m)
@@ -233,11 +248,11 @@ namespace AntdUI
                     break;
                 case WindowMessage.WM_MOUSEMOVE:
                 case WindowMessage.WM_NCMOUSEMOVE:
-                    if (!is_resizable && ReadMessage) ResizableMouseMove(PointToClient(MousePosition));
+                    if (!is_resizable && Window.CanHandMessage && ReadMessage) ResizableMouseMove(PointToClient(MousePosition));
                     break;
                 case WindowMessage.WM_LBUTTONDOWN:
                 case WindowMessage.WM_NCLBUTTONDOWN:
-                    if (!is_resizable && ReadMessage) ResizableMouseDown();
+                    if (!is_resizable && Window.CanHandMessage && ReadMessage) ResizableMouseDown();
                     break;
             }
             base.WndProc(ref m);
@@ -255,7 +270,7 @@ namespace AntdUI
                 oldmargin = margin;
                 var v = 2;
                 DarkUI.DwmSetWindowAttribute(Handle, 2, ref v, 4);
-                DwmExtendFrameIntoClientArea(handle, new MARGINS(margin));
+                DwmExtendFrameIntoClientArea(Handle, new MARGINS(margin));
             }
         }
 
@@ -356,18 +371,8 @@ namespace AntdUI
 
         protected override void OnHandleCreated(EventArgs e)
         {
-            handle = new HWND(Handle);
             base.OnHandleCreated(e);
-            if (UseDwm && OS.Version.Major >= 6)
-            {
-                try
-                {
-                    int enabled = 0;
-                    DarkUI.DwmIsCompositionEnabled(ref enabled);
-                    DwmEnabled = enabled == 1;
-                }
-                catch { }
-            }
+            if (UseDwm && OS.Version.Major >= 6) DwmEnabled = DarkUI.IsCompositionEnabled;
             SetTheme();
             DisableProcessWindowsGhosting();
             HandMessage();
@@ -398,11 +403,11 @@ namespace AntdUI
                             if ((Math.Abs(mousePosition.X - mouseOffset.X) >= 6 || Math.Abs(mousePosition.Y - mouseOffset.Y) >= 6))
                             {
                                 handmax = true;
-                                Invoke(new Action(() =>
+                                Invoke(() =>
                                 {
                                     WindowState = FormWindowState.Normal;
                                     isMax = false;
-                                }));
+                                });
                                 return;
                             }
                         }

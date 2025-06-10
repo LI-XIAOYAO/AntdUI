@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             AntdUI.SliderMarkItem sliderMarkItem1 = new AntdUI.SliderMarkItem();
@@ -118,6 +114,8 @@ namespace Demo.Controls
             header1.Description = "滑动型输入器，展示当前值和可选范围。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Slider.Description";
+            header1.LocalizationText = "Slider.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -148,7 +146,7 @@ namespace Demo.Controls
             panel3.Controls.Add(slider4);
             panel3.Controls.Add(slider7);
             panel3.Dock = DockStyle.Top;
-            panel3.Location = new Point(0, 98);
+            panel3.Location = new Point(0, 110);
             panel3.Name = "panel3";
             panel3.Size = new Size(1179, 407);
             panel3.TabIndex = 3;
@@ -372,10 +370,11 @@ namespace Demo.Controls
             // 
             divider2.Dock = DockStyle.Top;
             divider2.Font = new Font("Microsoft YaHei UI", 10F);
-            divider2.Location = new Point(0, 76);
+            divider2.LocalizationText = "Slider.{id}";
+            divider2.Location = new Point(0, 82);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(1179, 22);
+            divider2.Size = new Size(1179, 28);
             divider2.TabIndex = 0;
             divider2.TabStop = false;
             divider2.Text = "固定点";
@@ -386,7 +385,7 @@ namespace Demo.Controls
             panel2.Controls.Add(slider3);
             panel2.Controls.Add(slider1);
             panel2.Dock = DockStyle.Top;
-            panel2.Location = new Point(0, 22);
+            panel2.Location = new Point(0, 28);
             panel2.Name = "panel2";
             panel2.Size = new Size(1179, 54);
             panel2.TabIndex = 1;
@@ -423,10 +422,11 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Slider.{id}";
             divider1.Location = new Point(0, 0);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(1179, 22);
+            divider1.Size = new Size(1179, 28);
             divider1.TabIndex = 0;
             divider1.TabStop = false;
             divider1.Text = "基本";

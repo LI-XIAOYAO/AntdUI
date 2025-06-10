@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -52,7 +52,7 @@ namespace AntdUI
                 if (winState == value) return;
                 winState = value;
                 if (IsHandleCreated) HandMessage();
-                EventHub.Dispatch(EventType.WINDOW_STATE, winState == WState.Maximize);
+                EventHub.Dispatch(EventType.WINDOW_STATE);
             }
         }
 
@@ -77,57 +77,81 @@ namespace AntdUI
             }
         }
 
-        #endregion
-
-        internal HWND handle { get; private set; }
-
-        protected override void OnHandleCreated(EventArgs e)
+        /// <summary>
+        /// 确定窗体是否出现在 Windows 任务栏中
+        /// </summary>
+        [Description("确定窗体是否出现在 Windows 任务栏中"), Category("行为"), DefaultValue(true)]
+        public new bool ShowInTaskbar
         {
-            handle = new HWND(Handle);
-            base.OnHandleCreated(e);
-            if (FormBorderStyle == FormBorderStyle.None)
+            get => base.ShowInTaskbar;
+            set
             {
-                SetTheme();
-                DisableProcessWindowsGhosting();
-                HandMessage();
-                DwmArea();
-            }
-            else
-            {
-                SetTheme();
-                DisableProcessWindowsGhosting();
-                if (WindowState != FormWindowState.Maximized)
+                if (base.ShowInTaskbar == value) return;
+                if (IsHandleCreated)
                 {
                     Size max = MaximumSize, min = MinimumSize;
-                    sizeInit = ClientSize;
-                    MaximumSize = MinimumSize = ClientSize = sizeInit.Value;
-                    ClientSize = sizeInit.Value;
+                    MaximumSize = MinimumSize = base.ClientSize;
+                    if (InvokeRequired) { Invoke(() => base.ShowInTaskbar = value); }
+                    else base.ShowInTaskbar = value;
                     MinimumSize = min;
                     MaximumSize = max;
+                    oldmargin = 0;
+                    DwmArea();
                 }
-                HandMessage();
-                DwmArea();
+                else base.ShowInTaskbar = value;
             }
+        }
+
+        #endregion
+
+        bool rmax = false;
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            SetTheme();
+            DisableProcessWindowsGhosting();
+            if (WindowState == FormWindowState.Maximized) rmax = true;
+            if (FormBorderStyle != FormBorderStyle.None && !rmax)
+            {
+                sizeInit = base.ClientSize;
+                SetSize(sizeInit.Value);
+            }
+            HandMessage();
+            DwmArea();
+            eNonclient = false;
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            eNonclient = true;
+            base.OnHandleDestroyed(e);
+        }
+
+        void SetSize(Size size)
+        {
+            Size max = MaximumSize, min = MinimumSize;
+            MaximumSize = MinimumSize = base.ClientSize = size;
+            MinimumSize = min;
+            MaximumSize = max;
         }
 
         protected override void OnLoad(EventArgs e)
         {
-            SetWindowPos(handle, HWND.NULL, 0, 0, 0, 0, SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOOWNERZORDER | SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_FRAMECHANGED);
+            SetWindowPos(Handle, HWND.NULL, 0, 0, 0, 0, SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOOWNERZORDER | SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_FRAMECHANGED);
             base.OnLoad(e);
         }
 
+        bool eNonclient = true;
         private void InvalidateNonclient()
         {
-            if (!IsHandleCreated || IsDisposed) return;
-            RedrawWindow(handle, null, HWND.NULL, RedrawWindowFlags.RDW_FRAME | RedrawWindowFlags.RDW_UPDATENOW | RedrawWindowFlags.RDW_VALIDATE);
-            UpdateWindow(handle);
-            SetWindowPos(handle, HWND.NULL, 0, 0, 0, 0, SetWindowPosFlags.SWP_FRAMECHANGED | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_NOCOPYBITS | SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOOWNERZORDER | SetWindowPosFlags.SWP_NOREPOSITION | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOZORDER);
+            if (eNonclient) return;
+            UpdateWindow(Handle);
+            SetWindowPos(Handle, HWND.NULL, 0, 0, 0, 0, SetWindowPosFlags.SWP_FRAMECHANGED | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_NOCOPYBITS | SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOOWNERZORDER | SetWindowPosFlags.SWP_NOREPOSITION | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOZORDER);
         }
 
         protected override void WndProc(ref System.Windows.Forms.Message m)
         {
-            var msg = (WindowMessage)m.Msg;
-            switch (msg)
+            switch ((WindowMessage)m.Msg)
             {
                 case WindowMessage.WM_ACTIVATE:
                     DwmArea();
@@ -135,18 +159,26 @@ namespace AntdUI
                 case WindowMessage.WM_NCCALCSIZE when m.WParam != IntPtr.Zero:
                     if (WmNCCalcSize(ref m)) return;
                     break;
-                case WindowMessage.WM_NCACTIVATE:
-                    if (WmNCActivate(ref m)) return;
-                    break;
                 case WindowMessage.WM_SIZE:
                     WmSize(ref m);
                     break;
+                case WindowMessage.WM_ACTIVATEAPP:
+                case WindowMessage.WM_NCACTIVATE:
+                    if (DarkUI.IsCompositionEnabled) InvalidateNonclient();
+                    else
+                    {
+                        m.Result = TRUE;
+                        return;
+                    }
+                    break;
+                default:
+                    if (WmGhostingHandler(m)) return;
+                    break;
             }
-            if (WmGhostingHandler(m)) return;
             base.WndProc(ref m);
         }
 
-        static IntPtr FALSE = new IntPtr(0);
+        static IntPtr TRUE = new IntPtr(1), FALSE = new IntPtr(0);
         bool WmGhostingHandler(System.Windows.Forms.Message m)
         {
             switch (m.Msg)
@@ -164,7 +196,7 @@ namespace AntdUI
         bool iszoomed = false;
         bool ISZoomed()
         {
-            bool value = IsZoomed(handle);
+            bool value = IsZoomed(Handle);
             if (iszoomed == value) return value;
             iszoomed = value;
             DwmArea();
@@ -179,7 +211,7 @@ namespace AntdUI
             else margin = 1;
             if (oldmargin == margin) return;
             oldmargin = margin;
-            DwmExtendFrameIntoClientArea(handle, new MARGINS(margin));
+            DwmExtendFrameIntoClientArea(Handle, new MARGINS(margin));
         }
 
         public override void RefreshDWM() => DwmArea();
@@ -189,6 +221,7 @@ namespace AntdUI
         /// <summary>
         /// 获取或设置窗体的位置
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public new Point Location
         {
             get
@@ -206,6 +239,7 @@ namespace AntdUI
         /// <summary>
         /// 控件的顶部坐标
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new int Top
         {
             get => Location.Y;
@@ -219,6 +253,7 @@ namespace AntdUI
         /// <summary>
         /// 控件的左侧坐标
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new int Left
         {
             get => Location.X;
@@ -232,22 +267,17 @@ namespace AntdUI
         /// <summary>
         /// 控件的右坐标
         /// </summary>
-        public new int Right
-        {
-            get => ScreenRectangle.Right;
-        }
+        public new int Right => ScreenRectangle.Right;
 
         /// <summary>
         /// 控件的底部坐标
         /// </summary>
-        public new int Bottom
-        {
-            get => ScreenRectangle.Bottom;
-        }
+        public new int Bottom => ScreenRectangle.Bottom;
 
         /// <summary>
         /// 获取或设置窗体的大小
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new Size Size
         {
             get
@@ -259,13 +289,30 @@ namespace AntdUI
             {
                 sizeNormal = null;
                 base.Size = value;
-                sizeInit = ClientSize;
+                sizeInit = base.ClientSize;
+            }
+        }
+
+        /// <summary>
+        /// 获取或设置窗体的客户端区域的大小
+        /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        [Localizable(true)]
+        public new Size ClientSize
+        {
+            get => base.ClientSize;
+            set
+            {
+                sizeNormal = null;
+                base.ClientSize = value;
+                sizeInit = base.ClientSize;
             }
         }
 
         /// <summary>
         /// 控件的宽度
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new int Width
         {
             get => Size.Width;
@@ -273,13 +320,14 @@ namespace AntdUI
             {
                 sizeNormal = null;
                 base.Width = value;
-                sizeInit = ClientSize;
+                sizeInit = base.ClientSize;
             }
         }
 
         /// <summary>
         /// 控件的高度
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public new int Height
         {
             get => Size.Height;
@@ -287,7 +335,7 @@ namespace AntdUI
             {
                 sizeNormal = null;
                 base.Height = value;
-                sizeInit = ClientSize;
+                sizeInit = base.ClientSize;
             }
         }
 
@@ -311,7 +359,7 @@ namespace AntdUI
                 sizeNormal = null;
                 base.Location = value.Location;
                 base.Size = value.Size;
-                sizeInit = ClientSize;
+                sizeInit = base.ClientSize;
             }
         }
 
@@ -363,10 +411,7 @@ namespace AntdUI
 
         #region 鼠标
 
-        public override bool IsMax
-        {
-            get => winState == WState.Maximize;
-        }
+        public override bool IsMax => winState == WState.Maximize;
 
         public static bool CanHandMessage = true;
         public bool PreFilterMessage(ref System.Windows.Forms.Message m)
@@ -430,13 +475,18 @@ namespace AntdUI
         void WmSize(ref System.Windows.Forms.Message m)
         {
             if (m.WParam == SIZE_MINIMIZED) WinState = WState.Minimize;
-            else if (m.WParam == SIZE_MAXIMIZED) WinState = WState.Maximize;
+            else if (m.WParam == SIZE_MAXIMIZED)
+            {
+                WinState = WState.Maximize;
+                Invalidate();
+                InvalidateNonclient();
+            }
             else if (m.WParam == SIZE_RESTORED)
             {
-                sizeNormal = ClientSize;
                 WinState = WState.Restore;
                 InvalidateNonclient();
                 Invalidate();
+                sizeNormal = ClientSize;
             }
         }
 
@@ -455,24 +505,18 @@ namespace AntdUI
                 nccsp.top -= borders.Top;
                 nccsp.top += borders.Bottom;
                 Marshal.StructureToPtr(nccsp, m.LParam, false);
+                m.Result = new IntPtr(0x0400);
                 return false;
             }
             else
             {
-                m.Result = new IntPtr(1);
+                m.Result = TRUE;
                 return true;
             }
         }
 
         internal Size? sizeInit;
         Size? sizeNormal;
-        bool WmNCActivate(ref System.Windows.Forms.Message m)
-        {
-            if (m.HWnd == IntPtr.Zero) return false;
-            if (IsIconic(m.HWnd)) return false;
-            m.Result = DefWindowProc(m.HWnd, (uint)m.Msg, m.WParam, new IntPtr(-1));
-            return true;
-        }
 
         #endregion
 
@@ -502,12 +546,17 @@ namespace AntdUI
         protected override void SetBoundsCore(int x, int y, int width, int height, BoundsSpecified specified)
         {
             if (DesignMode) base.SetBoundsCore(x, y, width, height, specified);
-#if NET40 || NET45 || NET46 || NET48
-            else if (WindowState == FormWindowState.Normal && sizeNormal.HasValue) base.SetBoundsCore(x, y, sizeNormal.Value.Width, sizeNormal.Value.Height, BoundsSpecified.None);
+            else if (WindowState == FormWindowState.Normal && sizeNormal.HasValue)
+            {
+                if (rmax)
+                {
+                    rmax = false;
+                    base.SetBoundsCore(x, y, width, height, specified);
+                    return;
+                }
+                base.SetBoundsCore(x, y, sizeNormal.Value.Width, sizeNormal.Value.Height, BoundsSpecified.None);
+            }
             else base.SetBoundsCore(x, y, width, height, specified);
-#else
-            else base.SetBoundsCore(x, y, width, height, specified);
-#endif
         }
 
         #endregion

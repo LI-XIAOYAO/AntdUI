@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -48,9 +48,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -67,6 +68,7 @@ namespace AntdUI
                 if (current == value) return;
                 current = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Current));
             }
         }
 
@@ -83,6 +85,7 @@ namespace AntdUI
                 if (status == value) return;
                 status = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Status));
             }
         }
 
@@ -100,8 +103,15 @@ namespace AntdUI
                 vertical = value;
                 ChangeList();
                 Invalidate();
+                OnPropertyChanged(nameof(Vertical));
             }
         }
+
+        /// <summary>
+        /// 间距
+        /// </summary>
+        [Description("间距"), Category("外观"), DefaultValue(8)]
+        public int Gap { get; set; } = 8;
 
         StepsItemCollection? items;
         /// <summary>
@@ -145,6 +155,7 @@ namespace AntdUI
                     ChangeList();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PauseLayout));
             }
         }
 
@@ -155,97 +166,108 @@ namespace AntdUI
             if (rect.Width == 0 || rect.Height == 0) return;
             Helper.GDI(g =>
             {
-                int gap = (int)(8F * Config.Dpi), split = (int)(1F * Config.Dpi);
+                int gap = (int)(Gap * Config.Dpi), split = (int)Config.Dpi;
                 var _splits = new List<RectangleF>(items.Count);
                 using (var font_description = new Font(Font.FontFamily, Font.Size * 0.875F))
                 {
                     int gap2 = gap * 2;
+                    int i = 0, ri = 0, count = 0;
+                    foreach (var it in items)
+                    {
+                        it.PARENT = this;
+                        if (it.Visible) count++;
+                    }
                     if (vertical)
                     {
-                        int t_height_one = rect.Height / items.Count;
-                        int i = 0;
-                        foreach (StepsItem it in items)
+                        int t_height_one = rect.Height / count, iod = 0;
+                        foreach (var it in items)
                         {
-                            it.PARENT = this;
-                            it.TitleSize = g.MeasureString(it.Title, Font).Size();
-                            int ico_size = (int)(it.TitleSize.Height * 1.6F);
-                            it.pen_w = it.TitleSize.Height * 0.136F;
-                            int width_one = it.TitleSize.Width + gap, height_one = ico_size, width_ex = 0;
-
-                            if (it.showSub)
+                            if (it.Visible)
                             {
-                                it.SubTitleSize = g.MeasureString(it.SubTitle, Font).Size();
-                                height_one += it.SubTitleSize.Height;
-                            }
-                            if (it.showDescription)
-                            {
-                                it.DescriptionSize = g.MeasureString(it.Description, font_description).Size();
-                                width_ex = it.DescriptionSize.Width;
-                            }
+                                it.TitleSize = g.MeasureText(it.Title, Font);
+                                int ico_size = (int)(it.TitleSize.Height * 1.6F);
+                                it.pen_w = it.TitleSize.Height * 0.136F;
+                                int width_one = it.TitleSize.Width + gap, height_one = ico_size, width_ex = 0;
 
-                            int centery = rect.Y + t_height_one * i + t_height_one / 2;//居中X
-                            it.title_rect = new Rectangle(rect.X + gap + ico_size, centery - height_one / 2, it.TitleSize.Width, height_one);
-                            int read_y = it.title_rect.Y - gap - ico_size;
-
-                            it.ico_rect = new Rectangle(rect.X, it.title_rect.Y + (it.title_rect.Height - ico_size) / 2, ico_size, ico_size);
-
-                            int tmp_max_width = it.title_rect.Width, tmp_max_height = it.ico_rect.Height, tmp_max_wr = it.title_rect.Right;
-
-                            if (it.showSub)
-                            {
-                                it.subtitle_rect = new Rectangle(it.title_rect.X + it.TitleSize.Width, it.title_rect.Y, it.SubTitleSize.Width, height_one);
-                                tmp_max_width = it.subtitle_rect.Width + it.title_rect.Width;
-                                tmp_max_wr = it.subtitle_rect.Right;
-                            }
-                            if (it.showDescription)
-                            {
-                                it.description_rect = new Rectangle(it.title_rect.X, it.title_rect.Y + (height_one - it.TitleSize.Height) / 2 + it.TitleSize.Height + gap / 2, it.DescriptionSize.Width, it.DescriptionSize.Height);
-                                if (it.description_rect.Width > tmp_max_width)
+                                if (it.showSub)
                                 {
-                                    tmp_max_width = it.description_rect.Width;
-                                    tmp_max_wr = it.description_rect.Right;
+                                    it.SubTitleSize = g.MeasureText(it.SubTitle, Font);
+                                    height_one += it.SubTitleSize.Height;
                                 }
-                                tmp_max_height += it.DescriptionSize.Height;
-                            }
-                            it.rect = new Rectangle(it.ico_rect.X - gap, it.ico_rect.Y - gap, tmp_max_wr - it.ico_rect.X + gap2, tmp_max_height + gap2);
+                                if (it.showDescription)
+                                {
+                                    it.DescriptionSize = g.MeasureText(it.Description, font_description);
+                                    width_ex = it.DescriptionSize.Width;
+                                }
 
-                            if (i > 0)
-                            {
-                                var old = items[i - 1];
-                                if (old != null) _splits.Add(new RectangleF(it.ico_rect.X + (ico_size - split) / 2F, old.ico_rect.Bottom + gap, split, it.ico_rect.Y - old.ico_rect.Bottom - gap2));
+                                int centery = rect.Y + t_height_one * i + t_height_one / 2;//居中X
+                                it.title_rect = new Rectangle(rect.X + gap + ico_size, centery - height_one / 2, it.TitleSize.Width, height_one);
+                                int read_y = it.title_rect.Y - gap - ico_size;
+
+                                it.ico_rect = new Rectangle(rect.X, it.title_rect.Y + (it.title_rect.Height - ico_size) / 2, ico_size, ico_size);
+
+                                int tmp_max_width = it.title_rect.Width, tmp_max_height = it.ico_rect.Height, tmp_max_wr = it.title_rect.Right;
+
+                                if (it.showSub)
+                                {
+                                    it.subtitle_rect = new Rectangle(it.title_rect.X + it.TitleSize.Width, it.title_rect.Y, it.SubTitleSize.Width, height_one);
+                                    tmp_max_width = it.subtitle_rect.Width + it.title_rect.Width;
+                                    tmp_max_wr = it.subtitle_rect.Right;
+                                }
+                                if (it.showDescription)
+                                {
+                                    it.description_rect = new Rectangle(it.title_rect.X, it.title_rect.Y + (height_one - it.TitleSize.Height) / 2 + it.TitleSize.Height + gap / 2, it.DescriptionSize.Width, it.DescriptionSize.Height);
+                                    if (it.description_rect.Width > tmp_max_width)
+                                    {
+                                        tmp_max_width = it.description_rect.Width;
+                                        tmp_max_wr = it.description_rect.Right;
+                                    }
+                                    tmp_max_height += it.DescriptionSize.Height;
+                                }
+                                it.rect = new Rectangle(it.ico_rect.X - gap, it.ico_rect.Y - gap, tmp_max_wr - it.ico_rect.X + gap2, tmp_max_height + gap2);
+
+                                if (ri > 0)
+                                {
+                                    var old = items[iod];
+                                    if (old != null) _splits.Add(new RectangleF(it.ico_rect.X + (ico_size - split) / 2F, old.ico_rect.Bottom + gap, split, it.ico_rect.Y - old.ico_rect.Bottom - gap2));
+                                }
+                                i++;
+                                iod = ri;
                             }
-                            i++;
+                            ri++;
                         }
                     }
                     else
                     {
                         //横向
                         int read_width = MaxHeight(g, font_description, gap, out var maxHeight);
-                        int i = 0;
-                        int count = items.Count;
                         int sp = (rect.Width - read_width) / count, spline = sp - gap;
                         int has_x = rect.X + sp / 2;
                         count -= 1;
-                        foreach (StepsItem it in items)
+                        foreach (var it in items)
                         {
-                            int icon_size = it.IconSize ?? (int)(it.TitleSize.Height * 1.6F);
-                            int y = rect.Y + (rect.Height - maxHeight) / 2;
-                            it.ico_rect = new Rectangle(has_x, y + (it.TitleSize.Height - icon_size) / 2, icon_size, icon_size);
-                            it.title_rect = new Rectangle(it.ico_rect.Right + gap, y, it.TitleSize.Width, it.TitleSize.Height);
-
-                            int tmp_max_height = it.ico_rect.Height;
-                            if (it.showSub) it.subtitle_rect = new Rectangle(it.title_rect.X + it.TitleSize.Width, it.title_rect.Y, it.SubTitleSize.Width, it.title_rect.Height);
-
-                            if (it.showDescription)
+                            if (it.Visible)
                             {
-                                it.description_rect = new Rectangle(it.title_rect.X, it.title_rect.Bottom + gap / 2, it.DescriptionSize.Width, it.DescriptionSize.Height);
-                                tmp_max_height += it.DescriptionSize.Height;
-                            }
+                                int icon_size = it.IconSize ?? (int)(it.TitleSize.Height * 1.6F);
+                                int y = rect.Y + (rect.Height - maxHeight) / 2;
+                                it.ico_rect = new Rectangle(has_x, y + (it.TitleSize.Height - icon_size) / 2, icon_size, icon_size);
+                                it.title_rect = new Rectangle(it.ico_rect.Right + gap, y, it.TitleSize.Width, it.TitleSize.Height);
 
-                            it.rect = new Rectangle(it.ico_rect.X - gap, it.ico_rect.Y - gap, it.ReadWidth + gap2, tmp_max_height + gap2);
-                            if (spline > 0 && i != count) _splits.Add(new RectangleF(it.rect.Right - gap, it.ico_rect.Y + (it.ico_rect.Height - split) / 2F, spline, split));
-                            has_x += it.ReadWidth + sp;
-                            i++;
+                                int tmp_max_height = it.ico_rect.Height;
+                                if (it.showSub) it.subtitle_rect = new Rectangle(it.title_rect.X + it.TitleSize.Width, it.title_rect.Y, it.SubTitleSize.Width, it.title_rect.Height);
+
+                                if (it.showDescription)
+                                {
+                                    it.description_rect = new Rectangle(it.title_rect.X, it.title_rect.Bottom + gap / 2, it.DescriptionSize.Width, it.DescriptionSize.Height);
+                                    tmp_max_height += it.DescriptionSize.Height;
+                                }
+
+                                it.rect = new Rectangle(it.ico_rect.X - gap, it.ico_rect.Y - gap, it.ReadWidth + gap2, tmp_max_height + gap2);
+                                if (spline > 0 && i < count) _splits.Add(new RectangleF(it.rect.Right - gap, it.ico_rect.Y + (it.ico_rect.Height - split) / 2F, spline, split));
+                                has_x += it.ReadWidth + sp;
+                                i++;
+                            }
+                            ri++;
                         }
                     }
                 }
@@ -254,30 +276,31 @@ namespace AntdUI
             return;
         }
 
-        int MaxHeight(Graphics g, Font font_description, int gap, out int height)
+        int MaxHeight(Canvas g, Font font_description, int gap, out int height)
         {
             int w = 0, temp_t = 0, temp = 0;
-            foreach (StepsItem it in Items)
+            foreach (var it in Items)
             {
-                it.PARENT = this;
+                if (it.Visible)
+                {
+                    #region 计算
 
-                #region 计算
+                    it.TitleSize = g.MeasureText(it.Title, Font);
+                    if (it.showSub) it.SubTitleSize = g.MeasureText(it.SubTitle, Font);
+                    if (it.showDescription) it.DescriptionSize = g.MeasureText(it.Description, font_description);
 
-                it.TitleSize = g.MeasureString(it.Title, Font).Size();
-                if (it.showSub) it.SubTitleSize = g.MeasureString(it.SubTitle, Font).Size();
-                if (it.showDescription) it.DescriptionSize = g.MeasureString(it.Description, font_description).Size();
+                    int icon_size = it.IconSize ?? (int)(it.TitleSize.Height * 1.6F);
+                    int width_top = it.TitleSize.Width + (it.showSub ? it.SubTitleSize.Width : 0), width_buttom = (it.showDescription ? it.DescriptionSize.Width : 0);
 
-                int icon_size = it.IconSize ?? (int)(it.TitleSize.Height * 1.6F);
-                int width_top = it.TitleSize.Width + (it.showSub ? it.SubTitleSize.Width : 0), width_buttom = (it.showDescription ? it.DescriptionSize.Width : 0);
+                    it.ReadWidth = icon_size + gap + (width_top > width_buttom ? width_top : width_buttom);
 
-                it.ReadWidth = icon_size + gap + (width_top > width_buttom ? width_top : width_buttom);
+                    #endregion
 
-                #endregion
-
-                it.pen_w = it.TitleSize.Height * 0.136F;
-                w += it.ReadWidth;
-                if (temp_t == 0) temp_t = it.TitleSize.Height;
-                if (temp == 0 && it.showDescription) temp = it.DescriptionSize.Height + gap / 2;
+                    it.pen_w = it.TitleSize.Height * 0.136F;
+                    w += it.ReadWidth;
+                    if (temp_t == 0) temp_t = it.TitleSize.Height;
+                    if (temp == 0 && it.showDescription) temp = it.DescriptionSize.Height + gap / 2;
+                }
             }
             height = temp_t + temp;
             return w;
@@ -294,31 +317,35 @@ namespace AntdUI
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (items == null || items.Count == 0) return;
             var rect = ClientRectangle;
             if (rect.Width == 0 || rect.Height == 0) return;
+            if (items == null || items.Count == 0)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
-            Color color_fore = fore ?? Style.Db.Text;
+            Color color_fore = fore ?? Colour.Text.Get("Steps", ColorScheme);
             using (var brush_fore = new SolidBrush(color_fore))
-            using (var brush_primarybg = new SolidBrush(Style.Db.PrimaryBg))
-            using (var brush_primary = new SolidBrush(Style.Db.Primary))
-            using (var brush_primary_fore = new SolidBrush(Style.Db.PrimaryColor))
-            using (var brush_dotback = new SolidBrush(Style.Db.BgBase))
-            using (var brush_fore2 = new SolidBrush(Style.Db.TextTertiary))
-            using (var brush_fore3 = new SolidBrush(Style.Db.TextSecondary))
-            using (var brush_bg2 = new SolidBrush(Style.Db.FillSecondary))
+            using (var brush_primarybg = new SolidBrush(Colour.PrimaryBg.Get("Steps", ColorScheme)))
+            using (var brush_primary = new SolidBrush(Colour.Primary.Get("Steps", ColorScheme)))
+            using (var brush_primary_fore = new SolidBrush(Colour.PrimaryColor.Get("Steps", ColorScheme)))
+            using (var brush_dotback = new SolidBrush(Colour.BgBase.Get("Steps", ColorScheme)))
+            using (var brush_fore2 = new SolidBrush(Colour.TextTertiary.Get("Steps", ColorScheme)))
+            using (var brush_fore3 = new SolidBrush(Colour.TextSecondary.Get("Steps", ColorScheme)))
+            using (var brush_bg2 = new SolidBrush(Colour.FillSecondary.Get("Steps", ColorScheme)))
             using (var font_description = new Font(Font.FontFamily, Font.Size * 0.875F))
             {
-                using (var brush_split = new SolidBrush(Style.Db.Split))
+                using (var brush_split = new SolidBrush(Colour.Split.Get("Steps", ColorScheme)))
                 {
                     for (int sp = 0; sp < splits.Length; sp++)
                     {
-                        if (sp < current) g.FillRectangle(brush_primary, splits[sp]);
-                        else g.FillRectangle(brush_split, splits[sp]);
+                        if (sp < current) g.Fill(brush_primary, splits[sp]);
+                        else g.Fill(brush_split, splits[sp]);
                     }
                 }
                 int i = 0;
-                foreach (StepsItem it in items)
+                foreach (var it in items)
                 {
                     if (it.Visible)
                     {
@@ -328,32 +355,32 @@ namespace AntdUI
                             switch (status)
                             {
                                 case TStepState.Finish:
-                                    g.DrawStr(it.Title, Font, brush_fore, it.title_rect, stringLeft);
-                                    g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                                    g.DrawStr(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
+                                    g.DrawText(it.Title, Font, brush_fore, it.title_rect, stringLeft);
+                                    g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                                    g.DrawText(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
                                     ccolor = brush_primary.Color;
                                     break;
                                 case TStepState.Wait:
-                                    g.DrawStr(it.Title, Font, brush_fore2, it.title_rect, stringLeft);
-                                    g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                                    g.DrawStr(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
+                                    g.DrawText(it.Title, Font, brush_fore2, it.title_rect, stringLeft);
+                                    g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                                    g.DrawText(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
                                     ccolor = brush_fore2.Color;
                                     break;
                                 case TStepState.Error:
-                                    using (var brush_error = new SolidBrush(Style.Db.Error))
+                                    using (var brush_error = new SolidBrush(Colour.Error.Get("Steps", ColorScheme)))
                                     {
-                                        g.DrawStr(it.Title, Font, brush_error, it.title_rect, stringLeft);
-                                        g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                                        g.DrawStr(it.Description, font_description, brush_error, it.description_rect, stringLeft);
+                                        g.DrawText(it.Title, Font, brush_error, it.title_rect, stringLeft);
+                                        g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                                        g.DrawText(it.Description, font_description, brush_error, it.description_rect, stringLeft);
                                         ccolor = brush_error.Color;
                                     }
                                     break;
                                 case TStepState.Process:
                                 default:
 
-                                    g.DrawStr(it.Title, Font, brush_fore, it.title_rect, stringLeft);
-                                    g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                                    g.DrawStr(it.Description, font_description, brush_fore, it.description_rect, stringLeft);
+                                    g.DrawText(it.Title, Font, brush_fore, it.title_rect, stringLeft);
+                                    g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                                    g.DrawText(it.Description, font_description, brush_fore, it.description_rect, stringLeft);
 
                                     ccolor = brush_fore.Color;
                                     break;
@@ -362,17 +389,17 @@ namespace AntdUI
                         else if (i < current)
                         {
                             //过
-                            g.DrawStr(it.Title, Font, brush_fore, it.title_rect, stringLeft);
-                            g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                            g.DrawStr(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
+                            g.DrawText(it.Title, Font, brush_fore, it.title_rect, stringLeft);
+                            g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                            g.DrawText(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
                             ccolor = brush_fore.Color;
                         }
                         else
                         {
                             //未
-                            g.DrawStr(it.Title, Font, brush_fore2, it.title_rect, stringLeft);
-                            g.DrawStr(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
-                            g.DrawStr(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
+                            g.DrawText(it.Title, Font, brush_fore2, it.title_rect, stringLeft);
+                            g.DrawText(it.SubTitle, Font, brush_fore2, it.subtitle_rect, stringLeft);
+                            g.DrawText(it.Description, font_description, brush_fore2, it.description_rect, stringLeft);
                             ccolor = brush_fore2.Color;
                         }
 
@@ -387,15 +414,15 @@ namespace AntdUI
                                         break;
                                     case TStepState.Wait:
                                         g.FillEllipse(brush_bg2, it.ico_rect);
-                                        g.DrawStr((i + 1).ToString(), font_description, brush_fore3, it.ico_rect, stringCenter);
+                                        g.DrawText((i + 1).ToString(), font_description, brush_fore3, it.ico_rect, stringCenter);
                                         break;
                                     case TStepState.Error:
-                                        g.PaintIconCore(it.ico_rect, SvgDb.IcoError, Style.Db.ErrorColor, Style.Db.Error);
+                                        g.PaintIconCore(it.ico_rect, SvgDb.IcoError, Colour.ErrorColor.Get("Steps", ColorScheme), Colour.Error.Get("Steps", ColorScheme));
                                         break;
                                     case TStepState.Process:
                                     default:
                                         g.FillEllipse(brush_primary, it.ico_rect);
-                                        g.DrawStr((i + 1).ToString(), font_description, brush_primary_fore, it.ico_rect, stringCenter);
+                                        g.DrawText((i + 1).ToString(), font_description, brush_primary_fore, it.ico_rect, stringCenter);
                                         break;
                                 }
                             }
@@ -403,25 +430,23 @@ namespace AntdUI
                             else
                             {
                                 g.FillEllipse(brush_bg2, it.ico_rect);
-                                g.DrawStr((i + 1).ToString(), font_description, brush_fore3, it.ico_rect, stringCenter);
+                                g.DrawText((i + 1).ToString(), font_description, brush_fore3, it.ico_rect, stringCenter);
                             }
                         }
+                        i++;
                     }
-                    i++;
                 }
             }
             this.PaintBadge(g);
             base.OnPaint(e);
         }
 
-        bool PaintIcon(Graphics g, StepsItem it, Color fore)
+        bool PaintIcon(Canvas g, StepsItem it, Color fore)
         {
-            if (it.Icon != null) { g.DrawImage(it.Icon, it.ico_rect); return false; }
-            else if (it.IconSvg != null)
-            {
-                if (g.GetImgExtend(it.IconSvg, it.ico_rect, fore)) return false;
-            }
-            return true;
+            int count = 0;
+            if (it.Icon != null) { g.Image(it.Icon, it.ico_rect); count++; }
+            if (it.IconSvg != null && g.GetImgExtend(it.IconSvg, it.ico_rect, fore)) count++;
+            return count == 0;
         }
 
         #endregion
@@ -438,16 +463,12 @@ namespace AntdUI
         {
             base.OnMouseClick(e);
             if (items == null || items.Count == 0 || ItemClick == null) return;
-            for (int i = 0; i < items.Count; i++)
+            foreach (var it in items)
             {
-                var it = items[i];
-                if (it != null)
+                if (it.Visible && it.rect.Contains(e.Location))
                 {
-                    if (it.rect.Contains(e.Location))
-                    {
-                        ItemClick(this, new StepsItemEventArgs(it, e));
-                        return;
-                    }
+                    ItemClick(this, new StepsItemEventArgs(it, e));
+                    return;
                 }
             }
         }
@@ -456,16 +477,12 @@ namespace AntdUI
         {
             base.OnMouseMove(e);
             if (items == null || items.Count == 0 || ItemClick == null) return;
-            for (int i = 0; i < items.Count; i++)
+            foreach (var it in items)
             {
-                var it = items[i];
-                if (it != null)
+                if (it.Visible && it.rect.Contains(e.Location))
                 {
-                    if (it.rect.Contains(e.Location))
-                    {
-                        SetCursor(true);
-                        return;
-                    }
+                    SetCursor(true);
+                    return;
                 }
             }
             SetCursor(false);
@@ -510,6 +527,12 @@ namespace AntdUI
             SubTitle = subTitle;
             Description = description;
         }
+        /// <summary>
+        /// ID
+        /// </summary>
+        [Description("ID"), Category("数据"), DefaultValue(null)]
+        public string? ID { get; set; }
+
         Image? icon = null;
         /// <summary>
         /// 图标，可选
@@ -573,7 +596,7 @@ namespace AntdUI
         [Description("标题"), Category("外观"), DefaultValue("Title")]
         public string Title
         {
-            get => title;
+            get => Localization.GetLangIN(LocalizationTitle, title, new string?[] { "{id}", ID });
             set
             {
                 if (title == value) return;
@@ -581,6 +604,9 @@ namespace AntdUI
                 Invalidate();
             }
         }
+
+        [Description("标题"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationTitle { get; set; }
 
         internal Size TitleSize { get; set; }
 
@@ -592,7 +618,7 @@ namespace AntdUI
         [Description("子标题"), Category("外观"), DefaultValue(null)]
         public string? SubTitle
         {
-            get => subTitle;
+            get => Localization.GetLangI(LocalizationSubTitle, subTitle, new string?[] { "{id}", ID });
             set
             {
                 if (string.IsNullOrEmpty(value)) value = null;
@@ -602,6 +628,9 @@ namespace AntdUI
                 Invalidate();
             }
         }
+
+        [Description("子标题"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationSubTitle { get; set; }
         internal Size SubTitleSize { get; set; }
 
         string? description = null;
@@ -612,7 +641,7 @@ namespace AntdUI
         [Description("详情描述，可选"), Category("外观"), DefaultValue(null)]
         public string? Description
         {
-            get => description;
+            get => Localization.GetLangI(LocalizationDescription, description, new string?[] { "{id}", ID });
             set
             {
                 if (string.IsNullOrEmpty(value)) value = null;
@@ -622,6 +651,10 @@ namespace AntdUI
                 Invalidate();
             }
         }
+
+        [Description("详情描述"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationDescription { get; set; }
+
         internal Size DescriptionSize { get; set; }
 
         bool visible = true;
@@ -662,6 +695,6 @@ namespace AntdUI
         internal Rectangle description_rect { get; set; }
         internal Rectangle ico_rect { get; set; }
 
-        public override string ToString() => title + " " + subTitle;
+        public override string ToString() => Title + " " + SubTitle;
     }
 }

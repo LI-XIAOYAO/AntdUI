@@ -80,7 +80,6 @@ namespace AntdUI.Svg
         /// Opens the document at the specified path and loads the SVG contents.
         /// </summary>
         /// <param name="path">A <see cref="string"/> containing the path of the file to open.</param>
-        /// <param name="entities">A dictionary of custom entity definitions to be used when resolving XML entities within the document.</param>
         /// <returns>An <see cref="SvgDocument"/> with the contents loaded.</returns>
         /// <exception cref="FileNotFoundException">The document at the specified <paramref name="path"/> cannot be found.</exception>
         public static T? Open<T>(string path) where T : SvgDocument, new()
@@ -113,7 +112,6 @@ namespace AntdUI.Svg
         /// Opens an SVG document from the specified <see cref="Stream"/> and adds the specified entities.
         /// </summary>
         /// <param name="stream">The <see cref="Stream"/> containing the SVG document to open.</param>
-        /// <param name="entities">Custom entity definitions.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="stream"/> parameter cannot be <c>null</c>.</exception>
         public static T? Open<T>(Stream stream) where T : SvgDocument, new()
         {
@@ -339,8 +337,8 @@ namespace AntdUI.Svg
             // Ratio of height/width of the original SVG size, to be used for scaling transformation
             float ratio = size.Height / size.Width;
 
-            size.Width = rasterWidth > 0 ? (float)rasterWidth : size.Width;
-            size.Height = rasterHeight > 0 ? (float)rasterHeight : size.Height;
+            size.Width = rasterWidth > 0 ? rasterWidth : size.Width;
+            size.Height = rasterHeight > 0 ? rasterHeight : size.Height;
 
             if (rasterHeight == 0 && rasterWidth > 0) size.Height = (int)(rasterWidth * ratio);
             else if (rasterHeight > 0 && rasterWidth == 0) size.Width = (int)(rasterHeight / ratio);

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -62,7 +62,7 @@ namespace AntdUI
         /// 是否允许半选
         /// </summary>
         [Description("是否允许半选"), Category("行为"), DefaultValue(false)]
-        public bool AllowHalf { get; set; } = false;
+        public bool AllowHalf { get; set; }
 
         int count = 5;
         /// <summary>
@@ -76,7 +76,7 @@ namespace AntdUI
             {
                 if (count == value) return;
                 count = value;
-                OnSizeChanged(EventArgs.Empty);
+                IOnSizeChanged();
                 Invalidate();
             }
         }
@@ -104,6 +104,7 @@ namespace AntdUI
                 }
                 Invalidate();
                 ValueChanged?.Invoke(this, new FloatEventArgs(_value));
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -124,9 +125,10 @@ namespace AntdUI
         /// 自定义字符
         /// </summary>
         [Description("自定义字符"), Category("外观"), DefaultValue(null)]
+        [Localizable(true)]
         public string? Character
         {
-            get => character;
+            get => this.GetLangI(LocalizationCharacter, character);
             set
             {
                 if (character == value) return;
@@ -138,6 +140,16 @@ namespace AntdUI
             }
         }
 
+        [Description("自定义字符"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationCharacter { get; set; }
+
+        /// <summary>
+        /// 超出文字提示配置
+        /// </summary>
+        [Browsable(false)]
+        [Description("超出文字提示配置"), Category("行为"), DefaultValue(null)]
+        public TooltipConfig? TooltipConfig { get; set; }
+
         #endregion
 
         #region 渲染
@@ -146,18 +158,22 @@ namespace AntdUI
         protected override void OnPaint(PaintEventArgs e)
         {
             var rect = ClientRectangle.PaddingRect(Padding);
-            if (rect.Width == 0 || rect.Height == 0 || count < 1) return;
-
+            if (rect.Width == 0 || rect.Height == 0) return;
+            if (count < 1)
+            {
+                base.OnPaint(e);
+                return;
+            }
             int size = rect.Height;
-
             var g = e.Graphics.High();
 
+            var character = Character;
             #region 初始化位图
 
             if (icon == null || icon.Width != size)
             {
                 icon?.Dispose();
-                icon = SvgExtend.SvgToBmp(character ?? SvgDb.IcoStar, size, size, Style.Db.FillSecondary);
+                icon = SvgExtend.SvgToBmp(character ?? SvgDb.IcoStar, size, size, Colour.FillSecondary.Get("Rate", ColorScheme));
 
             }
             if (icon_active == null || icon_active.Width != size)
@@ -172,7 +188,7 @@ namespace AntdUI
                 icon_active = new Bitmap(size, size);
                 using (var font = new Font(Font.FontFamily, size, Font.Style))
                 {
-                    var font_size = g.MeasureString(character, font).Size();
+                    var font_size = g.MeasureString(character, font);
                     int bmp_size = (font_size.Width > font_size.Height ? font_size.Width : font_size.Height);
                     using (var bmp_diy = new Bitmap(bmp_size, bmp_size))
                     using (var bmp_diy_active = new Bitmap(bmp_size, bmp_size))
@@ -180,35 +196,34 @@ namespace AntdUI
                         Rectangle rect_diy = new Rectangle(0, 0, bmp_size, bmp_size), rect_icon = new Rectangle(0, 0, size, size);
                         using (var s_f = Helper.SF())
                         {
-                            using (var g2 = Graphics.FromImage(bmp_diy).HighLay())
+                            using (var g2 = Graphics.FromImage(bmp_diy).HighLay(true))
                             {
-                                using (var brush = new SolidBrush(Style.Db.FillSecondary))
+                                using (var brush = new SolidBrush(Colour.FillSecondary.Get("Rate", ColorScheme)))
                                 {
-                                    g2.DrawStr(character, font, brush, rect_diy, s_f);
+                                    g2.String(character, font, brush, rect_diy, s_f);
                                 }
                             }
-                            using (var g2 = Graphics.FromImage(bmp_diy_active).HighLay())
+                            using (var g2 = Graphics.FromImage(bmp_diy_active).HighLay(true))
                             {
                                 using (var brush = new SolidBrush(fill))
                                 {
-                                    g2.DrawStr(character, font, brush, rect_diy, s_f);
+                                    g2.String(character, font, brush, rect_diy, s_f);
                                 }
                             }
                         }
                         using (var g2 = Graphics.FromImage(icon).High())
                         {
-                            g2.DrawImage(bmp_diy, rect_icon);
+                            g2.Image(bmp_diy, rect_icon);
                         }
                         using (var g2 = Graphics.FromImage(icon_active).High())
                         {
-                            g2.DrawImage(bmp_diy_active, rect_icon);
+                            g2.Image(bmp_diy_active, rect_icon);
                         }
                     }
                 }
             }
 
             #endregion
-
             for (int i = 0; i < rect_stars.Length; i++)
             {
                 var it = rect_stars[i];
@@ -216,35 +231,37 @@ namespace AntdUI
                 {
                     int readvalue = (int)((it.rect.Width - it.rect_i.Width) * it.AnimationActiveValueS), readsize = it.rect_i.Width + readvalue, readsize2 = readvalue / 2;
                     var rect_ = new Rectangle(it.rect_i.X - readsize2, it.rect_i.Y - readsize2, readsize, readsize);
-                    g.DrawImage(icon, rect_);
+                    g.Image(icon, rect_);
                     using (var attributes = new ImageAttributes())
                     {
                         var matrix = new ColorMatrix { Matrix33 = it.AnimationActiveValueO };
                         attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                        if (it.half) g.DrawImage(icon_active, new Rectangle(rect_.X, rect_.Y, rect_.Width / 2, rect_.Height), 0, 0, icon_active.Width / 2, icon_active.Height, GraphicsUnit.Pixel, attributes);
-                        else g.DrawImage(icon_active, rect_, 0, 0, icon_active.Width, icon_active.Height, GraphicsUnit.Pixel, attributes);
+                        if (it.half) g.Image(icon_active, new Rectangle(rect_.X, rect_.Y, rect_.Width / 2, rect_.Height), 0, 0, icon_active.Width / 2, icon_active.Height, GraphicsUnit.Pixel, attributes);
+                        else g.Image(icon_active, rect_, 0, 0, icon_active.Width, icon_active.Height, GraphicsUnit.Pixel, attributes);
                     }
                 }
                 else if (it.hover)
                 {
                     if (it.half)
                     {
-                        g.DrawImage(icon, it.rect);
-                        g.DrawImage(icon_active, new Rectangle(it.rect.X, it.rect.Y, it.rect.Width / 2, it.rect.Height), new Rectangle(0, 0, icon_active.Width / 2, icon_active.Height), GraphicsUnit.Pixel);
+                        g.Image(icon, it.rect);
+                        g.Image(icon_active, new Rectangle(it.rect.X, it.rect.Y, it.rect.Width / 2, it.rect.Height), new Rectangle(0, 0, icon_active.Width / 2, icon_active.Height), GraphicsUnit.Pixel);
                     }
-                    else g.DrawImage(icon_active, it.rect);
+                    else g.Image(icon_active, it.rect);
                 }
                 else if (it.active)
                 {
                     if (it.half)
                     {
-                        g.DrawImage(icon, it.rect_i);
-                        g.DrawImage(icon_active, new Rectangle(it.rect_i.X, it.rect_i.Y, it.rect_i.Width / 2, it.rect_i.Height), new Rectangle(0, 0, icon_active.Width / 2, icon_active.Height), GraphicsUnit.Pixel);
+                        g.Image(icon, it.rect_i);
+                        g.Image(icon_active, new Rectangle(it.rect_i.X, it.rect_i.Y, it.rect_i.Width / 2, it.rect_i.Height), new Rectangle(0, 0, icon_active.Width / 2, icon_active.Height), GraphicsUnit.Pixel);
                     }
-                    else g.DrawImage(icon_active, it.rect_i);
+                    else g.Image(icon_active, it.rect_i);
                 }
-                else g.DrawImage(icon, it.rect_i);
+                else g.Image(icon, it.rect_i);
             }
+            this.PaintBadge(g);
+            base.OnPaint(e);
         }
 
         #endregion
@@ -277,10 +294,7 @@ namespace AntdUI
             {
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(() =>
-                    {
-                        Width = list[list.Count - 1].rect.Right;
-                    }));
+                    Invoke(() => Width = list[list.Count - 1].rect.Right);
                 }
                 else Width = list[list.Count - 1].rect.Right;
             }
@@ -327,7 +341,7 @@ namespace AntdUI
                 active = _active;
                 hover = _hover;
                 half = _half;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(Rate)))
                 {
                     ThreadActive?.Dispose();
                     AnimationActive = true;
@@ -437,7 +451,7 @@ namespace AntdUI
             {
                 if (autoSize == value) return;
                 autoSize = value;
-                if (value) OnSizeChanged(EventArgs.Empty);
+                if (value) IOnSizeChanged();
             }
         }
 
@@ -457,7 +471,7 @@ namespace AntdUI
             var rect = new Rectangle(_rect.X + dot_rect.X, _rect.Y + dot_rect.Y, dot_rect.Width, dot_rect.Height);
             if (tooltipForm == null)
             {
-                tooltipForm = new TooltipForm(this, rect, tooltipText, new TooltipConfig
+                tooltipForm = new TooltipForm(this, rect, tooltipText, TooltipConfig ?? new TooltipConfig
                 {
                     Font = Font,
                     ArrowAlign = TAlign.Top,

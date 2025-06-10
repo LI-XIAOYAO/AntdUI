@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -82,7 +82,7 @@ namespace AntdUI
         /// <summary>
         /// 取和拼音相同的汉字列表
         /// </summary>
-        /// <param name="Pinyin">编码为UTF8的拼音</param>
+        /// <param name="pinyin">编码为UTF8的拼音</param>
         /// <returns>取拼音相同的汉字列表，如拼音“ai”将会返回“唉爱……”等</returns>
         public static string GetChineseText(string pinyin)
         {
@@ -97,7 +97,7 @@ namespace AntdUI
         /// <summary>
         /// 取和拼音相同的汉字列表，编码同参数encoding
         /// </summary>
-        /// <param name="Pinyin">编码为encoding的拼音</param>
+        /// <param name="pinyin">编码为encoding的拼音</param>
         /// <param name="encoding">编码</param>
         /// <returns>返回编码为encoding的拼音为pinyin的汉字列表，如拼音“ai”将会返回“唉爱……”等</returns>
         public static string GetChineseText(string pinyin, Encoding encoding)
@@ -127,6 +127,7 @@ namespace AntdUI
         /// 返回单个字符的汉字拼音
         /// </summary>
         /// <param name="ch">编码为encoding的中文字符</param>
+        /// <param name="encoding">编码</param>
         /// <returns>编码为encoding的ch对应的拼音</returns>
         public static string GetPinyin(char ch, Encoding encoding)
         {

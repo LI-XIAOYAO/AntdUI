@@ -1,46 +1,47 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## Progress
+👚
 
-Progress 进度条 👚
+> Display the current progress of the operation.
 
-> 展示操作的当前进度。
+- DefaultProperty：Value
+- DefaultEvent：Click
 
-- 默认属性：Value
-- 默认事件：Click
+### Property
 
-### 属性
-
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**ForeColor** | 文字颜色 | Color`?` | `null` |
-**Back** | 背景颜色 | Color`?` | `null` |
-**Fill** | 进度条颜色 | Color`?` | `null` |
+**ForeColor** | Text color | Color`?` | `null` |
+**Back** | Background color | Color`?` | `null` |
+**Fill** | Progress bar color | Color`?` | `null` |
 ||||
-**Radius** | 圆角 | int | 0 |
-**Shape** 🔴 | 形状 | [TShapeProgress](Enum#tshapeprogress) | Round |
-**IconRatio** | 图标比例 | float | 0.7F |
-**ValueRatio** 🔴 | 进度条比例 | float | 0.4F |
+**Radius** | Rounded corners | int | 0 |
+**Shape** | Shape | [TShapeProgress](Enum.md#tshapeprogress) | Round |
+**IconRatio** | Icon Scale | float | 0.7F |
+**ValueRatio** | Progress bar ratio | float | 0.4F |
 ||||
-**UseSystemText** 🔴 | 使用系统文本 | bool | false |
-**ShowTextDot** 🔴 | 显示进度文本小数点位数 | int | 0 |
-**State** | 样式 | [TType](Enum#ttype) | None |
-**ShowInTaskbar** | 任务栏中显示进度 | bool | false |
+**UseSystemText** | Using system text | bool | false |
+**ShowTextDot** | Display the decimal places of progress text | int | 0 |
+**State** | Style | [TType](Enum.md#ttype) | None |
+**ShowInTaskbar** | Display progress in taskbar | bool | false |
 ||||
-**Text** | 文本 | string`?` | `null` |
-**TextUnit** 🔴 | 单位文本 | string`?` | % |
-**Value** | 进度条 `0F-1F` | float | 0F |
-**Loading** | 加载状态 | bool | false |
-**LoadingFull** | 动画铺满 | bool | false |
-**Loading** | 加载状态 | bool | false |
-**Animation** | 动画时长 | int | 200 |
+**Text** | Text | string`?` | `null` |
+🌏 **LocalizationText** | International Text | string`?` | `null` |
+**TextUnit** | Unit text | string`?` | % |
+🌏 **LocalizationTextUnit** | International Unit text | string`?` | `null` |
+**Value** | Progress bar `0F-1F` | float | 0F |
+**Loading** | Loading State | bool | false |
+**LoadingFull** | Animated Full | bool | false |
+**Loading** | Loading State | bool | false |
+**Animation** | Animation duration | int | 200 |
 ||||
-**Steps** 🔴 | 进度条总共步数 | int | 3 |
-**StepSize** 🔴 | 步数大小 | int | 14 |
-**StepGap** 🔴 | 步数间隔 | int | 2 |
+**Steps** | Total number of steps in the progress bar | int | 3 |
+**StepSize** | Step size | int | 14 |
+**StepGap** | Step gap | int | 2 |
 
-### 事件
+### Event
 
-名称 | 描述 | 返回值 | 参数 |
+Name | Description | Return Value | Parameters |
 :--|:--|:--|:--|
-**ValueFormatChanged** 🔴 | Value格式化时发生 | string | float value `进度` |
+**ValueFormatChanged** | Occurred during Value formatting | string | float value |

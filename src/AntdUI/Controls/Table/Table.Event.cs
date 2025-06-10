@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -30,11 +30,15 @@ namespace AntdUI
         /// </summary>
         public delegate void CheckEventHandler(object sender, TableCheckEventArgs e);
 
-
         /// <summary>
         /// 点击事件
         /// </summary>
         public delegate void ClickEventHandler(object sender, TableClickEventArgs e);
+
+        /// <summary>
+        /// 移动事件
+        /// </summary>
+        public delegate void HoverEventHandler(object sender, TableHoverEventArgs e);
 
         /// <summary>
         /// 按钮点击事件
@@ -64,7 +68,7 @@ namespace AntdUI
             /// <summary>
             /// 数值
             /// </summary>
-            public CheckState? Value { get; private set; }
+            public CheckState Value { get; private set; }
         }
 
         /// <summary>
@@ -78,10 +82,7 @@ namespace AntdUI
         [Description("全局 CheckState 属性值更改时发生"), Category("行为")]
         public event CheckStateEventHandler? CheckedOverallChanged = null;
 
-        internal void OnCheckedOverallChanged(ColumnCheck column, CheckState checkState)
-        {
-            CheckedOverallChanged?.Invoke(this, new CheckStateEventArgs(column, checkState));
-        }
+        internal void OnCheckedOverallChanged(ColumnCheck column, CheckState checkState) => CheckedOverallChanged?.Invoke(this, new CheckStateEventArgs(column, checkState));
 
         /// <summary>
         /// 单击时发生
@@ -90,10 +91,28 @@ namespace AntdUI
         public event ClickEventHandler? CellClick;
 
         /// <summary>
+        /// 滑动时发生
+        /// </summary>
+        [Description("滑动时发生"), Category("行为")]
+        public event HoverEventHandler? CellHover;
+
+        /// <summary>
         /// 单击按钮时发生
         /// </summary>
         [Description("单击按钮时发生"), Category("行为")]
         public event ClickButtonEventHandler? CellButtonClick;
+
+        /// <summary>
+        /// 按下按钮时发生
+        /// </summary>
+        [Description("按下按钮时发生"), Category("行为")]
+        public event ClickButtonEventHandler? CellButtonDown;
+
+        /// <summary>
+        /// 放下按钮时发生
+        /// </summary>
+        [Description("放下按钮时发生"), Category("行为")]
+        public event ClickButtonEventHandler? CellButtonUp;
 
         /// <summary>
         /// 双击时发生
@@ -119,6 +138,21 @@ namespace AntdUI
         public delegate bool EndEditEventHandler(object sender, TableEndEditEventArgs e);
 
         /// <summary>
+        /// 绘制单元格时发生
+        /// </summary>
+        public delegate void CellPaintEventHandler(object sender, TablePaintEventArgs e);
+
+        /// <summary>
+        /// 绘制单元格之前发生
+        /// </summary>
+        public delegate void CellPaintBeginEventHandler(object sender, TablePaintBeginEventArgs e);
+
+        /// <summary>
+        /// 编辑后事件
+        /// </summary>
+        public delegate void EndEditCompleteEventHandler(object sender, ITableEventArgs e);
+
+        /// <summary>
         /// 编辑前发生
         /// </summary>
         [Description("编辑前发生"), Category("行为")]
@@ -131,10 +165,28 @@ namespace AntdUI
         public event BeginEditInputStyleEventHandler? CellBeginEditInputStyle;
 
         /// <summary>
+        /// 绘制单元格时发生
+        /// </summary>
+        [Description("绘制单元格时发生"), Category("行为")]
+        public event CellPaintEventHandler? CellPaint;
+
+        /// <summary>
+        /// 绘制单元格之前发生
+        /// </summary>
+        [Description("绘制单元格之前发生"), Category("行为")]
+        public event CellPaintBeginEventHandler? CellPaintBegin;
+
+        /// <summary>
         /// 编辑后发生
         /// </summary>
         [Description("编辑后发生"), Category("行为")]
         public event EndEditEventHandler? CellEndEdit;
+
+        /// <summary>
+        /// 编辑完成后发生
+        /// </summary>
+        [Description("编辑完成后发生"), Category("行为")]
+        public event EndEditCompleteEventHandler? CellEditComplete;
 
         #endregion
 
@@ -158,14 +210,48 @@ namespace AntdUI
         }
 
         /// <summary>
-        /// 点击事件
-        /// </summary>
-        public delegate void SortEventHandler(object sender, TableClickEventArgs e);
-
-        /// <summary>
         /// 行排序时发生
         /// </summary>
         [Description("行排序时发生"), Category("行为")]
         public event IntEventHandler? SortRows;
+
+        /// <summary>
+        /// 树行排序时发生
+        /// </summary>
+        [Description("树行排序时发生"), Category("行为")]
+        public event SortTreeEventHandler? SortRowsTree;
+
+        public delegate void SortTreeEventHandler(object sender, TableSortTreeEventArgs e);
+
+        public delegate bool SortModeEventHandler(object sender, TableSortModeEventArgs e);
+
+        /// <summary>
+        /// 点击排序后发生
+        /// </summary>
+        [Description("点击排序后发生"), Category("行为")]
+        public event SortModeEventHandler? SortModeChanged;
+
+        /// <summary>
+        /// 选中变化后发生
+        /// </summary>
+        [Description("选中变化后发生"), Category("行为")]
+        public event EventHandler? SelectIndexChanged;
+
+        /// <summary>
+        /// 自定义排序
+        /// </summary>
+        [Description("自定义排序"), Category("行为")]
+        public event Comparison<string>? CustomSort = null;
+
+        /// <summary>
+        /// 展开事件
+        /// </summary>
+        public delegate void ExpandEventHandler(object sender, TableExpandEventArgs e);
+
+        /// <summary>
+        /// 展开改变时发生
+        /// </summary>
+        [Description("展开改变时发生"), Category("行为")]
+        public event ExpandEventHandler? ExpandChanged;
     }
 }

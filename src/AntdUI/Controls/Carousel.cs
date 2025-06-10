@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -48,7 +48,7 @@ namespace AntdUI
         /// 滑动到外面
         /// </summary>
         [Description("滑动到外面"), Category("行为"), DefaultValue(false)]
-        public bool TouchOut { get; set; } = false;
+        public bool TouchOut { get; set; }
 
         bool autoplay = false;
         /// <summary>
@@ -208,7 +208,7 @@ namespace AntdUI
         void SetSelectIndexVertical(int value, bool auto = false)
         {
             int height = ClientRectangle.Height - Padding.Vertical;
-            if (items != null && IsHandleCreated && Config.Animation)
+            if (items != null && IsHandleCreated && Config.HasAnimation(nameof(Carousel)))
             {
                 ThreadChange?.Dispose();
                 AnimationChangeAuto = false;
@@ -297,7 +297,7 @@ namespace AntdUI
         void SetSelectIndexHorizontal(int value, bool auto = false)
         {
             int width = ClientRectangle.Width - Padding.Horizontal;
-            if (items != null && IsHandleCreated && Config.Animation)
+            if (items != null && IsHandleCreated && Config.HasAnimation(nameof(Carousel)))
             {
                 ThreadChange?.Dispose();
                 AnimationChangeAuto = false;
@@ -389,12 +389,12 @@ namespace AntdUI
         #region 动画
 
         DateTime now = DateTime.Now;
-        internal float Speed(float speed, float modera)
+        float Speed(float speed, float modera)
         {
             if (modera < AnimationChangeValue) return 0.8F;
             return speed;
         }
-        internal float Speed2(float speed, float modera)
+        float Speed2(float speed, float modera)
         {
             if (modera > AnimationChangeValue) return 0.8F;
             return speed;
@@ -462,6 +462,7 @@ namespace AntdUI
             if (_rect.Width == 0 || _rect.Height == 0) return;
             bmp?.Dispose();
             bmp = null;
+            foreach (var it in items) it.PARENT = this;
             var rect = _rect.PaddingRect(Padding);
             int len = items.Count;
             var list = new List<CarouselDotItem>(len);
@@ -511,9 +512,13 @@ namespace AntdUI
         Bitmap? bmp = null;
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (items == null || items.Count == 0) return;
             var _rect = ClientRectangle;
             if (_rect.Width == 0 || _rect.Height == 0) return;
+            if (items == null || items.Count == 0)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var rect = _rect.PaddingRect(Padding);
             var g = e.Graphics.High();
             int len = items.Count;
@@ -531,7 +536,7 @@ namespace AntdUI
                             bmpcode = select_range.i;
                             bmp = PaintBmpVertical(items, select_range, rect, _radius);
                         }
-                        g.DrawImage(bmp, rect.X, (int)(rect.Y - AnimationChangeValue), bmp.Width, bmp.Height);
+                        g.Image(bmp, rect.X, (int)(rect.Y - AnimationChangeValue), bmp.Width, bmp.Height);
                     }
                     else
                     {
@@ -541,14 +546,14 @@ namespace AntdUI
                             bmpcode = select_range.i;
                             bmp = PaintBmpHorizontal(items, select_range, rect, _radius);
                         }
-                        g.DrawImage(bmp, (int)(rect.X - AnimationChangeValue), rect.Y, bmp.Width, bmp.Height);
+                        g.Image(bmp, (int)(rect.X - AnimationChangeValue), rect.Y, bmp.Width, bmp.Height);
                     }
                 }
-                else g.PaintImg(rect, image, imageFit, _radius, round);
+                else g.Image(rect, image, imageFit, _radius, round);
             }
             if (dot_list.Length > 0)
             {
-                using (var brush = new SolidBrush(Style.Db.BgBase))
+                using (var brush = new SolidBrush(Colour.BgBase.Get("Carousel", ColorScheme)))
                 using (var brush2 = new SolidBrush(Color.FromArgb(77, brush.Color)))
                 {
                     if (round || radius > 0)
@@ -558,12 +563,12 @@ namespace AntdUI
                             if (it.i == selectIndex)
                             {
                                 using (var path = it.rect_action.RoundPath(DotSize.Height))
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                             }
                             else
                             {
                                 using (var path = it.rect.RoundPath(DotSize.Height))
-                                    g.FillPath(brush2, path);
+                                    g.Fill(brush2, path);
                             }
                         }
                     }
@@ -571,8 +576,8 @@ namespace AntdUI
                     {
                         foreach (var it in dot_list)
                         {
-                            if (it.i == selectIndex) g.FillRectangle(brush, it.rect_action);
-                            else g.FillRectangle(brush2, it.rect);
+                            if (it.i == selectIndex) g.Fill(brush, it.rect_action);
+                            else g.Fill(brush2, it.rect);
                         }
                     }
                 }
@@ -591,7 +596,7 @@ namespace AntdUI
                 {
                     PaintBmp(items, select_range, g2, radius);
                     var bmo = items[0].Img;
-                    if (bmo != null) g2.PaintImg(new Rectangle(0, AnimationChangeMax, rect.Width, rect.Height), bmo, imageFit, radius, round);
+                    if (bmo != null) g2.Image(new Rectangle(0, AnimationChangeMax, rect.Width, rect.Height), bmo, imageFit, radius, round);
                 }
             }
             else
@@ -616,7 +621,7 @@ namespace AntdUI
                 {
                     PaintBmp(items, select_range, g2, radius);
                     var bmo = items[0].Img;
-                    if (bmo != null) g2.PaintImg(new Rectangle(AnimationChangeMax, 0, rect.Width, rect.Height), bmo, imageFit, radius, round);
+                    if (bmo != null) g2.Image(new Rectangle(AnimationChangeMax, 0, rect.Width, rect.Height), bmo, imageFit, radius, round);
                 }
             }
             else
@@ -629,12 +634,12 @@ namespace AntdUI
             }
             return bmp;
         }
-        void PaintBmp(CarouselItemCollection items, CarouselRectPanel select_range, Graphics g2, float radius)
+        void PaintBmp(CarouselItemCollection items, CarouselRectPanel select_range, Canvas g2, float radius)
         {
             foreach (var it in select_range.list)
             {
                 var bmo = items[it.i].Img;
-                if (bmo != null) g2.PaintImg(it.rect, bmo, imageFit, radius, round);
+                if (bmo != null) g2.Image(it.rect, bmo, imageFit, radius, round);
             }
         }
 
@@ -810,8 +815,7 @@ namespace AntdUI
             {
                 if (_mouseHover == value) return;
                 _mouseHover = value;
-                var enabled = Enabled;
-                SetCursor(value && enabled);
+                SetCursor(value && Enabled);
                 if (!value && autoplay) now = DateTime.Now.AddSeconds(Autodelay);
             }
         }
@@ -954,8 +958,14 @@ namespace AntdUI
             return this;
         }
     }
-    public class CarouselItem : NotifyProperty
+    public class CarouselItem
     {
+        /// <summary>
+        /// ID
+        /// </summary>
+        [Description("ID"), Category("数据"), DefaultValue(null)]
+        public string? ID { get; set; }
+
         Image? img;
         /// <summary>
         /// 图片
@@ -968,9 +978,11 @@ namespace AntdUI
             {
                 if (img == value) return;
                 img = value;
-                OnPropertyChanged("Img");
+                PARENT?.Invalidate();
             }
         }
+
+        internal Carousel? PARENT { get; set; }
 
         /// <summary>
         /// 用户定义数据

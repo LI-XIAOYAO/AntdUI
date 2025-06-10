@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -65,6 +61,8 @@ namespace Demo.Controls
             header1.Description = "内容区域。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "VirtualPanel.Description";
+            header1.LocalizationText = "VirtualPanel.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -97,7 +95,7 @@ namespace Demo.Controls
             // 
             // checkbox1
             // 
-            checkbox1.AutoCheck = true;
+            checkbox1.LocalizationText = "VirtualPanel.{id}";
             checkbox1.Location = new Point(229, 54);
             checkbox1.Name = "checkbox1";
             checkbox1.Size = new Size(91, 30);
@@ -156,6 +154,7 @@ namespace Demo.Controls
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
         private AntdUI.VirtualPanel vpanel;
         private System.Windows.Forms.Panel panel1;

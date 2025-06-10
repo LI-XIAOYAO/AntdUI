@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -68,6 +68,23 @@ namespace AntdUI
         [Editor(typeof(Design.ColorEditor), typeof(UITypeEditor))]
         public Color? FillActive { get; set; }
 
+        Color? trackColor;
+        /// <summary>
+        /// 滑轨颜色
+        /// </summary>
+        [Description("滑轨颜色"), Category("外观"), DefaultValue(null)]
+        [Editor(typeof(Design.ColorEditor), typeof(UITypeEditor))]
+        public Color? TrackColor
+        {
+            get => trackColor;
+            set
+            {
+                if (trackColor == value) return;
+                trackColor = value;
+                Invalidate();
+            }
+        }
+
         int _minValue = 0;
         /// <summary>
         /// 最小值
@@ -118,6 +135,7 @@ namespace AntdUI
                 _value = value;
                 ValueChanged?.Invoke(this, new IntEventArgs(_value));
                 Invalidate();
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -166,7 +184,7 @@ namespace AntdUI
             {
                 if (align == value) return;
                 align = value;
-                OnSizeChanged(EventArgs.Empty);
+                IOnSizeChanged();
                 Invalidate();
             }
         }
@@ -181,7 +199,7 @@ namespace AntdUI
         /// 是否显示数值
         /// </summary>
         [Description("是否显示数值"), Category("行为"), DefaultValue(false)]
-        public bool ShowValue { get; set; } = false;
+        public bool ShowValue { get; set; }
 
         int lineSize = 4;
         /// <summary>
@@ -268,6 +286,7 @@ namespace AntdUI
         {
             var padding = Padding;
             var _rect = ClientRectangle.PaddingRect(padding);
+            if (_rect.Width == 0 || _rect.Height == 0) return;
             int LineSize = (int)(lineSize * Config.Dpi), DotS = (int)((dotSizeActive > dotSize ? dotSizeActive : dotSize) * Config.Dpi), DotS2 = DotS * 2;
             if (align == TAlignMini.Top || align == TAlignMini.Bottom)
             {
@@ -290,15 +309,16 @@ namespace AntdUI
                 else rect_read = new Rectangle(_rect.X + DotS, _rect.Y + (_rect.Height - LineSize) / 2, _rect.Width - DotS2, LineSize);
             }
 
-            bool enabled = Enabled;
-            Color color = enabled ? fill ?? Style.Db.InfoBorder : Style.Db.FillTertiary, color_dot = enabled ? fill ?? Style.Db.InfoBorder : Style.Db.SliderHandleColorDisabled, color_hover = FillHover ?? Style.Db.InfoHover, color_active = FillActive ?? Style.Db.Primary;
+            var enabled = Enabled;
+            Color color = enabled ? fill ?? Colour.InfoBorder.Get("Slider", ColorScheme) : Colour.FillTertiary.Get("Slider", ColorScheme), color_dot = enabled ? fill ?? Colour.InfoBorder.Get("Slider", ColorScheme) : Colour.SliderHandleColorDisabled.Get("Slider", ColorScheme), color_hover = FillHover ?? Colour.InfoHover.Get("Slider", ColorScheme), color_active = FillActive ?? Colour.Primary.Get("Slider", ColorScheme);
 
             var g = e.Graphics.High();
             IPaint(g, _rect, enabled, color, color_dot, color_hover, color_active);
             this.PaintBadge(g);
+            base.OnPaint(e);
         }
 
-        internal virtual void IPaint(Graphics g, Rectangle rect, bool enabled, Color color, Color color_dot, Color color_hover, Color color_active)
+        internal virtual void IPaint(Canvas g, Rectangle rect, bool enabled, Color color, Color color_dot, Color color_hover, Color color_active)
         {
             float prog = ProgValue(_value);
 
@@ -306,17 +326,11 @@ namespace AntdUI
 
             using (var path = rect_read.RoundPath(rect_read.Height / 2))
             {
-                using (var brush = new SolidBrush(Style.Db.FillQuaternary))
+                using (var brush = new SolidBrush(trackColor ?? Colour.FillQuaternary.Get("Slider", ColorScheme)))
                 {
-                    g.FillPath(brush, path);
-                    if (AnimationHover)
-                    {
-                        using (var brush_hover = new SolidBrush(Helper.ToColorN(AnimationHoverValue, brush.Color)))
-                        {
-                            g.FillPath(brush_hover, path);
-                        }
-                    }
-                    else if (ExtraMouseHover) g.FillPath(brush, path);
+                    g.Fill(brush, path);
+                    if (AnimationHover) g.Fill(Helper.ToColorN(AnimationHoverValue, brush.Color), path);
+                    else if (ExtraMouseHover) g.Fill(brush, path);
                 }
 
                 if (prog > 0)
@@ -324,29 +338,17 @@ namespace AntdUI
                     g.SetClip(RectLine(rect_read, prog));
                     if (AnimationHover)
                     {
-                        using (var brush = new SolidBrush(color))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                        using (var brush = new SolidBrush(Helper.ToColor(255 * AnimationHoverValue, color_hover)))
-                        {
-                            g.FillPath(brush, path);
-                        }
+                        g.Fill(color, path);
+                        g.Fill(Helper.ToColor(255 * AnimationHoverValue, color_hover), path);
                     }
-                    else
-                    {
-                        using (var brush = new SolidBrush(ExtraMouseHover ? color_hover : color))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                    }
+                    else g.Fill(ExtraMouseHover ? color_hover : color, path);
                     g.ResetClip();
                 }
             }
 
             #endregion
 
-            using (var brush = new SolidBrush(Style.Db.BgBase))
+            using (var brush = new SolidBrush(Colour.BgBase.Get("Slider", ColorScheme)))
             {
                 PaintMarksEllipse(g, rect, rect_read, brush, color, LineSize);
                 PaintEllipse(g, rect, rect_read, prog, brush, color_dot, color_hover, color_active, LineSize);
@@ -355,7 +357,7 @@ namespace AntdUI
 
         readonly StringFormat s_f = Helper.SF_NoWrap();
         internal RectangleF rectEllipse;
-        internal void PaintEllipse(Graphics g, Rectangle rect, RectangleF rect_read, float prog, SolidBrush brush, Color color, Color color_hover, Color color_active, int LineSize)
+        internal void PaintEllipse(Canvas g, Rectangle rect, RectangleF rect_read, float prog, SolidBrush brush, Color color, Color color_hover, Color color_active, int LineSize)
         {
             int DotSize = (int)(dotSize * Config.Dpi), DotSizeActive = (int)(dotSizeActive * Config.Dpi);
             rectEllipse = RectDot(rect, rect_read, prog, DotSizeActive + LineSize);
@@ -410,11 +412,11 @@ namespace AntdUI
                 g.FillEllipse(brush, RectDot(rect, rect_read, prog, DotSize));
             }
         }
-        internal void PaintMarksEllipse(Graphics g, Rectangle rect, RectangleF rect_read, SolidBrush brush, Color color, int LineSize)
+        internal void PaintMarksEllipse(Canvas g, Rectangle rect, Rectangle rect_read, SolidBrush brush, Color color, int LineSize)
         {
             if (marks != null && marks.Count > 0)
             {
-                using (var fore = new SolidBrush(Style.Db.Text))
+                using (var fore = new SolidBrush(Colour.Text.Get("Slider", ColorScheme)))
                 {
                     int markTextGap = (int)(MarkTextGap * Config.Dpi);
                     int size2 = LineSize, size = size2 * 2;
@@ -427,10 +429,10 @@ namespace AntdUI
                             {
                                 using (var fore2 = new SolidBrush(it.Fore.Value))
                                 {
-                                    g.DrawStr(it.Text, Font, fore2, RectDotText(rect, rect_read, uks, markTextGap, g.MeasureString(it.Text, Font).Size()), s_f);
+                                    g.String(it.Text, Font, fore2, RectDotText(rect, rect_read, (int)uks, markTextGap, g.MeasureString(it.Text, Font)), s_f);
                                 }
                             }
-                            else g.DrawStr(it.Text, Font, fore, RectDotText(rect, rect_read, uks, markTextGap, g.MeasureString(it.Text, Font).Size()), s_f);
+                            else g.String(it.Text, Font, fore, RectDotText(rect, rect_read, (int)uks, markTextGap, g.MeasureString(it.Text, Font)), s_f);
                         }
                         using (var brush_dot = new SolidBrush(color))
                         {
@@ -487,18 +489,18 @@ namespace AntdUI
                     return new RectangleF(rect_read.X + prog - size / 2F, rect.Y + (rect.Height - size) / 2F, size, size);
             }
         }
-        internal RectangleF RectDotText(Rectangle rect, RectangleF rect_read, float prog, int gap, Size size)
+        internal Rectangle RectDotText(Rectangle rect, Rectangle rect_read, int prog, int gap, Size size)
         {
             switch (align)
             {
                 case TAlignMini.Right:
-                    return new RectangleF(rect_read.X + (rect_read.Width - prog - size.Width / 2F), rect_read.Bottom + rect_read.Height + gap, size.Width, size.Height);
+                    return new Rectangle(rect_read.X + (rect_read.Width - prog - size.Width / 2), rect_read.Bottom + rect_read.Height + gap, size.Width, size.Height);
                 case TAlignMini.Top:
-                    return new RectangleF(rect_read.Right + rect_read.Width + gap, rect_read.Y + prog - size.Height / 2F, size.Width, size.Height);
+                    return new Rectangle(rect_read.Right + rect_read.Width + gap, rect_read.Y + prog - size.Height / 2, size.Width, size.Height);
                 case TAlignMini.Bottom:
-                    return new RectangleF(rect_read.Right + rect_read.Width + gap, rect_read.Y + (rect_read.Height - prog - size.Height / 2F), size.Width, size.Height);
+                    return new Rectangle(rect_read.Right + rect_read.Width + gap, rect_read.Y + (rect_read.Height - prog - size.Height / 2), size.Width, size.Height);
                 default:
-                    return new RectangleF(rect_read.X + prog - size.Width / 2F, rect_read.Bottom + rect_read.Height + gap, size.Width, size.Height);
+                    return new Rectangle(rect_read.X + prog - size.Width / 2, rect_read.Bottom + rect_read.Height + gap, size.Width, size.Height);
             }
         }
         internal RectangleF RectDotH(Rectangle rect, Rectangle rect_read, float prog, int DotSize)
@@ -635,6 +637,8 @@ namespace AntdUI
         internal float AnimationHoverValue = 0F;
         internal bool AnimationHover = false;
         bool _mouseHover = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseHover
         {
             get => _mouseHover;
@@ -644,7 +648,7 @@ namespace AntdUI
                 _mouseHover = value;
                 var enabled = Enabled;
                 SetCursor(value && enabled);
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(Slider)))
                 {
                     ThreadHover?.Dispose();
                     AnimationHover = true;
@@ -684,6 +688,8 @@ namespace AntdUI
         internal float AnimationDotHoverValue = 0F;
         internal bool AnimationDotHover = false;
         bool _mouseDotHover = false;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal bool ExtraMouseDotHover
         {
             get => _mouseDotHover;
@@ -692,7 +698,7 @@ namespace AntdUI
                 if (_mouseDotHover == value) return;
                 _mouseDotHover = value;
                 if (!value) CloseTips();
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(Slider)))
                 {
                     ThreadHover?.Dispose();
                     ThreadHover = null;
@@ -760,6 +766,25 @@ namespace AntdUI
             base.OnLeave(e);
             CloseTips();
             ExtraMouseHover = ExtraMouseDotHover = false;
+        }
+
+        #endregion
+
+        #region 方法
+
+        /// <summary>
+        /// 设置最小最大值
+        /// </summary>
+        /// <param name="min">最小值</param>
+        /// <param name="max">最大值</param>
+        public void SetMinMax(int min, int max)
+        {
+            if (min > max) return;
+            _minValue = min;
+            _maxValue = max;
+            if (_value < min) _value = min;
+            else if (_value > max) _value = max;
+            Invalidate();
         }
 
         #endregion

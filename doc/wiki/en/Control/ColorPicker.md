@@ -1,44 +1,57 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## ColorPicker
+👚
 
-ColorPicker 颜色选择器 👚
+> Used for color selection.
 
-> 提供颜色选取的组件。
+- DefaultProperty：Value
+- DefaultEvent：ValueChanged
 
-- 默认属性：Value
-- 默认事件：ValueChanged
+### Property
 
-### 属性
-
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**OriginalBackColor** 🔴 | 原装背景颜色 | Color | Transparent |
+**OriginalBackColor** | Original background color | Color | Transparent |
 ||||
-**AutoSize** | 自动大小 | bool | false |
-**AutoSizeMode** | 自动大小模式 | [TAutoSize](Enum#tautosize) | None |
-**Mode** 🔴 | 颜色模式 | [TColorMode](Enum#tcolormode) | Hex |
+**AutoSize** | Auto Size | bool | false |
+**AutoSizeMode** | Auto size mode | [TAutoSize](Enum.md#tautosize) | None |
+**Mode** | Color mode | [TColorMode](Enum.md#tcolormode) | Hex |
 ||||
-**ForeColor** | 文字颜色 | Color`?` | `null` |
-**BackColor** | 背景颜色 | Color`?` | `null` |
+**ForeColor** | Text color | Color`?` | `null` |
+**BackColor** | Background color | Color`?` | `null` |
 ||||
-**BorderWidth** | 边框宽度 | float | 0F |
-**BorderColor** | 边框颜色 | Color`?` | `null` |
-**BorderHover** | 悬停边框颜色 | Color`?` | `null` |
-**BorderActive** | 激活边框颜色 | Color`?` | `null` |
+**BorderWidth** | Border width | float | 0F |
+**BorderColor** | Border color | Color`?` | `null` |
+**BorderHover** | Hover border color | Color`?` | `null` |
+**BorderActive** | Activate border color | Color`?` | `null` |
 ||||
-**WaveSize** | 波浪大小 `点击动画` | int | 4 |
-**Radius** | 圆角 | int | 6 |
-**Round** | 圆角样式 | bool | false |
-**ShowText** | 显示Hex文字 | bool | false |
+**WaveSize** | Wave size `Click animation` | int | 4 |
+**Radius** | Rounded corners | int | 6 |
+**Round** | Rounded corner style | bool | false |
+**ShowText** | Display Hex text | bool | false |
 ||||
-**JoinLeft** | 连接左边 `组合按钮` | bool | false |
-**JoinRight** | 连接右边 `组合按钮` | bool | false |
+**JoinLeft** | Connect left area `Combination button` | bool | false |
+**JoinRight** | Connect right area `Combination button` | bool | false |
 ||||
-**Value** | 颜色的值 | Color | Style.Db.Primary `主题色` |
+**Value** | Value of color | Color | Style.Db.Primary `Theme color` |
+**DisabledAlpha** 🔴 | Disable transparency | bool | false |
+**AllowClear** 🔴 | Support clearing | bool | false |
+**ShowClose** 🔴 | Display the close button | bool | false |
+||||
+**Trigger** | Trigger dropdown behavior | [Trigger](Enum.md#trigger) | Click |
+**Placement** | Menu pop-up location | [TAlignFrom](Enum.md#talignfrom) | BL |
+**DropDownArrow** | Is the dropdown arrow displayed | bool | false |
 
-### 事件
+### Method
 
-名称 | 描述 | 返回值 | 参数 |
+Name | Description | Return Value | Parameters |
 :--|:--|:--|:--|
-**ValueChanged** | Value 属性值更改时发生 | void | Color value `颜色的值` |
+**ClearValue** | Clear value | void | |
+**ClearValue** | Clear value | void | Color def `Default Color` |
+
+### Event
+
+Name | Description | Return Value | Parameters |
+:--|:--|:--|:--|
+**ValueChanged** | Occurred when the value of the Value property is changed | void | Color value |

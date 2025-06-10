@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -24,13 +24,15 @@ using System.Windows.Forms;
 
 namespace AntdUI
 {
-    internal class LayeredFormDrawer : ILayeredForm
+    internal class LayeredFormDrawer : ILayeredForm, LayeredFormAsynLoad
     {
         int FrmRadius = 0, FrmBor = 0;
         bool HasBor = false;
         Drawer.Config config;
         int padding = 24;
         ILayeredForm? formMask = null;
+        public bool isclose = false;
+        internal bool topMost = false;
         public LayeredFormDrawer(Drawer.Config _config, ILayeredForm mask) : this(_config)
         {
             formMask = mask;
@@ -38,6 +40,7 @@ namespace AntdUI
             {
                 mask.Click += (s1, e1) =>
                 {
+                    isclose = true;
                     IClose();
                 };
             }
@@ -45,24 +48,13 @@ namespace AntdUI
         public LayeredFormDrawer(Drawer.Config _config)
         {
             config = _config;
-            TopMost = config.Form.TopMost;
+            topMost = config.Form.SetTopMost(Handle);
             Font = config.Form.Font;
-
             padding = (int)Math.Round(config.Padding * Config.Dpi);
             Padding = new Padding(padding);
-            var version = OS.Version;
-            if (version.Major >= 10 && version.Build > 22000) FrmRadius = 8; //Win11
-            if (config.Form is Window)
-            {
-                //无边框处理
-            }
-            else if (config.Form.FormBorderStyle != FormBorderStyle.None && config.Form.WindowState != FormWindowState.Maximized)
-            {
-                HasBor = true;
-                FrmBor = 8;
-            }
-            config.Content.BackColor = Style.Db.BgElevated;
-            config.Content.ForeColor = Style.Db.Text;
+            HasBor = Helper.FormFrame(config.Form, out FrmRadius, out FrmBor);
+            config.Content.BackColor = Colour.BgElevated.Get("Drawer");
+            config.Content.ForeColor = Colour.Text.Get("Drawer");
             SetPoint();
             SetSize(start_W, start_H);
             SetLocation(start_X, start_Y);
@@ -74,6 +66,7 @@ namespace AntdUI
                 config.Content.Tag = config.Content.Size;
                 Helper.DpiAuto(Config.Dpi, config.Content);
             }
+            config.Content.Location = new Point(-tempContent.Width * 2, -tempContent.Height * 2);
             config.Content.Size = new Size(tempContent.Width, tempContent.Height);
             LoadContent();
             config.Content.DrawToBitmap(tempContent, new Rectangle(0, 0, tempContent.Width, tempContent.Height));
@@ -161,6 +154,7 @@ namespace AntdUI
         Bitmap? tempContent;
         private void Form_SizeChanged(object? sender, EventArgs e)
         {
+            if (config.Form.WindowState == FormWindowState.Minimized) return;
             switch (config.Align)
             {
                 case TAlignMini.Top:
@@ -241,6 +235,16 @@ namespace AntdUI
 
         private void Form_LocationChanged(object? sender, EventArgs e)
         {
+            if (config.Form.WindowState == FormWindowState.Minimized)
+            {
+                SetLocation(-end_W * 2, -end_H * 2);
+                if (task_start == null)
+                {
+                    if (form != null) form.Location = new Point(-form.Width * 2, -form.Height * 2);
+                    Print();
+                }
+                return;
+            }
             switch (config.Align)
             {
                 case TAlignMini.Top:
@@ -319,7 +323,7 @@ namespace AntdUI
         bool run_end = false, ok_end = false;
         protected override void OnLoad(EventArgs e)
         {
-            if (Config.Animation)
+            if (Config.HasAnimation(nameof(Drawer)))
             {
                 var t = Animation.TotalFrames(10, 100);
                 int sleep = config.Mask ? 200 : 0;
@@ -336,7 +340,7 @@ namespace AntdUI
                     return true;
                 }, 10, t, () =>
                 {
-                    if (IsHandleCreated) BeginInvoke(new Action(ShowContent));
+                    if (IsHandleCreated) BeginInvoke(ShowContent);
                     SetAnimateValue(end_X, end_Y, end_W, end_H, 255);
                     task_start = null;
                 }, sleep);
@@ -356,23 +360,23 @@ namespace AntdUI
         void LoadContent()
         {
             var rect = Ang();
-            var hidelocation = new Point(-rect.Width, -rect.Height);
+            var hidelocation = new Point(-rect.Width * 2, -rect.Height * 2);
             if (config.Content is Form form_)
             {
-                form_.BackColor = Style.Db.BgElevated;
+                form_.BackColor = Colour.BgElevated.Get("Drawer");
                 form_.FormBorderStyle = FormBorderStyle.None;
                 form_.Location = hidelocation;
-                form_.Size = rect.Size;
+                form_.ClientSize = rect.Size;
                 form = form_;
             }
             else
             {
                 form = new DoubleBufferForm(this, config.Content)
                 {
-                    BackColor = Style.Db.BgElevated,
+                    BackColor = Colour.BgElevated.Get("Drawer"),
                     FormBorderStyle = FormBorderStyle.None,
                     Location = hidelocation,
-                    Size = rect.Size
+                    ClientSize = rect.Size
                 };
             }
             if (!config.Dispose && config.Content.Tag is Size size)
@@ -381,7 +385,7 @@ namespace AntdUI
                 {
                     config.Content.Dock = DockStyle.None;
                     config.Content.Size = size;
-                    config.Content.Location = new Point(-config.Content.Width, -config.Content.Height);
+                    config.Content.Location = new Point(-config.Content.Width * 2, -config.Content.Height * 2);
                     config.Form.Controls.Add(config.Content);
                 };
             }
@@ -392,21 +396,23 @@ namespace AntdUI
             };
             form.Show(this);
             form.Location = hidelocation;
-            form.Size = rect.Size;
+            form.ClientSize = rect.Size;
         }
 
         void ShowContent()
         {
             if (form == null) return;
             var rect = Ang();
+            if (form.ClientSize != rect.Size) form.ClientSize = rect.Size;
             form.Location = rect.Location;
-            form.Size = rect.Size;
+            config.OnLoad?.Invoke();
+            IsLoad = false;
+            LoadCompleted?.Invoke();
+            config.Content.SizeChanged += Content_SizeChanged;
             tempContent?.Dispose();
             tempContent = null;
-            config.OnLoad?.Invoke();
-            LoadOK?.Invoke();
-            if (config.Content is DrawerLoad idrawer) idrawer.LoadOK();
-            config.Content.SizeChanged += Content_SizeChanged;
+            config.Content.ControlEvent();
+            if (config.Content is ControlEvent controlEvent) controlEvent.LoadCompleted();
         }
 
         bool isok = true;
@@ -497,7 +503,17 @@ namespace AntdUI
             }
         }
 
-        internal Action? LoadOK = null;
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        [Description("是否正在加载"), Category("参数"), DefaultValue(true)]
+        public bool IsLoad { get; set; } = true;
+
+        /// <summary>
+        /// 加载完成回调
+        /// </summary>
+        [Description("加载完成回调"), Category("参数"), DefaultValue(null)]
+        public Action? LoadCompleted { get; set; }
 
         Rectangle Ang()
         {
@@ -537,13 +553,10 @@ namespace AntdUI
         }
         void SetAnimateValue(int x, int y, int w, int h, byte _alpha)
         {
-            if (TargetRect.X != x || TargetRect.Y != y || TargetRect.Width != w || TargetRect.Height != h || alpha != _alpha)
-            {
-                SetLocation(x, y);
-                SetSize(w, h);
-                alpha = _alpha;
-                Print();
-            }
+            SetLocation(x, y);
+            SetSize(w, h);
+            alpha = _alpha;
+            Print(true);
         }
 
         #endregion
@@ -551,6 +564,7 @@ namespace AntdUI
         protected override void DestroyHandle()
         {
             base.DestroyHandle();
+            isclose = true;
             formMask?.IClose();
         }
 
@@ -564,9 +578,9 @@ namespace AntdUI
 
                 tempContent = new Bitmap(config.Content.Width, config.Content.Height);
                 config.Content.DrawToBitmap(tempContent, new Rectangle(0, 0, tempContent.Width, tempContent.Height));
-                form?.Hide();
+                if (form != null) form.Location = new Point(-form.Width * 2, -form.Height * 2);
                 e.Cancel = true;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(Drawer)))
                 {
                     if (!run_end)
                     {
@@ -624,32 +638,27 @@ namespace AntdUI
 
         public override Bitmap PrintBit()
         {
-            Rectangle rect;
-            if (HasBor) rect = new Rectangle(FrmBor, 0, TargetRect.Width - FrmBor * 2, TargetRect.Height - FrmBor);
-            else rect = TargetRectXY;
-            var original_bmp = new Bitmap(TargetRect.Width, TargetRect.Height);
+            Rectangle rect_t = TargetRectXY, rect = HasBor ? new Rectangle(FrmBor, 0, rect_t.Width - FrmBor * 2, rect_t.Height - FrmBor) : rect_t;
+            var original_bmp = new Bitmap(rect_t.Width, rect_t.Height);
             using (var g = Graphics.FromImage(original_bmp).High())
             {
                 var rect_read = DrawShadow(g, rect);
                 using (var path = rect_read.RoundPath(FrmRadius))
                 {
-                    using (var brush = new SolidBrush(Style.Db.BgElevated))
-                    {
-                        g.FillPath(brush, path);
-                    }
-                    if (tempContent != null) g.DrawImage(tempContent, new Rectangle(rect_read.X + padding, rect_read.Y + padding, tempContent.Width, tempContent.Height));
+                    g.Fill(Colour.BgElevated.Get("Drawer"), path);
+                    if (tempContent != null) g.Image(tempContent, new Rectangle(rect_read.X + padding, rect_read.Y + padding, tempContent.Width, tempContent.Height));
                 }
             }
             return original_bmp;
         }
 
-        Bitmap? shadow_temp = null;
+        SafeBitmap? shadow_temp = null;
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
         /// <param name="rect">客户区域</param>
-        Rectangle DrawShadow(Graphics g, Rectangle rect)
+        Rectangle DrawShadow(Canvas g, Rectangle rect)
         {
             var matrix = new ColorMatrix { Matrix33 = 0.3F };
             switch (config.Align)
@@ -668,7 +677,7 @@ namespace AntdUI
                         using (var attributes = new ImageAttributes())
                         {
                             attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                            g.DrawImage(shadow_temp, new Rectangle(rect.Y, rect.Bottom - 80, rect.Width, 80), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
+                            g.Image(shadow_temp.Bitmap, new Rectangle(rect.Y, rect.Bottom - 80, rect.Width, 80), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
                         }
                     }
                     return new Rectangle(rect.X, rect.Y, rect.Width, rect.Height - 20);
@@ -686,7 +695,7 @@ namespace AntdUI
                         using (var attributes = new ImageAttributes())
                         {
                             attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                            g.DrawImage(shadow_temp, new Rectangle(rect.Y, rect.Y, rect.Width, 80), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
+                            g.Image(shadow_temp.Bitmap, new Rectangle(rect.Y, rect.Y, rect.Width, 80), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
                         }
                     }
                     return new Rectangle(rect.X, rect.Y + 20, rect.Width, rect.Height - 20);
@@ -704,7 +713,7 @@ namespace AntdUI
                         using (var attributes = new ImageAttributes())
                         {
                             attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                            g.DrawImage(shadow_temp, new Rectangle(rect.Right - 80, rect.Y, 80, rect.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
+                            g.Image(shadow_temp.Bitmap, new Rectangle(rect.Right - 80, rect.Y, 80, rect.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
                         }
                     }
                     return new Rectangle(rect.X, rect.Y, rect.Width - 20, rect.Height);
@@ -723,7 +732,7 @@ namespace AntdUI
                         using (var attributes = new ImageAttributes())
                         {
                             attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                            g.DrawImage(shadow_temp, new Rectangle(rect.X, rect.Y, 80, rect.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
+                            g.Image(shadow_temp.Bitmap, new Rectangle(rect.X, rect.Y, 80, rect.Height), 0, 0, shadow_temp.Width, shadow_temp.Height, GraphicsUnit.Pixel, attributes);
                         }
                     }
                     return new Rectangle(rect.X + 20, rect.Y, rect.Width - 20, rect.Height);
@@ -731,10 +740,5 @@ namespace AntdUI
         }
 
         #endregion
-    }
-
-    public interface DrawerLoad
-    {
-        void LoadOK();
     }
 }

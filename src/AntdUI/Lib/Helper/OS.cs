@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -23,6 +23,10 @@ namespace AntdUI
     public class OS
     {
         public static Version Version;
+
+        /// <summary>
+        /// 大于等于Windows 11
+        /// </summary>
         public static bool Win11
         {
             get
@@ -33,6 +37,16 @@ namespace AntdUI
             }
         }
 
+        /// <summary>
+        /// 大于等于Windows 10
+        /// </summary>
+        public static bool Win10 => Version.Major >= 10;
+
+        /// <summary>
+        /// 小于等于Windows 7
+        /// </summary>
+        public static bool Win7OrLower => Version.Major < 6 || (Version.Major == 6 && Version.Minor <= 1);
+
         #region OS版本
 
 #if NET40 || NET46 || NET48
@@ -41,7 +55,11 @@ namespace AntdUI
             try
             {
                 var osVersionInfo = new OSVERSIONINFOEX { OSVersionInfoSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(OSVERSIONINFOEX)) };
-                if (RtlGetVersion(ref osVersionInfo) == 0) Version = new Version(osVersionInfo.MajorVersion, osVersionInfo.MinorVersion, osVersionInfo.BuildNumber);
+                if (RtlGetVersion(ref osVersionInfo) == 0)
+                {
+                    Version = new Version(osVersionInfo.MajorVersion, osVersionInfo.MinorVersion, osVersionInfo.BuildNumber);
+                    return;
+                }
             }
             catch { }
             Version = Environment.OSVersion.Version;

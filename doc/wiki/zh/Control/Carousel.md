@@ -1,4 +1,4 @@
-﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)・[SVG](../SVG.md)
+﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)
 
 ## Carousel
 
@@ -20,13 +20,13 @@ Carousel 走马灯 👚
 ||||
 **DotSize** | 面板指示点大小 | Size | 28 × 4 |
 **DotMargin** | 面板指示点边距 | int | 12 |
-**DotPosition** | 面板指示点位置 | [TAlignMini](Enum#talignmini) | None |
+**DotPosition** | 面板指示点位置 | [TAlignMini](Enum.md#talignmini) | None |
 ||||
 **Radius** | 圆角 | int | 0 |
 **Round** | 圆角样式 | bool | false |
 ||||
 **Image** | 图片集合 `CarouselItem[]` | [CarouselItem[]](#carouselitem) | [] |
-**ImageFit** | 图片布局 | [TFit](Enum#tfit) | Cover |
+**ImageFit** | 图片布局 | [TFit](Enum.md#tfit) | Cover |
 **SelectIndex** | 选择序号 | int | 0 |
 
 ### 事件

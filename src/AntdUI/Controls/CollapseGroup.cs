@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -58,9 +58,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -89,6 +90,7 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -106,6 +108,7 @@ namespace AntdUI
                 columnCount = value;
                 ChangeList();
                 Invalidate();
+                OnPropertyChanged(nameof(ColumnCount));
             }
         }
 
@@ -139,6 +142,7 @@ namespace AntdUI
                     ChangeList();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PauseLayout));
             }
         }
 
@@ -154,22 +158,19 @@ namespace AntdUI
 
         protected override void OnSizeChanged(EventArgs e)
         {
-            var rect = ChangeList();
-            ScrollBar.SizeChange(rect);
+            ChangeList();
             base.OnSizeChanged(e);
         }
 
-        internal Rectangle ChangeList()
+        internal void ChangeList()
         {
             var _rect = ClientRectangle;
-            if (pauseLayout || items == null || items.Count == 0 || (_rect.Width == 0 || _rect.Height == 0)) return _rect;
-
+            if (pauseLayout || items == null || items.Count == 0 || (_rect.Width == 0 || _rect.Height == 0)) return;
             var rect = ClientRectangle.DeflateRect(Padding);
-
             int y = rect.Y;
             Helper.GDI(g =>
             {
-                var size = g.MeasureString(Config.NullText, Font).Size();
+                var size = g.MeasureString(Config.NullText, Font);
                 int gap = (int)(4 * Config.Dpi), csize = (rect.Width - (gap * (columnCount - 1))) / columnCount, icon_size = csize / 2, height = size.Height + gap * 2;
                 foreach (var it in items)
                 {
@@ -192,17 +193,17 @@ namespace AntdUI
                 }
             });
             ScrollBar.SetVrSize(0, y);
-            return _rect;
+            ScrollBar.SizeChange(_rect);
         }
 
-        void ChangeList(Graphics g, Rectangle rect, CollapseGroupItem Parent, CollapseGroupSubCollection items, ref int y, int font_height, int csize, int icon_size, int gap)
+        void ChangeList(Canvas g, Rectangle rect, CollapseGroupItem Parent, CollapseGroupSubCollection items, ref int y, int font_height, int csize, int icon_size, int gap)
         {
             int hasI = 0, tmp = 0;
             foreach (var it in items)
             {
                 it.PARENT = this;
                 it.PARENTITEM = Parent;
-                var size = g.MeasureString(it.Text, Font, csize, s_c).Size();
+                var size = g.MeasureString(it.Text, Font, csize, s_c);
                 int xc = size.Height - font_height;
                 if (xc > 0 && tmp < xc) tmp = xc;
                 it.SetRect(g, new Rectangle(rect.X + ((csize + gap) * hasI), y, csize, csize), font_height, xc, icon_size);
@@ -227,18 +228,22 @@ namespace AntdUI
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (items == null || items.Count == 0) return;
             var rect = ClientRectangle;
             if (rect.Width == 0 || rect.Height == 0) return;
+            if (items == null || items.Count == 0)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
             float _radius = radius * Config.Dpi;
             int sx = ScrollBar.ValueX, sy = ScrollBar.ValueY;
             g.TranslateTransform(-sx, -sy);
-            using (var brush_fore = new SolidBrush(fore ?? Style.Db.TextBase))
-            using (var brush_fore_active = new SolidBrush(ForeActive ?? Style.Db.Primary))
-            using (var brush_hover = new SolidBrush(BackHover ?? Style.Db.FillSecondary))
-            using (var brush_active = new SolidBrush(BackActive ?? Style.Db.PrimaryBg))
-            using (var brush_TextQuaternary = new SolidBrush(Style.Db.TextQuaternary))
+            using (var brush_fore = new SolidBrush(fore ?? Colour.TextBase.Get("CollapseGroup", ColorScheme)))
+            using (var brush_fore_active = new SolidBrush(ForeActive ?? Colour.Primary.Get("CollapseGroup", ColorScheme)))
+            using (var brush_hover = new SolidBrush(BackHover ?? Colour.FillSecondary.Get("CollapseGroup", ColorScheme)))
+            using (var brush_active = new SolidBrush(BackActive ?? Colour.PrimaryBg.Get("CollapseGroup", ColorScheme)))
+            using (var brush_TextQuaternary = new SolidBrush(Colour.TextQuaternary.Get("CollapseGroup", ColorScheme)))
             {
                 PaintItem(g, rect, sx, sy, items, brush_fore, brush_fore_active, brush_hover, brush_active, brush_TextQuaternary, _radius);
             }
@@ -248,14 +253,14 @@ namespace AntdUI
             base.OnPaint(e);
         }
 
-        void PaintItem(Graphics g, Rectangle rect, int sx, int sy, CollapseGroupItemCollection items, SolidBrush fore, SolidBrush fore_active, SolidBrush hover, SolidBrush active, SolidBrush brush_TextQuaternary, float radius)
+        void PaintItem(Canvas g, Rectangle rect, int sx, int sy, CollapseGroupItemCollection items, SolidBrush fore, SolidBrush fore_active, SolidBrush hover, SolidBrush active, SolidBrush brush_TextQuaternary, float radius)
         {
             foreach (var it in items)
             {
                 if (it.Show)
                 {
                     PaintArrow(g, it, fore, sx, sy);
-                    g.DrawStr(it.Text, Font, fore, it.txt_rect, s_l);
+                    g.String(it.Text, Font, fore, it.txt_rect, s_l);
                     if ((it.Expand || it.ExpandThread) && it.items != null && it.items.Count > 0)
                     {
                         if (it.ExpandThread) g.SetClip(new RectangleF(rect.X, it.rect.Bottom, rect.Width, it.ExpandHeight * it.ExpandProg));
@@ -267,19 +272,19 @@ namespace AntdUI
                                 {
                                     if (sub.Select)
                                     {
-                                        PaintBack(g, sub, active);
+                                        PaintBack(g, sub, active, radius);
                                         if (sub.AnimationHover)
                                         {
                                             using (var brush = new SolidBrush(Helper.ToColorN(sub.AnimationHoverValue, hover.Color)))
                                             {
-                                                PaintBack(g, sub, brush);
+                                                PaintBack(g, sub, brush, radius);
                                             }
                                         }
-                                        else if (sub.Hover) PaintBack(g, sub, hover);
+                                        else if (sub.Hover) PaintBack(g, sub, hover, radius);
 
-                                        if (sub.Icon != null) g.DrawImage(sub.Icon, sub.ico_rect);
-                                        else if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, fore_active.Color);
-                                        g.DrawStr(sub.Text, Font, fore_active, sub.txt_rect, s_c);
+                                        if (sub.Icon != null) g.Image(sub.Icon, sub.ico_rect);
+                                        if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, fore_active.Color);
+                                        g.String(sub.Text, Font, fore_active, sub.txt_rect, s_c);
                                     }
                                     else
                                     {
@@ -287,21 +292,21 @@ namespace AntdUI
                                         {
                                             using (var brush = new SolidBrush(Helper.ToColorN(sub.AnimationHoverValue, hover.Color)))
                                             {
-                                                PaintBack(g, sub, brush);
+                                                PaintBack(g, sub, brush, radius);
                                             }
                                         }
-                                        else if (sub.Hover) PaintBack(g, sub, hover);
+                                        else if (sub.Hover) PaintBack(g, sub, hover, radius);
 
-                                        if (sub.Icon != null) g.DrawImage(sub.Icon, sub.ico_rect);
-                                        else if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, fore.Color);
-                                        g.DrawStr(sub.Text, Font, fore, sub.txt_rect, s_c);
+                                        if (sub.Icon != null) g.Image(sub.Icon, sub.ico_rect);
+                                        if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, fore.Color);
+                                        g.String(sub.Text, Font, fore, sub.txt_rect, s_c);
                                     }
                                 }
                                 else
                                 {
-                                    if (sub.Icon != null) g.DrawImage(sub.Icon, sub.ico_rect);
-                                    else if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, brush_TextQuaternary.Color);
-                                    g.DrawStr(sub.Text, Font, brush_TextQuaternary, sub.txt_rect, s_c);
+                                    if (sub.Icon != null) g.Image(sub.Icon, sub.ico_rect);
+                                    if (sub.IconSvg != null) g.GetImgExtend(sub.IconSvg, sub.ico_rect, brush_TextQuaternary.Color);
+                                    g.String(sub.Text, Font, brush_TextQuaternary, sub.txt_rect, s_c);
                                 }
                             }
                         }
@@ -311,16 +316,16 @@ namespace AntdUI
             }
         }
 
-        void PaintBack(Graphics g, CollapseGroupSub sub, SolidBrush brush)
+        void PaintBack(Canvas g, CollapseGroupSub sub, SolidBrush brush, float radius)
         {
             if (radius > 0)
             {
                 using (var path = sub.rect.RoundPath(radius))
                 {
-                    g.FillPath(brush, path);
+                    g.Fill(brush, path);
                 }
             }
-            else g.FillRectangle(brush, sub.rect);
+            else g.Fill(brush, sub.rect);
         }
 
         readonly StringFormat s_c = Helper.SF(tb: StringAlignment.Near), s_l = Helper.SF_ALL(lr: StringAlignment.Near);
@@ -335,7 +340,7 @@ namespace AntdUI
             };
         }
 
-        void PaintArrow(Graphics g, CollapseGroupItem item, SolidBrush color, int sx, int sy)
+        void PaintArrow(Canvas g, CollapseGroupItem item, SolidBrush color, int sx, int sy)
         {
             using (var pen = new Pen(color, 2F))
             {
@@ -346,7 +351,7 @@ namespace AntdUI
             }
         }
 
-        void PaintArrow(Graphics g, CollapseGroupItem item, Pen pen, int sx, int sy, float rotate)
+        void PaintArrow(Canvas g, CollapseGroupItem item, Pen pen, int sx, int sy, float rotate)
         {
             int size = item.arr_rect.Width, size_arrow = size / 2;
             g.TranslateTransform(item.arr_rect.X + size_arrow, item.arr_rect.Y + size_arrow);
@@ -465,7 +470,7 @@ namespace AntdUI
             }
         }
 
-        internal void IUSelect()
+        public void IUSelect()
         {
             if (items == null || items.Count == 0) return;
             foreach (var it in items)
@@ -501,8 +506,8 @@ namespace AntdUI
             ScrollBar.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
-        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
-        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
+        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelXCore(value);
+        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelYCore(value);
 
         #endregion
 
@@ -564,7 +569,7 @@ namespace AntdUI
         }
     }
 
-    public class CollapseGroupItem : NotifyProperty
+    public class CollapseGroupItem
     {
         public CollapseGroupItem() { }
         public CollapseGroupItem(string text)
@@ -627,7 +632,7 @@ namespace AntdUI
                 expand = value;
                 if (items != null && items.Count > 0)
                 {
-                    if (PARENT != null && PARENT.IsHandleCreated && Config.Animation)
+                    if (PARENT != null && PARENT.IsHandleCreated && Config.HasAnimation(nameof(CollapseGroup)))
                     {
                         ThreadExpand?.Dispose();
                         float oldval = -1;
@@ -677,10 +682,7 @@ namespace AntdUI
         }
 
         [Description("是否可以展开"), Category("行为"), DefaultValue(false)]
-        public bool CanExpand
-        {
-            get => items != null && items.Count > 0;
-        }
+        public bool CanExpand => items != null && items.Count > 0;
 
         #endregion
 
@@ -724,7 +726,7 @@ namespace AntdUI
 
         internal CollapseGroup? PARENT { get; set; }
 
-        internal void SetRect(Graphics g, Rectangle _rect, int icon_size, int gap)
+        internal void SetRect(Canvas g, Rectangle _rect, int icon_size, int gap)
         {
             rect = _rect;
             int x = _rect.X + gap, y = _rect.Y + (_rect.Height - icon_size) / 2;
@@ -775,7 +777,7 @@ namespace AntdUI
             return this;
         }
     }
-    public class CollapseGroupSub : NotifyProperty
+    public class CollapseGroupSub
     {
         public CollapseGroupSub() { }
         public CollapseGroupSub(string text)
@@ -800,7 +802,7 @@ namespace AntdUI
             {
                 if (icon == value) return;
                 icon = value;
-                OnPropertyChanged("Icon");
+                Invalidates();
             }
         }
 
@@ -816,17 +818,14 @@ namespace AntdUI
             {
                 if (iconSvg == value) return;
                 iconSvg = value;
-                OnPropertyChanged("IconSvg");
+                Invalidates();
             }
         }
 
         /// <summary>
         /// 是否包含图片
         /// </summary>
-        internal bool HasIcon
-        {
-            get => iconSvg != null || Icon != null;
-        }
+        internal bool HasIcon => iconSvg != null || Icon != null;
 
         /// <summary>
         /// 名称
@@ -912,10 +911,7 @@ namespace AntdUI
 
         #endregion
 
-        void Invalidate()
-        {
-            PARENT?.Invalidate();
-        }
+        void Invalidate() => PARENT?.Invalidate();
         void Invalidates()
         {
             if (PARENT == null) return;
@@ -934,7 +930,7 @@ namespace AntdUI
             {
                 if (hover == value) return;
                 hover = value;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(CollapseGroup)))
                 {
                     ThreadHover?.Dispose();
                     AnimationHover = true;
@@ -987,9 +983,11 @@ namespace AntdUI
         }
 
         internal CollapseGroup? PARENT { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public CollapseGroupItem? PARENTITEM { get; set; }
 
-        internal void SetRect(Graphics g, Rectangle rect_read, int font_height, int xc, int icon_size)
+        internal void SetRect(Canvas g, Rectangle rect_read, int font_height, int xc, int icon_size)
         {
             rect = rect_read;
             int sp = (int)(font_height * .25F), t_x = rect_read.Y + ((rect_read.Height - (font_height + icon_size + sp)) / 2);
@@ -1002,9 +1000,9 @@ namespace AntdUI
         internal bool Show { get; set; }
         internal Rectangle rect { get; set; }
 
-        internal bool Contains(Point point, int x, int y)
+        internal bool Contains(int x, int y, int sx, int sy)
         {
-            if (rect.Contains(point.X + x, point.Y + y))
+            if (rect.Contains(x + sx, y + sy))
             {
                 Hover = true;
                 return true;

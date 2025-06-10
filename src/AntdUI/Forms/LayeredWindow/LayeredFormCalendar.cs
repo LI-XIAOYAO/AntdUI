@@ -11,23 +11,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 
 namespace AntdUI
 {
     public class LayeredFormCalendar : ILayeredFormOpacityDown
     {
+        #region 初始化
+
         DateTime? minDate, maxDate;
-        public LayeredFormCalendar(DatePicker _control, Rectangle rect_read, DateTime? date, Action<DateTime> _action, Action<object> _action_btns, Func<DateTime[], List<DateBadge>?>? _badge_action = null)
+        bool ValueTimeHorizontal = false, ShowButtonToDay = true;
+        TAMode ColorScheme;
+        int shadow = 10, shadow2 = 20;
+        public LayeredFormCalendar(DatePicker _control, Rectangle rect_read, DateTime? date, TDatePicker _datepicker, Action<DateTime> _action, Action<object> _action_btns, Func<DateTime[], List<DateBadge>?>? _badge_action = null)
         {
+            ColorScheme = _control.ColorScheme;
             _control.Parent.SetTopMost(Handle);
             control = _control;
             minDate = _control.MinDate;
@@ -37,20 +45,27 @@ namespace AntdUI
             action = _action;
             action_btns = _action_btns;
             ShowTime = _control.ShowTime;
-            hover_lefts = new ITaskOpacity(this);
-            hover_left = new ITaskOpacity(this);
-            hover_rights = new ITaskOpacity(this);
-            hover_right = new ITaskOpacity(this);
-            hover_year = new ITaskOpacity(this);
-            hover_month = new ITaskOpacity(this);
-            hover_button = new ITaskOpacity(this);
-            hover_buttonok = new ITaskOpacity(this);
+            ShowButtonToDay = _control.ShowButtonToDay;
+            ValueTimeHorizontal = _control.ValueTimeHorizontal;
+            hover_lefts = new ITaskOpacity(name, this);
+            hover_left = new ITaskOpacity(name, this);
+            hover_rights = new ITaskOpacity(name, this);
+            hover_right = new ITaskOpacity(name, this);
+            hover_year = new ITaskOpacity(name, this);
+            hover_month = new ITaskOpacity(name, this);
+            hover_button = new ITaskOpacity(name, this);
+            hover_buttonok = new ITaskOpacity(name, this);
             scrollY_left = new ScrollY(this);
             scrollY_h = new ScrollY(this);
             scrollY_m = new ScrollY(this);
             scrollY_s = new ScrollY(this);
+            showType = PickerType = _datepicker;
+            Culture = new CultureInfo(CultureID);
+            YDR = CultureID.StartsWith("en");
+
             float dpi = Config.Dpi;
-            if (dpi != 1F)
+            if (dpi == 1F) Radius = _control.Radius;
+            else
             {
                 Radius = _control.Radius * dpi;
                 t_one_width = (int)(t_one_width * dpi);
@@ -63,7 +78,6 @@ namespace AntdUI
                 year2_width = (int)(year2_width * dpi);
                 month_width = (int)(month_width * dpi);
             }
-            else Radius = _control.Radius;
 
             if (_control.Presets.Count > 0)
             {
@@ -76,17 +90,52 @@ namespace AntdUI
                 }
                 t_x = left_button;
             }
-            if (ShowTime) { t_width = t_x + t_one_width + t_time * 3; button_text = Localization.Provider?.GetLocalizedString("Now") ?? "此刻"; }
+            if (ShowTime)
+            {
+                t_width = t_x + t_one_width + t_time * 3;
+                button_text = Localization.Get("Now", "此刻");
+            }
             else t_width = t_x + t_one_width;
 
-            rect_lefts = new Rectangle(t_x + 10, 10, t_top, t_top);
-            rect_left = new Rectangle(t_x + 10 + t_top, 10, t_top, t_top);
-            rect_rights = new Rectangle(t_x + t_one_width + 10 - t_top, 10, t_top, t_top);
-            rect_right = new Rectangle(t_x + t_one_width + 10 - t_top * 2, 10, t_top, t_top);
+            rect_lefts = new Rectangle(t_x + shadow, shadow, t_top, t_top);
+            rect_left = new Rectangle(t_x + shadow + t_top, shadow, t_top, t_top);
+            rect_rights = new Rectangle(t_x + t_one_width + shadow - t_top, shadow, t_top, t_top);
+            rect_right = new Rectangle(t_x + t_one_width + shadow - t_top * 2, shadow, t_top, t_top);
 
-            rect_year = new Rectangle(t_x + 10 + t_one_width / 2 - year_width, 10, year_width, t_top);
-            rect_year2 = new Rectangle(t_x + 10 + (t_one_width - year2_width) / 2, 10, year2_width, t_top);
-            rect_month = new Rectangle(t_x + 10 + t_one_width / 2, 10, month_width, t_top);
+            int gap = (int)(4 * dpi), t_width2 = t_one_width / 2;
+            rect_year2 = new Rectangle(t_x + shadow + (t_one_width - year2_width) / 2, shadow, year2_width, t_top);
+            if (YDR)
+            {
+                YearFormat = "yyyy";
+                MonthFormat = "MMM";
+                MondayButton = "Mon";
+                TuesdayButton = "Tue";
+                WednesdayButton = "Wed";
+                ThursdayButton = "Thu";
+                FridayButton = "Fri";
+                SaturdayButton = "Sat";
+                SundayButton = "Sun";
+
+                rect_month = new Rectangle(t_x + shadow + t_width2 - year_width - gap, shadow, year_width, t_top);
+                rect_year = new Rectangle(t_x + shadow + t_width2 + gap, shadow, month_width, t_top);
+                s_f_L = Helper.SF(lr: StringAlignment.Near); s_f_R = Helper.SF(lr: StringAlignment.Far);
+            }
+            else
+            {
+                YearFormat = "yyyy年";
+                MonthFormat = "MM月";
+                MondayButton = "一";
+                TuesdayButton = "二";
+                WednesdayButton = "三";
+                ThursdayButton = "四";
+                FridayButton = "五";
+                SaturdayButton = "六";
+                SundayButton = "日";
+
+                rect_year = new Rectangle(t_x + shadow + t_width2 - year_width - gap, shadow, year_width, t_top);
+                rect_month = new Rectangle(t_x + shadow + t_width2 + gap, shadow, month_width, t_top);
+                s_f_L = Helper.SF(lr: StringAlignment.Far); s_f_R = Helper.SF(lr: StringAlignment.Near);
+            }
 
             Font = new Font(_control.Font.FontFamily, 11.2F);
 
@@ -94,20 +143,25 @@ namespace AntdUI
             Date = date ?? DateNow;
 
             var point = _control.PointToScreen(Point.Empty);
-            int r_w = t_width + 20, r_h;
-            if (calendar_day == null) r_h = 348 + 20;
-            else r_h = (t_top + t_button) + (12 * 2) + (int)Math.Ceiling((calendar_day[calendar_day.Count - 1].y + 2) * (t_one_width - 16) / 7F) + 20;
+            int r_w = t_width + shadow2, r_h;
+            if (calendar_day == null) r_h = 348 + shadow2;
+            else r_h = (t_top + (ShowButtonToDay ? t_button : 0)) + (12 * 2) + (int)Math.Ceiling((calendar_day[calendar_day.Count - 1].y + 2) * (t_one_width - 16) / 7F) + shadow2;
 
             SetSize(r_w, r_h);
-            rect_button = new Rectangle(t_x + 10 + (t_one_width - year_width) / 2, r_h - t_button - (20 - 8), year_width, t_button);
+            rect_button = new Rectangle(t_x + shadow + (t_one_width - year_width) / 2, r_h - t_button - (shadow2 - 8), year_width, t_button);
             if (ShowTime)
             {
                 int t_time_w = t_time * 3;
-                rect_buttonok = new Rectangle(t_x + 10 + t_one_width, rect_button.Y, t_time_w, t_button);
+                rect_buttonok = new Rectangle(t_x + shadow + t_one_width, rect_button.Y, t_time_w, t_button);
             }
-            CLocation(point, _control.Placement, _control.DropDownArrow, ArrowSize, 10, r_w, r_h, rect_read, ref Inverted, ref ArrowAlign);
+            CLocation(point, _control.Placement, _control.DropDownArrow, shadow, r_w, r_h, rect_read, ref Inverted, ref ArrowAlign);
             t_h = r_h;
+            if (OS.Win7OrLower) Select();
         }
+
+        public override string name => nameof(DatePicker);
+
+        #endregion
 
         #region 属性
 
@@ -118,20 +172,18 @@ namespace AntdUI
         bool ShowTime = false;
         float Radius = 6;
         int t_width = 288, t_h = 0, t_one_width = 288, t_x = 0, left_button = 120, t_top = 34, t_button = 38, t_time = 56, t_time_height = 30;
-        int year_width = 60, year2_width = 88, month_width = 40;
+        int year_width = 60, year2_width = 90, month_width = 60;
         TAlign ArrowAlign = TAlign.None;
         int ArrowSize = 8;
-        string button_text = Localization.Provider?.GetLocalizedString("ToDay") ?? "今天",
-            OKButton = Localization.Provider?.GetLocalizedString("OK") ?? "确定",
-            YearButton = Localization.Provider?.GetLocalizedString("Year") ?? "年",
-            MonthButton = Localization.Provider?.GetLocalizedString("Month") ?? "月",
-            MondayButton = Localization.Provider?.GetLocalizedString("Mon") ?? "一",
-            TuesdayButton = Localization.Provider?.GetLocalizedString("Tue") ?? "二",
-            WednesdayButton = Localization.Provider?.GetLocalizedString("Wed") ?? "三",
-            ThursdayButton = Localization.Provider?.GetLocalizedString("Thu") ?? "四",
-            FridayButton = Localization.Provider?.GetLocalizedString("Fri") ?? "五",
-            SaturdayButton = Localization.Provider?.GetLocalizedString("Sat") ?? "六",
-            SundayButton = Localization.Provider?.GetLocalizedString("Sun") ?? "日";
+
+        CultureInfo Culture;
+        string CultureID = Localization.Get("ID", "zh-CN"),
+            button_text = Localization.Get("ToDay", "今天"),
+            OKButton = Localization.Get("OK", "确定"),
+            YearFormat, MonthFormat,
+            MondayButton, TuesdayButton, WednesdayButton, ThursdayButton, FridayButton, SaturdayButton, SundayButton;
+
+        bool YDR = false;
 
         ScrollY scrollY_left, scrollY_h, scrollY_m, scrollY_s;
         List<CalendarButton>? left_buttons = null;
@@ -155,13 +207,15 @@ namespace AntdUI
         List<Calendari>? calendar_month = null;
         List<Calendari>? calendar_day = null;
         List<CalendarT>? calendar_time = null;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public DateTime Date
         {
             get => _Date;
             set
             {
                 _Date = value;
-                sizeday = size_month = size_year = true;
+                size_day = size_month = size_year = true;
                 calendar_day = GetCalendar(value);
 
                 #region 添加时间
@@ -169,9 +223,9 @@ namespace AntdUI
                 if (ShowTime && calendar_time == null)
                 {
                     calendar_time = new List<CalendarT>(24 + 120);
-                    for (int i = 0; i < 24; i++) calendar_time.Add(new CalendarT(0, i, i));
-                    for (int i = 0; i < 60; i++) calendar_time.Add(new CalendarT(1, i, i));
-                    for (int i = 0; i < 60; i++) calendar_time.Add(new CalendarT(2, i, i));
+                    for (int i = 0; i < 24; i++) calendar_time.Add(new CalendarT(0, 0, i, i));
+                    for (int i = 0; i < 60; i++) calendar_time.Add(new CalendarT(1, 1, i, i));
+                    for (int i = 0; i < 60; i++) calendar_time.Add(new CalendarT(2, 2, i, i));
                 }
 
                 #endregion
@@ -183,7 +237,7 @@ namespace AntdUI
                 for (int i = 0; i < 12; i++)
                 {
                     var d_m = new DateTime(value.Year, i + 1, 1);
-                    _calendar_month.Add(new Calendari(0, x_m, y_m, d_m.ToString("MM") + MonthButton, d_m, d_m.ToString("yyyy-MM"), minDate, maxDate));
+                    _calendar_month.Add(new Calendari(0, x_m, y_m, d_m.ToString(MonthFormat, Culture), d_m, d_m.ToString("yyyy-MM"), minDate, maxDate));
                     x_m++;
                     if (x_m > 2)
                     {
@@ -248,16 +302,14 @@ namespace AntdUI
                     });
                 }
 
-                hover_left.Enable = Helper.DateExceed(value.AddMonths(-1), minDate, maxDate);
-                hover_right.Enable = Helper.DateExceed(value.AddMonths(1), minDate, maxDate);
-                hover_lefts.Enable = Helper.DateExceed(value.AddYears(-1), minDate, maxDate);
-                hover_rights.Enable = Helper.DateExceed(value.AddYears(1), minDate, maxDate);
+                hover_left.Enable = Helper.DateExceedMonth(value.AddMonths(-1), minDate, maxDate);
+                hover_right.Enable = Helper.DateExceedMonth(value.AddMonths(1), minDate, maxDate);
+                hover_lefts.Enable = Helper.DateExceedYear(value.AddYears(-1), minDate, maxDate);
+                hover_rights.Enable = Helper.DateExceedYear(value.AddYears(1), minDate, maxDate);
             }
         }
 
         string year_str = "";
-
-        bool sizeday = true, size_month = true, size_year = true;
         List<Calendari> GetCalendar(DateTime now)
         {
             var calendaris = new List<Calendari>(28);
@@ -337,43 +389,37 @@ namespace AntdUI
 
         #region 渲染
 
-        StringFormat s_f = Helper.SF();
-        StringFormat s_f_L = Helper.SF(lr: StringAlignment.Far);
-        StringFormat s_f_LE = Helper.SF_Ellipsis(lr: StringAlignment.Near);
-        StringFormat s_f_R = Helper.SF(lr: StringAlignment.Near);
+        StringFormat s_f = Helper.SF(), s_f_LE = Helper.SF_Ellipsis(lr: StringAlignment.Near);
+        StringFormat s_f_L, s_f_R;
         public override Bitmap PrintBit()
         {
             var rect = TargetRectXY;
-            var rect_read = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20);
+            var rect_read = new Rectangle(shadow, shadow, rect.Width - shadow2, rect.Height - shadow2);
             Bitmap original_bmp = new Bitmap(rect.Width, rect.Height);
             using (var g = Graphics.FromImage(original_bmp).High())
             {
                 using (var path = rect_read.RoundPath(Radius))
                 {
                     DrawShadow(g, rect);
-                    using (var brush = new SolidBrush(Style.Db.BgElevated))
+                    using (var brush = new SolidBrush(Colour.BgElevated.Get("DatePicker", ColorScheme)))
                     {
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                         if (ArrowAlign != TAlign.None) g.FillPolygon(brush, ArrowAlign.AlignLines(ArrowSize, rect, rect_read));
                     }
                 }
 
                 #region 方向
 
-                using (var pen_arrow = new Pen(Style.Db.TextTertiary, 1.6F * Config.Dpi))
-                using (var pen_arrow_hover = new Pen(Style.Db.Text, pen_arrow.Width))
-                using (var pen_arrow_enable = new Pen(Style.Db.FillSecondary, pen_arrow.Width))
+                using (var pen_arrow = new Pen(Colour.TextTertiary.Get("DatePicker", ColorScheme), 1.6F * Config.Dpi))
+                using (var pen_arrow_hover = new Pen(Colour.Text.Get("DatePicker", ColorScheme), pen_arrow.Width))
+                using (var pen_arrow_enable = new Pen(Colour.FillSecondary.Get("DatePicker", ColorScheme), pen_arrow.Width))
                 {
                     if (hover_lefts.Animation)
                     {
-                        PointF[] tl1 = TAlignMini.Left.TriangleLines(new Rectangle(rect_lefts.X - 4, rect_lefts.Y, rect_lefts.Width, rect_lefts.Height), .26F),
-                            tl2 = TAlignMini.Left.TriangleLines(new Rectangle(rect_lefts.X + 4, rect_lefts.Y, rect_lefts.Width, rect_lefts.Height), .26F);
-                        g.DrawLines(pen_arrow, tl1);
-                        g.DrawLines(pen_arrow, tl2);
-                        using (var pen_arrow_hovers = new Pen(Helper.ToColor(hover_lefts.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
+                        using (var pen_arrow_hovers = new Pen(pen_arrow.Color.BlendColors(hover_lefts.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
                         {
-                            g.DrawLines(pen_arrow_hovers, tl1);
-                            g.DrawLines(pen_arrow_hovers, tl2);
+                            g.DrawLines(pen_arrow_hovers, TAlignMini.Left.TriangleLines(new Rectangle(rect_lefts.X - 4, rect_lefts.Y, rect_lefts.Width, rect_lefts.Height), .26F));
+                            g.DrawLines(pen_arrow_hovers, TAlignMini.Left.TriangleLines(new Rectangle(rect_lefts.X + 4, rect_lefts.Y, rect_lefts.Width, rect_lefts.Height), .26F));
                         }
                     }
                     else if (hover_lefts.Switch)
@@ -394,14 +440,10 @@ namespace AntdUI
 
                     if (hover_rights.Animation)
                     {
-                        PointF[] tl1 = TAlignMini.Right.TriangleLines(new Rectangle(rect_rights.X - 4, rect_rights.Y, rect_rights.Width, rect_rights.Height), .26F),
-                            tl2 = TAlignMini.Right.TriangleLines(new Rectangle(rect_rights.X + 4, rect_rights.Y, rect_rights.Width, rect_rights.Height), .26F);
-                        g.DrawLines(pen_arrow, tl1);
-                        g.DrawLines(pen_arrow, tl2);
-                        using (var pen_arrow_hovers = new Pen(Helper.ToColor(hover_rights.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
+                        using (var pen_arrow_hovers = new Pen(pen_arrow.Color.BlendColors(hover_rights.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
                         {
-                            g.DrawLines(pen_arrow_hovers, tl1);
-                            g.DrawLines(pen_arrow_hovers, tl2);
+                            g.DrawLines(pen_arrow_hovers, TAlignMini.Right.TriangleLines(new Rectangle(rect_rights.X - 4, rect_rights.Y, rect_rights.Width, rect_rights.Height), .26F));
+                            g.DrawLines(pen_arrow_hovers, TAlignMini.Right.TriangleLines(new Rectangle(rect_rights.X + 4, rect_rights.Y, rect_rights.Width, rect_rights.Height), .26F));
                         }
                     }
                     else if (hover_rights.Switch)
@@ -420,15 +462,13 @@ namespace AntdUI
                         g.DrawLines(pen_arrow_enable, TAlignMini.Right.TriangleLines(new Rectangle(rect_rights.X + 4, rect_rights.Y, rect_rights.Width, rect_rights.Height), .26F));
                     }
 
-                    if (showType == 0)
+                    if (ShowType == 0)
                     {
                         if (hover_left.Animation)
                         {
-                            var tl = TAlignMini.Left.TriangleLines(rect_left, .26F);
-                            g.DrawLines(pen_arrow, tl);
-                            using (var pen_arrow_hovers = new Pen(Helper.ToColor(hover_left.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
+                            using (var pen_arrow_hovers = new Pen(pen_arrow.Color.BlendColors(hover_left.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
                             {
-                                g.DrawLines(pen_arrow_hovers, tl);
+                                g.DrawLines(pen_arrow_hovers, TAlignMini.Left.TriangleLines(rect_left, .26F));
                             }
                         }
                         else if (hover_left.Switch) g.DrawLines(pen_arrow_hover, TAlignMini.Left.TriangleLines(rect_left, .26F));
@@ -437,11 +477,9 @@ namespace AntdUI
 
                         if (hover_right.Animation)
                         {
-                            var tl = TAlignMini.Right.TriangleLines(rect_right, .26F);
-                            g.DrawLines(pen_arrow, tl);
-                            using (var pen_arrow_hovers = new Pen(Helper.ToColor(hover_right.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
+                            using (var pen_arrow_hovers = new Pen(pen_arrow.Color.BlendColors(hover_right.Value, pen_arrow_hover.Color), pen_arrow_hover.Width))
                             {
-                                g.DrawLines(pen_arrow_hovers, tl);
+                                g.DrawLines(pen_arrow_hovers, TAlignMini.Right.TriangleLines(rect_right, .26F));
                             }
                         }
                         else if (hover_right.Switch) g.DrawLines(pen_arrow_hover, TAlignMini.Right.TriangleLines(rect_right, .26F));
@@ -452,10 +490,9 @@ namespace AntdUI
 
                 #endregion
 
-                if (showType == 1 && calendar_month != null) PrintMonth(g, rect_read, calendar_month);
-                else if (showType == 2 && calendar_year != null) PrintYear(g, rect_read, calendar_year);
+                if (ShowType == TDatePicker.Month && calendar_month != null) PrintMonth(g, rect_read, calendar_month);
+                else if (ShowType == TDatePicker.Year && calendar_year != null) PrintYear(g, rect_read, calendar_year);
                 else if (calendar_day != null) PrintDay(g, rect_read, calendar_day);
-
             }
             return original_bmp;
         }
@@ -470,89 +507,42 @@ namespace AntdUI
         /// <param name="g">GDI</param>
         /// <param name="rect_read">真实区域</param>
         /// <param name="datas">数据</param>
-        void PrintYear(Graphics g, Rectangle rect_read, List<Calendari> datas)
+        void PrintYear(Canvas g, Rectangle rect_read, List<Calendari> datas)
         {
-            using (var brush_fore_disable = new SolidBrush(Style.Db.TextQuaternary))
-            using (var brush_bg_disable = new SolidBrush(Style.Db.FillTertiary))
-            using (var brush_fore = new SolidBrush(Style.Db.TextBase))
+            var color_fore = Colour.TextBase.Get("DatePicker", ColorScheme);
+            using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
             {
-                using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
-                {
-                    Rectangle rect_l = new Rectangle(rect_read.X, rect_read.Y, rect_read.Width, t_top);
+                Rectangle rect_l = new Rectangle(rect_read.X, rect_read.Y, rect_read.Width, t_top);
 
-                    if (hover_year.Animation)
-                    {
-                        g.DrawStr(year_str, font, brush_fore, rect_l, s_f);
-                        using (var brush_hove = new SolidBrush(Helper.ToColor(hover_year.Value, Style.Db.Primary)))
-                        {
-                            g.DrawStr(year_str, font, brush_hove, rect_l, s_f);
-                        }
-                    }
-                    else if (hover_year.Switch)
-                    {
-                        using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                        {
-                            g.DrawStr(year_str, font, brush_hove, rect_l, s_f);
-                        }
-                    }
-                    else g.DrawStr(year_str, font, brush_fore, rect_l, s_f);
-                }
-
-                int size_w = (rect_read.Width - 16) / 3, size_h = (rect_read.Width - 16) / 7 * 2;
-                int y = rect_read.Y + t_top;
-                if (size_year)
-                {
-                    size_year = false;
-                    foreach (var it in datas)
-                    {
-                        it.rect = new Rectangle(rect_read.X + 8 + (size_w * it.x), y + (size_h * it.y), size_w, size_h);
-                    }
-                }
+                if (hover_year.Animation) g.String(year_str, font, color_fore.BlendColors(hover_year.Value, Colour.Primary.Get("DatePicker", ColorScheme)), rect_l, s_f);
+                else if (hover_year.Switch) g.String(year_str, font, Colour.Primary.Get("DatePicker", ColorScheme), rect_l, s_f);
+                else g.String(year_str, font, color_fore, rect_l, s_f);
+            }
+            if (size_year) LayoutYear(rect_read);
+            using (var brush_fore_disable = new SolidBrush(Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
+            using (var brush_bg_disable = new SolidBrush(Colour.FillTertiary.Get("DatePicker", ColorScheme)))
+            using (var brush_fore = new SolidBrush(color_fore))
+            {
                 foreach (var it in datas)
                 {
                     using (var path = it.rect_read.RoundPath(Radius))
                     {
                         if (SelDate.HasValue && SelDate.Value.ToString("yyyy") == it.date_str)
                         {
-                            using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                            {
-                                g.FillPath(brush_hove, path);
-                            }
-
-                            using (var brush_active_fore = new SolidBrush(Style.Db.PrimaryColor))
-                            {
-                                g.DrawStr(it.v, Font, brush_active_fore, it.rect, s_f);
-                            }
+                            g.Fill(Colour.Primary.Get("DatePicker", ColorScheme), path);
+                            g.String(it.v, Font, Colour.PrimaryColor.Get("DatePicker", ColorScheme), it.rect, s_f);
                         }
                         else if (it.enable)
                         {
-                            if (it.hover)
-                            {
-                                using (var brush_hove = new SolidBrush(Style.Db.FillTertiary))
-                                {
-                                    g.FillPath(brush_hove, path);
-                                }
-                            }
-                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
-                            {
-                                using (var brush_hove = new Pen(Style.Db.Primary, Config.Dpi))
-                                {
-                                    g.DrawPath(brush_hove, path);
-                                }
-                            }
-                            g.DrawStr(it.v, Font, it.t == 1 ? brush_fore : brush_fore_disable, it.rect, s_f);
+                            if (it.hover) g.Fill(Colour.FillTertiary.Get("DatePicker", ColorScheme), path);
+                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str) g.Draw(Colour.Primary.Get("DatePicker", ColorScheme), Config.Dpi, path);
+                            g.String(it.v, Font, it.t == 1 ? brush_fore : brush_fore_disable, it.rect, s_f);
                         }
                         else
                         {
-                            g.FillRectangle(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
-                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
-                            {
-                                using (var brush_hove = new Pen(Style.Db.Primary, Config.Dpi))
-                                {
-                                    g.DrawPath(brush_hove, path);
-                                }
-                            }
-                            g.DrawStr(it.v, Font, brush_fore_disable, it.rect, s_f);
+                            g.Fill(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
+                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str) g.Draw(Colour.Primary.Get("DatePicker", ColorScheme), Config.Dpi, path);
+                            g.String(it.v, Font, brush_fore_disable, it.rect, s_f);
                         }
                     }
                 }
@@ -569,89 +559,42 @@ namespace AntdUI
         /// <param name="g">GDI</param>
         /// <param name="rect_read">真实区域</param>
         /// <param name="datas">数据</param>
-        void PrintMonth(Graphics g, Rectangle rect_read, List<Calendari> datas)
+        void PrintMonth(Canvas g, Rectangle rect_read, List<Calendari> datas)
         {
-            using (var brush_fore_disable = new SolidBrush(Style.Db.TextQuaternary))
-            using (var brush_bg_disable = new SolidBrush(Style.Db.FillTertiary))
-            using (var brush_fore = new SolidBrush(Style.Db.TextBase))
+            var color_fore = Colour.TextBase.Get("DatePicker", ColorScheme);
+            using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
             {
-                using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
-                {
-                    var rect_l = new Rectangle(rect_read.X, rect_read.Y, rect_read.Width, t_top);
-
-                    if (hover_year.Animation)
-                    {
-                        g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_fore, rect_l, s_f);
-                        using (var brush_hove = new SolidBrush(Helper.ToColor(hover_year.Value, Style.Db.Primary)))
-                        {
-                            g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_hove, rect_l, s_f);
-                        }
-                    }
-                    else if (hover_year.Switch)
-                    {
-                        using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                        {
-                            g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_hove, rect_l, s_f);
-                        }
-                    }
-                    else g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_fore, rect_l, s_f);
-                }
-
-                int size_w = (rect_read.Width - 16) / 3, size_h = (rect_read.Width - 16) / 7 * 2;
-                int y = rect_read.Y + t_top;
-                if (size_month)
-                {
-                    size_month = false;
-                    foreach (var it in datas)
-                    {
-                        it.rect = new Rectangle(rect_read.X + 8 + (size_w * it.x), y + (size_h * it.y), size_w, size_h);
-                    }
-                }
+                var rect_l = new Rectangle(rect_read.X, rect_read.Y, rect_read.Width, t_top);
+                string yearStr = _Date.ToString(YearFormat, Culture);
+                if (hover_year.Animation) g.String(yearStr, font, color_fore.BlendColors(hover_year.Value, Colour.Primary.Get("DatePicker", ColorScheme)), rect_l, s_f);
+                else if (hover_year.Switch) g.String(yearStr, font, Colour.Primary.Get("DatePicker", ColorScheme), rect_l, s_f);
+                else g.String(yearStr, font, color_fore, rect_l, s_f);
+            }
+            if (size_month) LayoutMonth(rect_read);
+            using (var brush_fore_disable = new SolidBrush(Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
+            using (var brush_bg_disable = new SolidBrush(Colour.FillTertiary.Get("DatePicker", ColorScheme)))
+            using (var brush_fore = new SolidBrush(color_fore))
+            {
                 foreach (var it in datas)
                 {
                     using (var path = it.rect_read.RoundPath(Radius))
                     {
                         if (SelDate.HasValue && SelDate.Value.ToString("yyyy-MM") == it.date_str)
                         {
-                            using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                            {
-                                g.FillPath(brush_hove, path);
-                            }
-
-                            using (var brush_active_fore = new SolidBrush(Style.Db.PrimaryColor))
-                            {
-                                g.DrawStr(it.v, Font, brush_active_fore, it.rect, s_f);
-                            }
+                            g.Fill(Colour.Primary.Get("DatePicker", ColorScheme), path);
+                            g.String(it.v, Font, Colour.PrimaryColor.Get("DatePicker", ColorScheme), it.rect, s_f);
                         }
                         else if (it.enable)
                         {
-                            if (it.hover)
-                            {
-                                using (var brush_hove = new SolidBrush(Style.Db.FillTertiary))
-                                {
-                                    g.FillPath(brush_hove, path);
-                                }
-                            }
-                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
-                            {
-                                using (var brush_hove = new Pen(Style.Db.Primary, Config.Dpi))
-                                {
-                                    g.DrawPath(brush_hove, path);
-                                }
-                            }
-                            g.DrawStr(it.v, Font, brush_fore, it.rect, s_f);
+                            if (it.hover) g.Fill(Colour.FillTertiary.Get("DatePicker", ColorScheme), path);
+                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str) g.Draw(Colour.Primary.Get("DatePicker", ColorScheme), Config.Dpi, path);
+                            g.String(it.v, Font, brush_fore, it.rect, s_f);
                         }
                         else
                         {
-                            g.FillRectangle(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
-                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
-                            {
-                                using (var brush_hove = new Pen(Style.Db.Primary, Config.Dpi))
-                                {
-                                    g.DrawPath(brush_hove, path);
-                                }
-                            }
-                            g.DrawStr(it.v, Font, brush_fore_disable, it.rect, s_f);
+                            g.Fill(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
+                            if (DateNow.ToString("yyyy-MM-dd") == it.date_str) g.Draw(Colour.Primary.Get("DatePicker", ColorScheme), Config.Dpi, path);
+                            g.String(it.v, Font, brush_fore_disable, it.rect, s_f);
                         }
                     }
                 }
@@ -669,304 +612,170 @@ namespace AntdUI
         /// <param name="g">GDI</param>
         /// <param name="rect_read">真实区域</param>
         /// <param name="datas">数据</param>
-        void PrintDay(Graphics g, Rectangle rect_read, List<Calendari> datas)
+        void PrintDay(Canvas g, Rectangle rect_read, List<Calendari> datas)
         {
-            using (var brush_fore = new SolidBrush(Style.Db.TextBase))
+            var color_fore = Colour.TextBase.Get("DatePicker", ColorScheme);
+            using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
             {
-                int xm = t_one_width / 2;
-                using (var font = new Font(Font.FontFamily, Font.Size, FontStyle.Bold))
+                string yearStr = _Date.ToString(YearFormat, Culture), monthStr = _Date.ToString(MonthFormat, Culture);
+                if (hover_year.Animation) g.String(yearStr, font, color_fore.BlendColors(hover_year.Value, Colour.Primary.Get("DatePicker", ColorScheme)), rect_year, s_f_L);
+                else if (hover_year.Switch) g.String(yearStr, font, Colour.Primary.Get("DatePicker", ColorScheme), rect_year, s_f_L);
+                else g.String(yearStr, font, color_fore, rect_year, s_f_L);
+
+                if (hover_month.Animation) g.String(monthStr, font, color_fore.BlendColors(hover_month.Value, Colour.Primary.Get("DatePicker", ColorScheme)), rect_month, s_f_R);
+                else if (hover_month.Switch) g.String(monthStr, font, Colour.Primary.Get("DatePicker", ColorScheme), rect_month, s_f_R);
+                else g.String(monthStr, font, color_fore, rect_month, s_f_R);
+            }
+
+            using (var brush_split = new SolidBrush(Colour.Split.Get("DatePicker", ColorScheme)))
+            {
+                g.Fill(brush_split, new Rectangle(t_x + rect_read.X, rect_read.Y + t_top, t_one_width, 1));
+                if (ShowButtonToDay) g.Fill(brush_split, new Rectangle(t_x + rect_read.X, rect_button.Y, rect_read.Width - t_x, 1));
+                else g.Fill(brush_split, new Rectangle(t_x + rect_read.X + t_one_width, rect_button.Y, rect_read.Width - t_x - t_one_width, 1));
+                if (ShowTime) g.Fill(brush_split, new Rectangle(t_x + rect_read.X + t_one_width, rect_read.Y, 1, rect_read.Height));
+                if (left_buttons != null) g.Fill(brush_split, new Rectangle(t_x + rect_read.X, rect_read.Y, 1, rect_read.Height));
+            }
+            int size = (t_one_width - 16) / 7, y = rect_read.Y + t_top + 12;
+            using (var brush = new SolidBrush(Colour.Text.Get("DatePicker", ColorScheme)))
+            {
+                g.String(MondayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8, y, size, size), s_f);
+                g.String(TuesdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size, y, size, size), s_f);
+                g.String(WednesdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 2, y, size, size), s_f);
+                g.String(ThursdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 3, y, size, size), s_f);
+                g.String(FridayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 4, y, size, size), s_f);
+                g.String(SaturdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 5, y, size, size), s_f);
+                g.String(SundayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 6, y, size, size), s_f);
+            }
+            if (size_day) LayoutDate(rect_read);
+            using (var brush_fore = new SolidBrush(color_fore))
+            using (var brush_fore_disable = new SolidBrush(Colour.TextQuaternary.Get("DatePicker", ColorScheme)))
+            using (var brush_bg_disable = new SolidBrush(Colour.FillTertiary.Get("DatePicker", ColorScheme)))
+            using (var brush_active = new SolidBrush(Colour.Primary.Get("DatePicker", ColorScheme)))
+            using (var brush_active_fore = new SolidBrush(Colour.PrimaryColor.Get("DatePicker", ColorScheme)))
+            using (var brush_error = new SolidBrush(Colour.Error.Get("DatePicker", ColorScheme)))
+            {
+                foreach (var it in datas)
                 {
-                    Rectangle rect_l = new Rectangle(t_x + rect_read.X, rect_read.Y, xm, t_top), rect_r = new Rectangle(t_x + rect_read.X + xm, rect_read.Y, xm, t_top);
-
-                    if (hover_year.Animation)
-                    {
-                        g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_fore, rect_l, s_f_L);
-                        using (var brush_hove = new SolidBrush(Helper.ToColor(hover_year.Value, Style.Db.Primary)))
-                        {
-                            g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_hove, rect_l, s_f_L);
-                        }
-                    }
-                    else if (hover_year.Switch)
-                    {
-                        using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                        {
-                            g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_hove, rect_l, s_f_L);
-                        }
-                    }
-                    else g.DrawStr(_Date.ToString("yyyy") + YearButton, font, brush_fore, rect_l, s_f_L);
-
-                    if (hover_month.Animation)
-                    {
-                        g.DrawStr(_Date.ToString("MM") + MonthButton, font, brush_fore, rect_r, s_f_R);
-                        using (var brush_hove = new SolidBrush(Helper.ToColor(hover_month.Value, Style.Db.Primary)))
-                        {
-                            g.DrawStr(_Date.ToString("MM") + MonthButton, font, brush_hove, rect_r, s_f_R);
-                        }
-                    }
-                    else if (hover_month.Switch)
-                    {
-                        using (var brush_hove = new SolidBrush(Style.Db.Primary))
-                        {
-                            g.DrawStr(_Date.ToString("MM") + MonthButton, font, brush_hove, rect_r, s_f_R);
-                        }
-                    }
-                    else g.DrawStr(_Date.ToString("MM") + MonthButton, font, brush_fore, rect_r, s_f_R);
-                }
-
-                using (var brush_split = new SolidBrush(Style.Db.Split))
-                {
-                    g.FillRectangle(brush_split, new Rectangle(t_x + rect_read.X, rect_read.Y + t_top, t_one_width, 1));
-                    g.FillRectangle(brush_split, new Rectangle(t_x + rect_read.X, rect_button.Y, rect_read.Width - t_x, 1));
-                    if (ShowTime) g.FillRectangle(brush_split, new Rectangle(t_x + rect_read.X + t_one_width, rect_read.Y, 1, rect_read.Height));
-                    if (left_buttons != null) g.FillRectangle(brush_split, new Rectangle(t_x + rect_read.X, rect_read.Y, 1, rect_read.Height));
-                }
-                int y = rect_read.Y + t_top + 12;
-                int size = (t_one_width - 16) / 7;
-                using (var brush = new SolidBrush(Style.Db.Text))
-                {
-                    g.DrawStr(MondayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8, y, size, size), s_f);
-                    g.DrawStr(TuesdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size, y, size, size), s_f);
-                    g.DrawStr(WednesdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 2, y, size, size), s_f);
-                    g.DrawStr(ThursdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 3, y, size, size), s_f);
-                    g.DrawStr(FridayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 4, y, size, size), s_f);
-                    g.DrawStr(SaturdayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 5, y, size, size), s_f);
-                    g.DrawStr(SundayButton, Font, brush, new Rectangle(t_x + rect_read.X + 8 + size * 6, y, size, size), s_f);
-                }
-                y += size;
-                if (sizeday)
-                {
-                    sizeday = false;
-                    int size_one = (int)(size * .666F);
-                    foreach (var it in datas) it.SetRect(new Rectangle(t_x + rect_read.X + 8 + (size * it.x), y + (size * it.y), size, size), size_one);
-                    if (calendar_time != null)
-                    {
-                        int size_time_one = (int)(t_time * .857F);
-                        int size_time_height_one = (int)(t_time_height * .93F);
-
-                        int endh = rect_button.Y;
-                        var rect_s_h = new Rectangle(t_x, rect_read.Y + 8, rect_read.X + t_one_width + t_time, endh - rect_read.Y - 8);
-                        rect_read_h = new Rectangle(rect_s_h.Right - t_time, 0, t_time, endh);
-                        rect_read_m = new Rectangle(rect_s_h.Right, 0, t_time, endh);
-                        rect_read_s = new Rectangle(rect_s_h.Right + t_time, 0, t_time, endh);
-                        scrollY_h.SizeChange(rect_s_h);
-                        rect_s_h.Width += t_time;
-                        scrollY_m.SizeChange(rect_s_h);
-                        rect_s_h.Width += t_time;
-                        scrollY_s.SizeChange(rect_s_h);
-
-                        int endh2 = endh - rect_read.Y * 2 - (t_time_height - size_time_height_one);
-                        scrollY_h.SetVrSize(t_time_height * 24, endh2);
-                        scrollY_m.SetVrSize(t_time_height * 60, endh2);
-                        scrollY_s.SetVrSize(t_time_height * 60, endh2);
-
-                        int _x = (t_time - size_time_one) / 2, _y = rect_read.Y + (t_time_height - size_time_height_one) / 2;
-                        foreach (var it in calendar_time)
-                        {
-                            var rect_n = new Rectangle(t_time * it.x, t_time_height * it.y, t_time, t_time_height);
-                            it.rect = new Rectangle(t_x + rect_read.X + t_one_width + rect_n.X, rect_read.Y + rect_n.Y, rect_n.Width, rect_n.Height);
-                            it.rect_read = new Rectangle(rect_n.X + _x, rect_n.Y + _y, size_time_one, size_time_height_one);
-                        }
-
-                        if (SelDate.HasValue)
-                        {
-                            var d = SelDate.Value;
-                            var find_h = calendar_time.Find(a => a.x == 0 && a.t == d.Hour);
-                            if (find_h != null) scrollY_h.Value = find_h.rect.Y - find_h.rect.Height;
-                            var find_m = calendar_time.Find(a => a.x == 1 && a.t == d.Minute);
-                            if (find_m != null) scrollY_m.Value = find_m.rect.Y - find_m.rect.Height;
-                            var find_s = calendar_time.Find(a => a.x == 2 && a.t == d.Second);
-                            if (find_s != null) scrollY_s.Value = find_s.rect.Y - find_s.rect.Height;
-                        }
-                    }
-                    if (left_buttons != null)
-                    {
-                        int btn_one = (int)(left_button * .9F), btn_height_one = (int)(t_time_height * .93F), btn_one2 = (int)(left_button * .8F);
-
-                        rect_read_left = new Rectangle(rect_read.X, rect_read.Y, t_x, t_h - rect_read.Y * 2);
-
-                        scrollY_left.SizeChange(new Rectangle(rect_read.X, rect_read.Y + 8, t_x, t_h - (8 + rect_read.Y) * 2));
-                        scrollY_left.SetVrSize(t_time_height * left_buttons.Count, t_h - 20 - rect_read.Y * 2);
-
-                        int _x = (left_button - btn_one) / 2, _x2 = (btn_one - btn_one2) / 2, _y = rect_read.Y + (t_time_height - btn_height_one) / 2;
-                        foreach (var it in left_buttons)
-                        {
-                            var rect_n = new Rectangle(0, t_time_height * it.y, left_button, t_time_height);
-                            it.rect_read = new Rectangle(rect_n.X + _x, rect_n.Y + _y, btn_one, btn_height_one);
-                            it.rect = new Rectangle(rect_read.X + rect_n.X, rect_read.Y + rect_n.Y, rect_n.Width, rect_n.Height);
-
-                            it.rect_text = new Rectangle(rect_read.X + _x2, it.rect_read.Y, btn_one2, it.rect_read.Height);
-                        }
-                    }
-                }
-                using (var brush_fore_disable = new SolidBrush(Style.Db.TextQuaternary))
-                using (var brush_bg_disable = new SolidBrush(Style.Db.FillTertiary))
-                using (var brush_active = new SolidBrush(Style.Db.Primary))
-                using (var brush_active_fore = new SolidBrush(Style.Db.PrimaryColor))
-                using (var brush_error = new SolidBrush(Style.Db.Error))
-                {
-                    foreach (var it in datas)
-                    {
-                        if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
-                        {
-                            using (var path = it.rect_read.RoundPath(Radius))
-                            {
-                                using (var pen_active = new Pen(Style.Db.Primary, Config.Dpi))
-                                {
-                                    g.DrawPath(pen_active, path);
-                                }
-                            }
-                        }
-                    }
-
-                    foreach (var it in datas)
+                    if (DateNow.ToString("yyyy-MM-dd") == it.date_str)
                     {
                         using (var path = it.rect_read.RoundPath(Radius))
                         {
-                            if (SelDate.HasValue && SelDate.Value.ToString("yyyy-MM-dd") == it.date_str)
-                            {
-                                g.FillPath(brush_active, path);
-                                g.DrawStr(it.v, Font, brush_active_fore, it.rect, s_f);
-                            }
-                            else if (it.enable)
-                            {
-                                if (it.hover)
-                                {
-                                    using (var brush_hove = new SolidBrush(Style.Db.FillTertiary))
-                                    {
-                                        g.FillPath(brush_hove, path);
-                                    }
-                                }
-                                g.DrawStr(it.v, Font, it.t == 1 ? brush_fore : brush_fore_disable, it.rect, s_f);
-                            }
-                            else
-                            {
-                                g.FillRectangle(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
-                                g.DrawStr(it.v, Font, brush_fore_disable, it.rect, s_f);
-                            }
+                            g.Draw(Colour.Primary.Get("DatePicker", ColorScheme), Config.Dpi, path);
                         }
                     }
-                    if (rect_read.Height > t_button)
-                    {
-                        if (left_buttons != null)
-                        {
-                            var state = g.Save();
-                            g.SetClip(new Rectangle(rect_read.X, rect_read.Y, left_button, rect_read.Height));
-                            g.TranslateTransform(rect_read.X, rect_read.Y - scrollY_left.Value);
-                            foreach (var it in left_buttons)
-                            {
-                                using (var path = it.rect_read.RoundPath(Radius))
-                                {
-                                    if (it.hover)
-                                    {
-                                        using (var brush_hove = new SolidBrush(Style.Db.FillTertiary))
-                                        {
-                                            g.FillPath(brush_hove, path);
-                                        }
-                                    }
-                                    g.DrawStr(it.v, Font, brush_fore, it.rect_text, s_f_LE);
-                                }
-                            }
-                            g.Restore(state);
-                            scrollY_left.Paint(g);
-                        }
-                        if (calendar_time != null)
-                        {
-                            var state = g.Save();
-                            int tx = t_x + rect_read.X + t_one_width;
-                            g.SetClip(new Rectangle(tx, rect_read.Y, t_time * 3, rect_button.Y - 10));
-                            using (var brush_bg = new SolidBrush(Style.Db.PrimaryBg))
-                            using (var brush_hove = new SolidBrush(Style.Db.FillTertiary))
-                            {
-                                g.TranslateTransform(tx, 10 - scrollY_h.Value);
-                                for (int i = 0; i < calendar_time.Count; i++)
-                                {
-                                    if (i == 24)
-                                    {
-                                        g.ResetTransform();
-                                        g.TranslateTransform(tx, 10 - scrollY_m.Value);
-                                    }
-                                    else if (i == 84)
-                                    {
-                                        g.ResetTransform();
-                                        g.TranslateTransform(tx, 10 - scrollY_s.Value);
-                                    }
-                                    var it = calendar_time[i];
-                                    bool hashover = false;
-                                    if (SelDate.HasValue)
-                                    {
-                                        switch (it.x)
-                                        {
-                                            case 0:
-                                                if (it.t == SelDate.Value.Hour) hashover = true;
-                                                break;
-                                            case 1:
-                                                if (it.t == SelDate.Value.Minute) hashover = true;
-                                                break;
-                                            case 2:
-                                                if (it.t == SelDate.Value.Second) hashover = true;
-                                                break;
-                                        }
-                                    }
-                                    if (hashover || it.hover)
-                                    {
-                                        using (var path = it.rect_read.RoundPath(Radius))
-                                        {
-                                            if (hashover) g.FillPath(brush_bg, path);
-                                            if (it.hover) g.FillPath(brush_hove, path);
-                                        }
-                                    }
-                                    g.DrawStr(it.v, Font, brush_fore, it.rect_read, s_f);
-                                }
-                            }
-                            g.Restore(state);
-                            scrollY_h.Paint(g);
-                            scrollY_m.Paint(g);
-                            scrollY_s.Paint(g);
+                }
 
-                            if (hover_buttonok.Animation)
-                            {
-                                g.DrawStr(OKButton, Font, brush_active, rect_buttonok, s_f);
-                                using (var brush_hove = new SolidBrush(Helper.ToColor(hover_buttonok.Value, Style.Db.PrimaryActive)))
-                                {
-                                    g.DrawStr(OKButton, Font, brush_hove, rect_buttonok, s_f);
-                                }
-                            }
-                            else if (hover_buttonok.Switch)
-                            {
-                                using (var brush_hove = new SolidBrush(Style.Db.PrimaryActive))
-                                {
-                                    g.DrawStr(OKButton, Font, brush_hove, rect_buttonok, s_f);
-                                }
-                            }
-                            else g.DrawStr(OKButton, Font, brush_active, rect_buttonok, s_f);
-                        }
-                    }
-                    if (hover_button.Animation)
+                foreach (var it in datas)
+                {
+                    using (var path = it.rect_read.RoundPath(Radius))
                     {
-                        g.DrawStr(button_text, Font, brush_active, rect_button, s_f);
-                        using (var brush_hove = new SolidBrush(Helper.ToColor(hover_button.Value, Style.Db.PrimaryActive)))
+                        if (SelDate.HasValue && SelDate.Value.ToString("yyyy-MM-dd") == it.date_str)
                         {
-                            g.DrawStr(button_text, Font, brush_hove, rect_button, s_f);
+                            g.Fill(brush_active, path);
+                            g.String(it.v, Font, brush_active_fore, it.rect, s_f);
+                        }
+                        else if (it.enable)
+                        {
+                            if (it.hover) g.Fill(Colour.FillTertiary.Get("DatePicker", ColorScheme), path);
+                            g.String(it.v, Font, it.t == 1 ? brush_fore : brush_fore_disable, it.rect, s_f);
+                        }
+                        else
+                        {
+                            g.Fill(brush_bg_disable, new Rectangle(it.rect.X, it.rect_read.Y, it.rect.Width, it.rect_read.Height));
+                            g.String(it.v, Font, brush_fore_disable, it.rect, s_f);
                         }
                     }
-                    else if (hover_button.Switch)
+                }
+                if (rect_read.Height > t_button)
+                {
+                    if (left_buttons != null)
                     {
-                        using (var brush_hove = new SolidBrush(Style.Db.PrimaryActive))
+                        var state = g.Save();
+                        g.SetClip(new Rectangle(rect_read.X, rect_read.Y, left_button, rect_read.Height));
+                        g.TranslateTransform(rect_read.X, rect_read.Y - scrollY_left.Value);
+                        foreach (var it in left_buttons)
                         {
-                            g.DrawStr(button_text, Font, brush_hove, rect_button, s_f);
+                            using (var path = it.rect_read.RoundPath(Radius))
+                            {
+                                if (it.hover) g.Fill(Colour.FillTertiary.Get("DatePicker", ColorScheme), path);
+                                g.String(it.v, Font, brush_fore, it.rect_text, s_f_LE);
+                            }
                         }
+                        g.Restore(state);
+                        scrollY_left.Paint(g);
                     }
-                    else g.DrawStr(button_text, Font, brush_active, rect_button, s_f);
+                    if (calendar_time != null)
+                    {
+                        var state = g.Save();
+                        int tx = t_x + rect_read.X + t_one_width;
+                        g.SetClip(new Rectangle(tx, rect_read.Y, t_time * 3, rect_button.Y - shadow));
+                        using (var brush_bg = new SolidBrush(Colour.PrimaryBg.Get("DatePicker", ColorScheme)))
+                        using (var brush_hove = new SolidBrush(Colour.FillTertiary.Get("DatePicker", ColorScheme)))
+                        {
+                            g.TranslateTransform(tx, shadow - scrollY_h.Value);
+                            for (int i = 0; i < calendar_time.Count; i++)
+                            {
+                                if (i == 24)
+                                {
+                                    g.ResetTransform();
+                                    g.TranslateTransform(tx, shadow - scrollY_m.Value);
+                                }
+                                else if (i == 84)
+                                {
+                                    g.ResetTransform();
+                                    g.TranslateTransform(tx, shadow - scrollY_s.Value);
+                                }
+                                var it = calendar_time[i];
+                                bool hashover = false;
+                                if (SelDate.HasValue)
+                                {
+                                    switch (it.rx)
+                                    {
+                                        case 0:
+                                            if (it.t == SelDate.Value.Hour) hashover = true;
+                                            break;
+                                        case 1:
+                                            if (it.t == SelDate.Value.Minute) hashover = true;
+                                            break;
+                                        case 2:
+                                            if (it.t == SelDate.Value.Second) hashover = true;
+                                            break;
+                                    }
+                                }
+                                if (hashover || it.hover)
+                                {
+                                    using (var path = it.rect_read.RoundPath(Radius))
+                                    {
+                                        if (hashover) g.Fill(brush_bg, path);
+                                        if (it.hover) g.Fill(brush_hove, path);
+                                    }
+                                }
+                                g.String(it.v, Font, brush_fore, it.rect_read, s_f);
+                            }
+                        }
+                        g.Restore(state);
+                        scrollY_h.Paint(g);
+                        scrollY_m.Paint(g);
+                        scrollY_s.Paint(g);
 
-                    if (badge_list.Count > 0)
+                        if (hover_buttonok.Animation) g.String(OKButton, Font, brush_active.Color.BlendColors(hover_buttonok.Value, Colour.PrimaryActive.Get("DatePicker", ColorScheme)), rect_buttonok, s_f);
+                        else if (hover_buttonok.Switch) g.String(OKButton, Font, Colour.PrimaryActive.Get("DatePicker", ColorScheme), rect_buttonok, s_f);
+                        else g.String(OKButton, Font, brush_active, rect_buttonok, s_f);
+                    }
+                }
+
+                if (ShowButtonToDay)
+                {
+                    if (hover_button.Animation) g.String(button_text, Font, brush_active.Color.BlendColors(hover_button.Value, Colour.PrimaryActive.Get("DatePicker", ColorScheme)), rect_button, s_f);
+                    else if (hover_button.Switch) g.String(button_text, Font, Colour.PrimaryActive.Get("DatePicker", ColorScheme), rect_button, s_f);
+                    else g.String(button_text, Font, brush_active, rect_button, s_f);
+                }
+
+                if (badge_list.Count > 0)
+                {
+                    foreach (var it in datas)
                     {
-                        using (var font = new Font(control.Font.FontFamily, control.Font.Size * control.BadgeSize))
-                        {
-                            foreach (var it in datas)
-                            {
-                                if (badge_list.TryGetValue(it.date_str, out var find)) control.PaintBadge(find, font, it.rect, g);
-                            }
-                        }
+                        if (badge_list.TryGetValue(it.date_str, out var find)) control.PaintBadge(find, it.rect, g);
                     }
                 }
             }
@@ -976,25 +785,173 @@ namespace AntdUI
 
         #endregion
 
-        Bitmap? shadow_temp = null;
+        SafeBitmap? shadow_temp = null;
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
         /// <param name="rect">客户区域</param>
-        void DrawShadow(Graphics g, Rectangle rect)
+        void DrawShadow(Canvas g, Rectangle rect)
         {
             if (Config.ShadowEnabled)
             {
                 if (shadow_temp == null)
                 {
                     shadow_temp?.Dispose();
-                    using (var path = new Rectangle(10, 10, rect.Width - 20, rect.Height - 20).RoundPath(Radius))
+                    using (var path = new Rectangle(shadow, shadow, rect.Width - shadow2, rect.Height - shadow2).RoundPath(Radius))
                     {
                         shadow_temp = path.PaintShadow(rect.Width, rect.Height);
                     }
                 }
-                g.DrawImage(shadow_temp, rect, 0.2F);
+                g.Image(shadow_temp.Bitmap, rect, .2F);
+            }
+        }
+
+        #endregion
+
+        #region 布局
+
+        TDatePicker PickerType, showType;
+        TDatePicker ShowType
+        {
+            get => showType;
+            set
+            {
+                if (showType == value) return;
+                showType = value;
+                LoadLayout();
+            }
+        }
+
+        bool size_day = true, size_month = true, size_year = true;
+
+        void LoadLayout()
+        {
+            if (left_buttons != null)
+            {
+                t_x = ShowType == 0 ? left_button : 0;
+
+                rect_lefts = new Rectangle(t_x + shadow, shadow, t_top, t_top);
+                rect_left = new Rectangle(t_x + shadow + t_top, shadow, t_top, t_top);
+                rect_rights = new Rectangle(t_x + t_one_width + shadow - t_top, shadow, t_top, t_top);
+                rect_right = new Rectangle(t_x + t_one_width + shadow - t_top * 2, shadow, t_top, t_top);
+
+                int gap = (int)(4 * Config.Dpi), t_width2 = t_one_width / 2;
+                rect_year2 = new Rectangle(t_x + shadow + (t_one_width - year2_width) / 2, shadow, year2_width, t_top);
+                if (YDR)
+                {
+                    rect_month = new Rectangle(t_x + shadow + t_width2 - year_width - gap, shadow, year_width, t_top);
+                    rect_year = new Rectangle(t_x + shadow + t_width2 + gap, shadow, month_width, t_top);
+                }
+                else
+                {
+                    rect_year = new Rectangle(t_x + shadow + t_width2 - year_width - gap, shadow, year_width, t_top);
+                    rect_month = new Rectangle(t_x + shadow + t_width2 + gap, shadow, month_width, t_top);
+                }
+            }
+            if (showType == TDatePicker.Date)
+            {
+                SetSize(t_width + shadow2, t_h);
+                var rect_read = new Rectangle(shadow, shadow, t_width, t_h - shadow2);
+                LayoutDate(rect_read);
+            }
+            else
+            {
+                SetSize(t_one_width + shadow2, t_h);
+                var rect_read = new Rectangle(shadow, shadow, t_one_width, t_h - shadow2);
+                switch (showType)
+                {
+                    case TDatePicker.Year:
+                        LayoutYear(rect_read);
+                        break;
+                    case TDatePicker.Month:
+                        LayoutMonth(rect_read);
+                        break;
+                }
+            }
+        }
+
+        void LayoutYear(Rectangle rect)
+        {
+            if (calendar_year == null) return;
+            int size_w = (rect.Width - 16) / 3, size_h = (rect.Width - 16) / 7 * 2, y = rect.Y + t_top;
+            size_year = false;
+            foreach (var it in calendar_year) it.rect = new Rectangle(rect.X + 8 + (size_w * it.x), y + (size_h * it.y), size_w, size_h);
+        }
+        void LayoutMonth(Rectangle rect)
+        {
+            if (calendar_month == null) return;
+            int size_w = (rect.Width - 16) / 3, size_h = (rect.Width - 16) / 7 * 2, y = rect.Y + t_top;
+            size_month = false;
+            foreach (var it in calendar_month) it.rect = new Rectangle(rect.X + 8 + (size_w * it.x), y + (size_h * it.y), size_w, size_h);
+        }
+        void LayoutDate(Rectangle rect)
+        {
+            if (calendar_day == null) return;
+            int size = (t_one_width - 16) / 7, y = rect.Y + t_top + 12 + size;
+
+            size_day = false;
+            int size_one = (int)(size * .666F);
+            foreach (var it in calendar_day) it.SetRect(new Rectangle(t_x + rect.X + 8 + (size * it.x), y + (size * it.y), size, size), size_one);
+            if (calendar_time != null)
+            {
+                int size_time_one = (int)(t_time * .857F);
+                int size_time_height_one = (int)(t_time_height * .93F);
+
+                int endh = rect_button.Y;
+                var rect_s_h = new Rectangle(t_x, rect.Y + 8, rect.X + t_one_width + t_time, endh - rect.Y - 8);
+                rect_read_h = new Rectangle(rect_s_h.Right - t_time, 0, t_time, endh);
+                rect_read_m = new Rectangle(rect_s_h.Right, 0, t_time, endh);
+                rect_read_s = new Rectangle(rect_s_h.Right + t_time, 0, t_time, endh);
+                scrollY_h.SizeChange(rect_s_h);
+                rect_s_h.Width += t_time;
+                scrollY_m.SizeChange(rect_s_h);
+                rect_s_h.Width += t_time;
+                scrollY_s.SizeChange(rect_s_h);
+
+                int endh2 = endh - rect.Y * 2 - (t_time_height - size_time_height_one);
+                if (ValueTimeHorizontal)
+                {
+                    int exceed = shadow;
+                    scrollY_h.SetVrSize(t_time_height * (24 + exceed), endh2);
+                    scrollY_m.SetVrSize(t_time_height * (60 + exceed), endh2);
+                    scrollY_s.SetVrSize(t_time_height * (60 + exceed), endh2);
+                }
+                else
+                {
+                    scrollY_h.SetVrSize(t_time_height * 24, endh2);
+                    scrollY_m.SetVrSize(t_time_height * 60, endh2);
+                    scrollY_s.SetVrSize(t_time_height * 60, endh2);
+                }
+
+                int _x = (t_time - size_time_one) / 2, _y = rect.Y + (t_time_height - size_time_height_one) / 2;
+                foreach (var it in calendar_time)
+                {
+                    var rect_n = new Rectangle(t_time * it.x, t_time_height * it.y, t_time, t_time_height);
+                    it.rect = new Rectangle(t_x + rect.X + t_one_width + rect_n.X, rect.Y + rect_n.Y, rect_n.Width, rect_n.Height);
+                    it.rect_read = new Rectangle(rect_n.X + _x, rect_n.Y + _y, size_time_one, size_time_height_one);
+                }
+
+                if (SelDate.HasValue) ScrollYTime(calendar_time, SelDate.Value);
+            }
+            if (left_buttons != null)
+            {
+                int btn_one = (int)(left_button * .9F), btn_height_one = (int)(t_time_height * .93F), btn_one2 = (int)(left_button * .8F);
+
+                rect_read_left = new Rectangle(rect.X, rect.Y, t_x, t_h - rect.Y * 2);
+
+                scrollY_left.SizeChange(new Rectangle(rect.X, rect.Y + 8, t_x, t_h - (8 + rect.Y) * 2));
+                scrollY_left.SetVrSize(t_time_height * left_buttons.Count, t_h - shadow2 - rect.Y * 2);
+
+                int _x = (left_button - btn_one) / 2, _x2 = (btn_one - btn_one2) / 2, _y = rect.Y + (t_time_height - btn_height_one) / 2;
+                foreach (var it in left_buttons)
+                {
+                    var rect_n = new Rectangle(0, t_time_height * it.y, left_button, t_time_height);
+                    it.rect_read = new Rectangle(rect_n.X + _x, rect_n.Y + _y, btn_one, btn_height_one);
+                    it.rect = new Rectangle(rect.X + rect_n.X, rect.Y + rect_n.Y, rect_n.Width, rect_n.Height);
+
+                    it.rect_text = new Rectangle(rect.X + _x2, it.rect_read.Y, btn_one2, it.rect_read.Height);
+                }
             }
         }
 
@@ -1029,15 +986,15 @@ namespace AntdUI
                 int count = 0, hand = 0;
                 bool _hover_lefts = rect_lefts.Contains(e.X, e.Y),
                  _hover_rights = rect_rights.Contains(e.X, e.Y),
-                 _hover_left = (showType == 0 && rect_left.Contains(e.X, e.Y)),
-                 _hover_right = (showType == 0 && rect_right.Contains(e.X, e.Y)),
-                 _hover_button = (showType == 0 && rect_button.Contains(e.X, e.Y)),
-                 _hover_buttonok = (showType == 0 && ShowTime && rect_buttonok.Contains(e.X, e.Y));
+                 _hover_left = (ShowType == 0 && rect_left.Contains(e.X, e.Y)),
+                 _hover_right = (ShowType == 0 && rect_right.Contains(e.X, e.Y)),
+                 _hover_button = (ShowType == 0 && ShowButtonToDay && rect_button.Contains(e.X, e.Y)),
+                 _hover_buttonok = (ShowType == 0 && ShowTime && rect_buttonok.Contains(e.X, e.Y));
 
                 bool _hover_year = false, _hover_month = false;
-                if (showType != 2)
+                if (ShowType != TDatePicker.Year)
                 {
-                    _hover_year = showType == 0 ? rect_year.Contains(e.X, e.Y) : rect_year2.Contains(e.X, e.Y);
+                    _hover_year = ShowType == 0 ? rect_year.Contains(e.X, e.Y) : rect_year2.Contains(e.X, e.Y);
                     _hover_month = rect_month.Contains(e.X, e.Y);
                 }
 
@@ -1062,7 +1019,7 @@ namespace AntdUI
                 if (hover_lefts.Switch || hover_left.Switch || hover_rights.Switch || hover_right.Switch || hover_year.Switch || hover_month.Switch || hover_button.Switch || hover_buttonok.Switch) hand++;
                 else
                 {
-                    if (showType == 1)
+                    if (ShowType == TDatePicker.Month)
                     {
                         if (calendar_month != null)
                         {
@@ -1075,7 +1032,7 @@ namespace AntdUI
                             }
                         }
                     }
-                    else if (showType == 2)
+                    else if (ShowType == TDatePicker.Year)
                     {
                         if (calendar_year != null)
                         {
@@ -1104,7 +1061,7 @@ namespace AntdUI
                         {
                             foreach (var it in left_buttons)
                             {
-                                if (it.Contains(e.Location, 0, scrollY_left.Value, out var change)) hand++;
+                                if (it.Contains(e.X, e.Y, 0, scrollY_left.Value, out var change)) hand++;
                                 if (change) count++;
                             }
                         }
@@ -1112,19 +1069,19 @@ namespace AntdUI
                         {
                             foreach (var it in calendar_time)
                             {
-                                switch (it.x)
+                                switch (it.rx)
                                 {
                                     case 1:
-                                        if (it.Contains(e.Location, 0, scrollY_m.Value, out var change1)) hand++;
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_m.Value, out var change1)) hand++;
                                         if (change1) count++;
                                         break;
                                     case 2:
-                                        if (it.Contains(e.Location, 0, scrollY_s.Value, out var change2)) hand++;
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_s.Value, out var change2)) hand++;
                                         if (change2) count++;
                                         break;
                                     case 0:
                                     default:
-                                        if (it.Contains(e.Location, 0, scrollY_h.Value, out var change0)) hand++;
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_h.Value, out var change0)) hand++;
                                         if (change0) count++;
                                         break;
                                 }
@@ -1156,56 +1113,23 @@ namespace AntdUI
             hover_buttonok.Switch = false;
             if (calendar_year != null)
             {
-                foreach (var it in calendar_year)
-                {
-                    it.hover = false;
-                }
+                foreach (var it in calendar_year) it.hover = false;
             }
             if (calendar_month != null)
             {
-                foreach (var it in calendar_month)
-                {
-                    it.hover = false;
-                }
+                foreach (var it in calendar_month) it.hover = false;
             }
             if (calendar_day != null)
             {
-                foreach (var it in calendar_day)
-                {
-                    it.hover = false;
-                }
+                foreach (var it in calendar_day) it.hover = false;
             }
             if (calendar_time != null)
             {
-                foreach (var it in calendar_time)
-                {
-                    it.hover = false;
-                }
+                foreach (var it in calendar_time) it.hover = false;
             }
             SetCursor(false);
             Print();
             base.OnMouseLeave(e);
-        }
-
-        int showType = 0;
-
-        void CSize()
-        {
-            if (left_buttons != null)
-            {
-                t_x = showType == 0 ? left_button : 0;
-
-                rect_lefts = new Rectangle(t_x + 10, 10, t_top, t_top);
-                rect_left = new Rectangle(t_x + 10 + t_top, 10, t_top, t_top);
-                rect_rights = new Rectangle(t_x + t_one_width + 10 - t_top, 10, t_top, t_top);
-                rect_right = new Rectangle(t_x + t_one_width + 10 - t_top * 2, 10, t_top, t_top);
-
-                rect_year = new Rectangle(t_x + 10 + t_one_width / 2 - year_width, 10, year_width, t_top);
-                rect_year2 = new Rectangle(t_x + 10 + (t_one_width - year2_width) / 2, 10, year2_width, t_top);
-                rect_month = new Rectangle(t_x + 10 + t_one_width / 2, 10, month_width, t_top);
-            }
-            if (showType == 0) SetSize(t_width + 20, t_h);
-            else SetSize(t_one_width + 20, t_h);
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
@@ -1221,7 +1145,7 @@ namespace AntdUI
                 {
                     if (hover_lefts.Enable)
                     {
-                        if (showType == 2) Date = _Date.AddYears(-10);
+                        if (ShowType == TDatePicker.Year) Date = _Date.AddYears(-10);
                         else Date = _Date.AddYears(-1);
                         Print();
                     }
@@ -1231,13 +1155,13 @@ namespace AntdUI
                 {
                     if (hover_rights.Enable)
                     {
-                        if (showType == 2) Date = _Date.AddYears(10);
+                        if (ShowType == TDatePicker.Year) Date = _Date.AddYears(10);
                         else Date = _Date.AddYears(1);
                         Print();
                     }
                     return;
                 }
-                else if (showType == 0 && rect_left.Contains(e.X, e.Y))
+                else if (ShowType == TDatePicker.Date && rect_left.Contains(e.X, e.Y))
                 {
                     if (hover_left.Enable)
                     {
@@ -1246,7 +1170,7 @@ namespace AntdUI
                     }
                     return;
                 }
-                else if (showType == 0 && rect_right.Contains(e.X, e.Y))
+                else if (ShowType == TDatePicker.Date && rect_right.Contains(e.X, e.Y))
                 {
                     if (hover_right.Enable)
                     {
@@ -1255,32 +1179,25 @@ namespace AntdUI
                     }
                     return;
                 }
-                else if ((showType == 0 && rect_year.Contains(e.X, e.Y)) || (showType != 0 && rect_year2.Contains(e.X, e.Y)))
+                else if ((ShowType == TDatePicker.Date && rect_year.Contains(e.X, e.Y)) || (ShowType != 0 && rect_year2.Contains(e.X, e.Y)))
                 {
-                    showType = 2;
-                    if (ShowTime || left_buttons != null) CSize();
+                    ShowType = TDatePicker.Year;
                     Print();
                     return;
                 }
-                else if (showType == 0 && rect_button.Contains(e.X, e.Y))
+                else if (ShowType == TDatePicker.Date && ShowButtonToDay && rect_button.Contains(e.X, e.Y))
                 {
                     SelDate = Date = DateNow = DateTime.Now;
                     action(SelDate.Value);
                     if (ShowTime && calendar_time != null)
                     {
-                        var d = SelDate.Value;
-                        var find_h = calendar_time.Find(a => a.x == 0 && a.t == d.Hour);
-                        if (find_h != null) scrollY_h.Value = find_h.rect.Y - find_h.rect.Height;
-                        var find_m = calendar_time.Find(a => a.x == 1 && a.t == d.Minute);
-                        if (find_m != null) scrollY_m.Value = find_m.rect.Y - find_m.rect.Height;
-                        var find_s = calendar_time.Find(a => a.x == 2 && a.t == d.Second);
-                        if (find_s != null) scrollY_s.Value = find_s.rect.Y - find_s.rect.Height;
+                        ScrollYTime(calendar_time, SelDate.Value);
                         Print();
                     }
                     else IClose();
                     return;
                 }
-                else if (showType == 0 && ShowTime && rect_buttonok.Contains(e.X, e.Y))
+                else if (ShowType == TDatePicker.Date && ShowTime && rect_buttonok.Contains(e.X, e.Y))
                 {
                     if (SelDate.HasValue)
                     {
@@ -1291,14 +1208,13 @@ namespace AntdUI
                 }
                 else if (rect_month.Contains(e.X, e.Y))
                 {
-                    showType = 1;
-                    if (ShowTime || left_buttons != null) CSize();
+                    ShowType = TDatePicker.Month;
                     Print();
                     return;
                 }
                 else
                 {
-                    if (showType == 1)
+                    if (ShowType == TDatePicker.Month)
                     {
                         if (calendar_month != null)
                         {
@@ -1307,15 +1223,21 @@ namespace AntdUI
                                 if (it.enable && it.rect.Contains(e.X, e.Y))
                                 {
                                     Date = it.date;
-                                    showType = 0;
-                                    if (ShowTime || left_buttons != null) CSize();
+                                    if (PickerType < ShowType) ShowType = TDatePicker.Date;
+                                    else
+                                    {
+                                        SelDate = it.date;
+                                        action(SelDate.Value);
+                                        IClose();
+                                        return;
+                                    }
                                     Print();
                                     return;
                                 }
                             }
                         }
                     }
-                    else if (showType == 2)
+                    else if (ShowType == TDatePicker.Year)
                     {
                         if (calendar_year != null)
                         {
@@ -1324,8 +1246,14 @@ namespace AntdUI
                                 if (it.enable && it.rect.Contains(e.X, e.Y))
                                 {
                                     Date = it.date;
-                                    showType = 1;
-                                    if (ShowTime || left_buttons != null) CSize();
+                                    if (PickerType < ShowType) ShowType = TDatePicker.Month;
+                                    else
+                                    {
+                                        SelDate = it.date;
+                                        action(SelDate.Value);
+                                        IClose();
+                                        return;
+                                    }
                                     Print();
                                     return;
                                 }
@@ -1349,16 +1277,7 @@ namespace AntdUI
                                             SelDate = new DateTime(it.date.Year, it.date.Month, it.date.Day, DateNow.Hour, DateNow.Minute, DateNow.Second);
                                         }
                                         action(SelDate.Value);
-                                        if (calendar_time != null)
-                                        {
-                                            var d = SelDate.Value;
-                                            var find_h = calendar_time.Find(a => a.x == 0 && a.t == d.Hour);
-                                            if (find_h != null) scrollY_h.Value = find_h.rect.Y - find_h.rect.Height;
-                                            var find_m = calendar_time.Find(a => a.x == 1 && a.t == d.Minute);
-                                            if (find_m != null) scrollY_m.Value = find_m.rect.Y - find_m.rect.Height;
-                                            var find_s = calendar_time.Find(a => a.x == 2 && a.t == d.Second);
-                                            if (find_s != null) scrollY_s.Value = find_s.rect.Y - find_s.rect.Height;
-                                        }
+                                        if (calendar_time != null) ScrollYTime(calendar_time, SelDate.Value);
                                         Print();
                                         return;
                                     }
@@ -1373,7 +1292,7 @@ namespace AntdUI
                         {
                             foreach (var it in left_buttons)
                             {
-                                if (it.Contains(e.Location, 0, scrollY_left.Value, out _))
+                                if (it.Contains(e.X, e.Y, 0, scrollY_left.Value, out _))
                                 {
                                     action_btns(it.Tag);
                                     IClose();
@@ -1386,29 +1305,32 @@ namespace AntdUI
                         {
                             foreach (var it in calendar_time)
                             {
-                                switch (it.x)
+                                switch (it.rx)
                                 {
                                     case 1:
-                                        if (it.Contains(e.Location, 0, scrollY_m.Value, out _))
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_m.Value, out _))
                                         {
                                             if (SelDate.HasValue) SelDate = new DateTime(SelDate.Value.Year, SelDate.Value.Month, SelDate.Value.Day, SelDate.Value.Hour, it.t, SelDate.Value.Second);
+                                            if (ValueTimeHorizontal && SelDate.HasValue) ScrollYTime(calendar_time, SelDate.Value);
                                             Print();
                                             return;
                                         }
                                         break;
                                     case 2:
-                                        if (it.Contains(e.Location, 0, scrollY_s.Value, out _))
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_s.Value, out _))
                                         {
                                             if (SelDate.HasValue) SelDate = new DateTime(SelDate.Value.Year, SelDate.Value.Month, SelDate.Value.Day, SelDate.Value.Hour, SelDate.Value.Minute, it.t);
+                                            if (ValueTimeHorizontal && SelDate.HasValue) ScrollYTime(calendar_time, SelDate.Value);
                                             Print();
                                             return;
                                         }
                                         break;
                                     case 0:
                                     default:
-                                        if (it.Contains(e.Location, 0, scrollY_h.Value, out _))
+                                        if (it.Contains(e.X, e.Y, 0, scrollY_h.Value, out _))
                                         {
                                             if (SelDate.HasValue) SelDate = new DateTime(SelDate.Value.Year, SelDate.Value.Month, SelDate.Value.Day, it.t, SelDate.Value.Minute, SelDate.Value.Second);
+                                            if (ValueTimeHorizontal && SelDate.HasValue) ScrollYTime(calendar_time, SelDate.Value);
                                             Print();
                                             return;
                                         }
@@ -1462,12 +1384,12 @@ namespace AntdUI
         {
             if (e.Delta > 0)
             {
-                if (showType == 1)
+                if (ShowType == TDatePicker.Month)
                 {
                     if (hover_lefts.Enable) Date = _Date.AddYears(-1);
                     else return;
                 }
-                else if (showType == 2)
+                else if (ShowType == TDatePicker.Year)
                 {
                     if (hover_lefts.Enable) Date = _Date.AddYears(-10);
                     else return;
@@ -1481,12 +1403,12 @@ namespace AntdUI
             }
             else
             {
-                if (showType == 1)
+                if (ShowType == TDatePicker.Month)
                 {
                     if (hover_rights.Enable) Date = _Date.AddYears(1);
                     else return;
                 }
-                else if (showType == 2)
+                else if (ShowType == TDatePicker.Year)
                 {
                     if (hover_rights.Enable) Date = _Date.AddYears(10);
                     else return;
@@ -1501,6 +1423,18 @@ namespace AntdUI
         }
 
         #endregion
+
+        void ScrollYTime(List<CalendarT> calendar_time, DateTime d)
+        {
+            CalendarT? find_h = calendar_time.Find(a => a.rx == 0 && a.t == d.Hour),
+                find_m = calendar_time.Find(a => a.rx == 1 && a.t == d.Minute),
+                find_s = calendar_time.Find(a => a.rx == 2 && a.t == d.Second);
+
+            int start = 4;
+            if (find_h != null) scrollY_h.Value = find_h.rect.Y - start;
+            if (find_m != null) scrollY_m.Value = find_m.rect.Y - start;
+            if (find_s != null) scrollY_s.Value = find_s.rect.Y - start;
+        }
 
         protected override void Dispose(bool disposing)
         {
@@ -1572,9 +1506,10 @@ namespace AntdUI
     }
     internal class CalendarT
     {
-        public CalendarT(int _x, int _y, int _t)
+        public CalendarT(int _x, int _rx, int _y, int _t)
         {
             x = _x;
+            rx = _rx;
             y = _y;
             t = _t;
             v = _t.ToString().PadLeft(2, '0');
@@ -1584,9 +1519,9 @@ namespace AntdUI
         public Rectangle rect { get; set; }
         public Rectangle rect_read { get; set; }
 
-        internal bool Contains(Point point, float x, float y, out bool change)
+        internal bool Contains(int x, int y, float sx, float sy, out bool change)
         {
-            if (rect.Contains(point.X + (int)x, point.Y + (int)y))
+            if (rect.Contains(x + (int)sx, y + (int)sy))
             {
                 change = SetHover(true);
                 return true;
@@ -1614,6 +1549,7 @@ namespace AntdUI
         }
 
         public int x { get; set; }
+        public int rx { get; set; }
         public int y { get; set; }
         public int t { get; set; }
         public string v { get; set; }
@@ -1631,9 +1567,9 @@ namespace AntdUI
         public Rectangle rect_read { get; set; }
         public Rectangle rect_text { get; set; }
 
-        internal bool Contains(Point point, float x, float y, out bool change)
+        internal bool Contains(int x, int y, float sx, float sy, out bool change)
         {
-            if (rect.Contains(point.X + (int)x, point.Y + (int)y))
+            if (rect.Contains(x + (int)sx, y + (int)sy))
             {
                 change = SetHover(true);
                 return true;
@@ -1661,7 +1597,7 @@ namespace AntdUI
         }
 
         public int y { get; set; }
-        public string v { get; set; }
+        public string? v { get; set; }
         public object Tag { get; set; }
     }
 }

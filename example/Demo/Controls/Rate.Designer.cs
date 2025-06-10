@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,21 +43,16 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Rate));
             header1 = new AntdUI.PageHeader();
             panel1 = new System.Windows.Forms.Panel();
+            rate6 = new AntdUI.Rate();
+            rate5 = new AntdUI.Rate();
             rate4 = new AntdUI.Rate();
             rate3 = new AntdUI.Rate();
             rate2 = new AntdUI.Rate();
             rate1 = new AntdUI.Rate();
-            rate5 = new AntdUI.Rate();
-            rate6 = new AntdUI.Rate();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -66,6 +61,8 @@ namespace Demo.Controls
             header1.Description = "评分组件。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Rate.Description";
+            header1.LocalizationText = "Rate.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -89,10 +86,36 @@ namespace Demo.Controls
             panel1.Size = new Size(614, 372);
             panel1.TabIndex = 0;
             // 
+            // rate6
+            // 
+            rate6.AllowHalf = true;
+            rate6.Character = "牛皮";
+            rate6.Dock = DockStyle.Top;
+            rate6.Fill = Color.FromArgb(3, 169, 244);
+            rate6.LocalizationCharacter = "Rate.{id}";
+            rate6.Location = new Point(0, 189);
+            rate6.Name = "rate6";
+            rate6.Size = new Size(614, 75);
+            rate6.TabIndex = 5;
+            rate6.Text = "rate6";
+            rate6.Value = 2.5F;
+            // 
+            // rate5
+            // 
+            rate5.Character = "好";
+            rate5.Dock = DockStyle.Top;
+            rate5.Fill = Color.FromArgb(255, 87, 34);
+            rate5.LocalizationCharacter = "Rate.{id}";
+            rate5.Location = new Point(0, 136);
+            rate5.Name = "rate5";
+            rate5.Size = new Size(614, 53);
+            rate5.TabIndex = 4;
+            rate5.Text = "rate5";
+            rate5.Value = 2F;
+            // 
             // rate4
             // 
             rate4.AllowHalf = true;
-            rate4.Character = resources.GetString("rate4.Character");
             rate4.Dock = DockStyle.Top;
             rate4.Fill = Color.Salmon;
             rate4.Location = new Point(0, 90);
@@ -115,7 +138,6 @@ namespace Demo.Controls
             // 
             // rate2
             // 
-            rate2.Character = resources.GetString("rate2.Character");
             rate2.Dock = DockStyle.Top;
             rate2.Location = new Point(0, 30);
             rate2.Name = "rate2";
@@ -133,36 +155,11 @@ namespace Demo.Controls
             rate1.TabIndex = 0;
             rate1.Text = "rate1";
             // 
-            // rate5
-            // 
-            rate5.Character = "好";
-            rate5.Dock = DockStyle.Top;
-            rate5.Fill = Color.FromArgb(255, 87, 34);
-            rate5.Location = new Point(0, 136);
-            rate5.Name = "rate5";
-            rate5.Size = new Size(614, 53);
-            rate5.TabIndex = 4;
-            rate5.Text = "rate5";
-            rate5.Value = 2F;
-            // 
-            // rate6
-            // 
-            rate6.AllowHalf = true;
-            rate6.Character = "牛皮";
-            rate6.Dock = DockStyle.Top;
-            rate6.Fill = Color.FromArgb(3, 169, 244);
-            rate6.Location = new Point(0, 189);
-            rate6.Name = "rate6";
-            rate6.Size = new Size(614, 75);
-            rate6.TabIndex = 5;
-            rate6.Text = "rate6";
-            rate6.Value = 2.5F;
-            // 
             // Rate
             // 
             Controls.Add(panel1);
             Controls.Add(header1);
-            Font = new Font("Microsoft YaHei UI", 16F);
+            Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Rate";
             Size = new Size(614, 446);
             panel1.ResumeLayout(false);
@@ -170,6 +167,7 @@ namespace Demo.Controls
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
         private System.Windows.Forms.Panel panel1;
         private AntdUI.Rate rate4;

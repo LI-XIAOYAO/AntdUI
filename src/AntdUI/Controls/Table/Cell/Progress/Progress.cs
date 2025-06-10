@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -33,6 +33,8 @@ namespace AntdUI
         {
             _value = value;
         }
+
+        #region 属性
 
         Color? back;
         /// <summary>
@@ -111,9 +113,60 @@ namespace AntdUI
             }
         }
 
-        public override string ToString()
+        /// <summary>
+        /// 大小
+        /// </summary>
+        public Size? Size { get; set; }
+
+        #endregion
+
+        #region 设置
+
+        public CellProgress SetBack(Color? value)
         {
-            return (_value * 100F) + "%";
+            back = value;
+            return this;
         }
+        public CellProgress SetFill(Color? value)
+        {
+            fill = value;
+            return this;
+        }
+        public CellProgress SetRadius(int value = 0)
+        {
+            radius = value;
+            return this;
+        }
+        public CellProgress SetShape(TShape value = TShape.Default)
+        {
+            shape = value;
+            return this;
+        }
+        public CellProgress SetValue(float value = 1F)
+        {
+            if (value < 0) value = 0;
+            else if (value > 1) value = 1;
+            _value = value;
+            return this;
+        }
+        public CellProgress SetSize(Size? value)
+        {
+            Size = value;
+            return this;
+        }
+        public CellProgress SetSize(int width, int height)
+        {
+            Size = new Size(width, height);
+            return this;
+        }
+        public CellProgress SetSize(int size)
+        {
+            Size = new Size(size, size);
+            return this;
+        }
+
+        #endregion
+
+        public override string ToString() => (_value * 100F) + "%";
     }
 }

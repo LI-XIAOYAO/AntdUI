@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -24,9 +24,10 @@ using System.Windows.Forms;
 
 namespace AntdUI
 {
-    internal class LayeredFormFloatButton : ILayeredFormOpacity, IEventListener
+    internal class LayeredFormFloatButton : FormFloatButton, IEventListener
     {
-        FloatButton.Config config;
+        public override FloatButton.Config config { get; }
+
         int BadgeSize = 6, ShadowXY;
         public LayeredFormFloatButton(FloatButton.Config _config)
         {
@@ -77,11 +78,58 @@ namespace AntdUI
             config.Form.SizeChanged += Form_LSChanged;
         }
 
+        public override string name => nameof(FloatButton);
+
         private void Notify_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (sender == null || e.PropertyName == null) return;
-            Print();
+            if (e.PropertyName == "Loading")
+            {
+                var loading = HasLoading;
+                if (Loading == loading) return;
+                Loading = loading;
+                if (loading)
+                {
+                    ThreadLoading = new ITask(this, i =>
+                    {
+                        foreach (var it in config.Btns)
+                        {
+                            if (it.Loading) it.AnimationLoadingValue = i;
+                        }
+                        Print();
+                        return Loading;
+                    }, 10, 360, 6, () =>
+                    {
+                        Print();
+                    });
+                }
+                else
+                {
+                    ThreadLoading?.Dispose();
+                    ThreadLoading = null;
+                    Print();
+                }
+            }
+            else Print();
         }
+
+        #region Loading
+
+        bool Loading = false;
+        bool HasLoading
+        {
+            get
+            {
+                foreach (var it in config.Btns)
+                {
+                    if (it.Loading) return true;
+                }
+                return false;
+            }
+        }
+        ITask? ThreadLoading = null;
+
+        #endregion
 
         bool SetPoint()
         {
@@ -178,157 +226,132 @@ namespace AntdUI
                 {
                     using (var path = DrawShadow(g, it))
                     {
-                        Color back, back_hover, fore;
-                        switch (it.Type)
+                        if (it.Loading)
                         {
-                            case TTypeMini.Primary:
-                                back = Style.Db.Primary;
-                                back_hover = Style.Db.PrimaryHover;
-                                fore = Style.Db.PrimaryColor;
-                                break;
-                            case TTypeMini.Success:
-                                back = Style.Db.Success;
-                                back_hover = Style.Db.SuccessHover;
-                                fore = Style.Db.SuccessColor;
-                                break;
-                            case TTypeMini.Error:
-                                back = Style.Db.Error;
-                                back_hover = Style.Db.ErrorHover;
-                                fore = Style.Db.ErrorColor;
-                                break;
-                            case TTypeMini.Warn:
-                                back = Style.Db.Warning;
-                                back_hover = Style.Db.WarningHover;
-                                fore = Style.Db.WarningColor;
-                                break;
-                            case TTypeMini.Info:
-                                back = Style.Db.Info;
-                                back_hover = Style.Db.InfoHover;
-                                fore = Style.Db.InfoColor;
-                                break;
-                            default:
-                                back = Style.Db.BgElevated;
-                                back_hover = Style.Db.FillSecondary;
-                                fore = Style.Db.Text;
-                                break;
-                        }
-                        if (it.Fore.HasValue) fore = it.Fore.Value;
-
-                        using (var brush = new SolidBrush(back))
-                        {
-                            g.FillPath(brush, path);
-                        }
-                        if (it.hover)
-                        {
-                            using (var brush = new SolidBrush(back_hover))
+                            Color back, fore;
+                            switch (it.Type)
                             {
-                                g.FillPath(brush, path);
+                                case TTypeMini.Primary:
+                                    back = Colour.Primary.Get("FloatButton");
+                                    fore = Colour.PrimaryColor.Get("FloatButton");
+                                    break;
+                                case TTypeMini.Success:
+                                    back = Colour.Success.Get("FloatButton");
+                                    fore = Colour.SuccessColor.Get("FloatButton");
+                                    break;
+                                case TTypeMini.Error:
+                                    back = Colour.Error.Get("FloatButton");
+                                    fore = Colour.ErrorColor.Get("FloatButton");
+                                    break;
+                                case TTypeMini.Warn:
+                                    back = Colour.Warning.Get("FloatButton");
+                                    fore = Colour.WarningColor.Get("FloatButton");
+                                    break;
+                                case TTypeMini.Info:
+                                    back = Colour.Info.Get("FloatButton");
+                                    fore = Colour.InfoColor.Get("FloatButton");
+                                    break;
+                                default:
+                                    back = Colour.BgElevated.Get("FloatButton");
+                                    fore = Colour.Text.Get("FloatButton");
+                                    break;
+                            }
+                            if (it.Fore.HasValue) fore = it.Fore.Value;
+
+                            g.Fill(back, path);
+
+                            float loading_size = it.rect_read.Height * 0.06F;
+                            using (var pen = new Pen(Colour.Fill.Get("FloatButton"), loading_size))
+                            using (var brush = new Pen(fore, pen.Width))
+                            {
+                                g.DrawEllipse(pen, it.rect_icon);
+                                brush.StartCap = brush.EndCap = LineCap.Round;
+                                g.DrawArc(brush, it.rect_icon, it.AnimationLoadingValue, it.LoadingValue * 360F);
                             }
                         }
-                        if (it.IconSvg != null) g.GetImgExtend(it.IconSvg, it.rect_icon, fore);
-                        else if (it.Icon != null) g.DrawImage(it.Icon, it.rect_icon);
                         else
                         {
-                            using (var brush = new SolidBrush(fore))
+                            Color back, back_hover, fore;
+                            if (it.Enabled)
                             {
-                                g.DrawStr(it.Text, Font, brush, it.rect_read, stringCenter);
+                                switch (it.Type)
+                                {
+                                    case TTypeMini.Primary:
+                                        back = Colour.Primary.Get("FloatButton");
+                                        back_hover = Colour.PrimaryHover.Get("FloatButton");
+                                        fore = Colour.PrimaryColor.Get("FloatButton");
+                                        break;
+                                    case TTypeMini.Success:
+                                        back = Colour.Success.Get("FloatButton");
+                                        back_hover = Colour.SuccessHover.Get("FloatButton");
+                                        fore = Colour.SuccessColor.Get("FloatButton");
+                                        break;
+                                    case TTypeMini.Error:
+                                        back = Colour.Error.Get("FloatButton");
+                                        back_hover = Colour.ErrorHover.Get("FloatButton");
+                                        fore = Colour.ErrorColor.Get("FloatButton");
+                                        break;
+                                    case TTypeMini.Warn:
+                                        back = Colour.Warning.Get("FloatButton");
+                                        back_hover = Colour.WarningHover.Get("FloatButton");
+                                        fore = Colour.WarningColor.Get("FloatButton");
+                                        break;
+                                    case TTypeMini.Info:
+                                        back = Colour.Info.Get("FloatButton");
+                                        back_hover = Colour.InfoHover.Get("FloatButton");
+                                        fore = Colour.InfoColor.Get("FloatButton");
+                                        break;
+                                    default:
+                                        back = Colour.BgElevated.Get("FloatButton");
+                                        back_hover = Colour.FillSecondary.Get("FloatButton");
+                                        fore = Colour.Text.Get("FloatButton");
+                                        break;
+                                }
+                                if (it.Fore.HasValue) fore = it.Fore.Value;
                             }
+                            else
+                            {
+                                back = back_hover = Colour.FillTertiary.Get("FloatButton");
+                                fore = Colour.TextQuaternary.Get("FloatButton");
+                            }
+
+                            g.Fill(back, path);
+                            if (it.hover) g.Fill(back_hover, path);
+                            if (it.IconSvg != null) g.GetImgExtend(it.IconSvg, it.rect_icon, fore);
+                            else if (it.Icon != null) g.Image(it.Icon, it.rect_icon);
+                            else g.String(it.Text, Font, fore, it.rect_read, stringCenter);
                         }
-                        PrintBadge(g, it);
+                        it.PaintBadge(Font, it.rect_read, g, TAMode.Auto);
                     }
                 }
             }
             return original_bmp;
         }
 
-        readonly StringFormat stringBadge = Helper.SF_NoWrap();
-
-        void PrintBadge(Graphics g, FloatButton.ConfigBtn it)
-        {
-            if (it.Badge != null)
-            {
-                var color = it.BadgeBack ?? Style.Db.Error;
-
-                using (var brush_fore = new SolidBrush(Style.Db.ErrorColor))
-                {
-                    if (it.Badge == " ")
-                    {
-                        var rect_badge = new Rectangle(it.rect_read.Right - BadgeSize, it.rect_read.Y, BadgeSize, BadgeSize);
-                        using (var brush = new SolidBrush(color))
-                        {
-                            g.FillEllipse(brush, rect_badge);
-                            using (var pen = new Pen(brush_fore.Color, 1F))
-                            {
-                                g.DrawEllipse(pen, rect_badge);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        using (var font = new Font(Font.FontFamily, it.BadgeSize))
-                        {
-                            var size = g.MeasureString(it.Badge, font);
-                            float size_badge = size.Height * 1.2F, size_badge2 = size_badge * 0.4F;
-                            if (size.Height > size.Width)
-                            {
-                                var rect_badge = new RectangleF(it.rect_read.Right + size_badge2 - size_badge, it.rect_read.Y - size_badge2, size_badge, size_badge);
-                                using (var brush = new SolidBrush(color))
-                                {
-                                    g.FillEllipse(brush, rect_badge);
-                                    using (var pen = new Pen(brush_fore.Color, 1F))
-                                    {
-                                        g.DrawEllipse(pen, rect_badge);
-                                    }
-                                }
-                                g.DrawStr(it.Badge, font, brush_fore, rect_badge, stringBadge);
-                            }
-                            else
-                            {
-                                var w_badge = size.Width * 1.2F;
-                                var rect_badge = new RectangleF(it.rect_read.Right + size_badge2 - w_badge, it.rect_read.Y - size_badge2, w_badge, size_badge);
-                                using (var brush = new SolidBrush(color))
-                                {
-                                    using (var path = rect_badge.RoundPath(rect_badge.Height))
-                                    {
-                                        g.FillPath(brush, path);
-                                        using (var pen = new Pen(brush_fore.Color, 1F))
-                                        {
-                                            g.DrawPath(pen, path);
-                                        }
-                                    }
-                                }
-                                g.DrawStr(it.Badge, font, brush_fore, rect_badge, stringBadge);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
-        GraphicsPath DrawShadow(Graphics g, FloatButton.ConfigBtn it)
+        GraphicsPath DrawShadow(Canvas g, FloatButton.ConfigBtn it)
         {
             bool round = it.Round;
             float radius = round ? it.rect_read.Height : it.Radius * Config.Dpi;
             var path = Helper.RoundPath(it.rect_read, radius, round);
-            if (Config.ShadowEnabled)
+            if (Config.ShadowEnabled && it.Enabled)
             {
                 if (it.shadow_temp == null || (it.shadow_temp.Width != it.rect.Width || it.shadow_temp.Height != it.rect.Height))
                 {
                     it.shadow_temp?.Dispose();
                     using (var path2 = Helper.RoundPath(new Rectangle(ShadowXY, ShadowXY, it.rect_read.Width, it.rect_read.Height), radius, round))
                     {
-                        it.shadow_temp = path2.PaintShadow(it.rect.Width, it.rect.Height, 14);
+                        it.shadow_temp = path2.PaintShadowO(it.rect.Width, it.rect.Height, 14);
                     }
                 }
                 using (var attributes = new ImageAttributes())
                 {
                     var matrix = new ColorMatrix { Matrix33 = 0.2F };
                     attributes.SetColorMatrix(matrix, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-                    g.DrawImage(it.shadow_temp, new Rectangle(it.rect.X, it.rect.Y + 6, it.rect.Width, it.rect.Height), 0, 0, it.rect.Width, it.rect.Height, GraphicsUnit.Pixel, attributes);
+                    g.Image(it.shadow_temp, new Rectangle(it.rect.X, it.rect.Y + 6, it.rect.Width, it.rect.Height), 0, 0, it.rect.Width, it.rect.Height, GraphicsUnit.Pixel, attributes);
                 }
             }
             return path;
@@ -339,12 +362,13 @@ namespace AntdUI
         #region 鼠标
 
         TooltipForm? tooltipForm = null;
+
         protected override void OnMouseMove(MouseEventArgs e)
         {
             int count = 0, hand = 0;
             foreach (var it in config.Btns)
             {
-                if (it.rect.Contains(e.Location))
+                if (it.Enabled && !it.Loading && it.rect.Contains(e.Location))
                 {
                     hand++;
                     if (!it.hover)
@@ -398,7 +422,7 @@ namespace AntdUI
             {
                 foreach (var it in config.Btns)
                 {
-                    if (it.rect.Contains(e.Location))
+                    if (it.Enabled && !it.Loading && it.rect.Contains(e.Location))
                     {
                         config.Call.Invoke(it);
                         return;
@@ -420,9 +444,14 @@ namespace AntdUI
 
         protected override void Dispose(bool disposing)
         {
+            ThreadLoading?.Dispose();
             config.Form.LocationChanged -= Form_LSChanged;
             config.Form.SizeChanged -= Form_LSChanged;
-            foreach (var it in config.Btns) it.PropertyChanged -= Notify_PropertyChanged;
+            foreach (var it in config.Btns)
+            {
+                it.shadow_temp?.Dispose();
+                it.PropertyChanged -= Notify_PropertyChanged;
+            }
             base.Dispose(disposing);
         }
 
@@ -437,5 +466,10 @@ namespace AntdUI
         }
 
         #endregion
+    }
+
+    public abstract class FormFloatButton : ILayeredFormOpacity
+    {
+        public abstract FloatButton.Config config { get; }
     }
 }

@@ -1,4 +1,4 @@
-﻿// COPYRIGHT (C) Tom. ALL RIGHTS RESERVED.
+// COPYRIGHT (C) Tom. ALL RIGHTS RESERVED.
 // THE AntdUI PROJECT IS AN WINFORM LIBRARY LICENSED UNDER THE Apache-2.0 License.
 // LICENSED UNDER THE Apache License, VERSION 2.0 (THE "License")
 // YOU MAY NOT USE THIS FILE EXCEPT IN COMPLIANCE WITH THE License.
@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -33,10 +33,7 @@ namespace AntdUI
         /// <param name="control">所属控件</param>
         /// <param name="call">点击回调</param>
         /// <param name="items">内容</param>
-        public static Form? open(Control control, Action<ContextMenuStripItem> call, IContextMenuStripItem[] items, int sleep = 0)
-        {
-            return open(new Config(control, call, items, sleep));
-        }
+        public static Form? open(Control control, Action<ContextMenuStripItem> call, IContextMenuStripItem[] items, int sleep = 0) => open(new Config(control, call, items, sleep));
 
         /// <summary>
         /// ContextMenuStrip 右键菜单
@@ -62,15 +59,7 @@ namespace AntdUI
         {
             if (config.Control.IsHandleCreated)
             {
-                if (config.Control.InvokeRequired)
-                {
-                    Form? form = null;
-                    config.Control.Invoke(new Action(() =>
-                    {
-                        form = open(config);
-                    }));
-                    return form;
-                }
+                if (config.Control.InvokeRequired) return ITask.Invoke(config.Control, new Func<Form?>(() => open(config)));
                 var frm = new LayeredFormContextMenuStrip(config);
                 frm.Show(config.Control);
                 return frm;
@@ -154,7 +143,7 @@ namespace AntdUI
         /// <param name="text">文本</param>
         public ContextMenuStripItem(string text)
         {
-            Text = text;
+            _text = text;
         }
 
         /// <summary>
@@ -164,8 +153,8 @@ namespace AntdUI
         /// <param name="subtext">子文本</param>
         public ContextMenuStripItem(string text, string subtext)
         {
-            Text = text;
-            SubText = subtext;
+            _text = text;
+            subText = subtext;
         }
 
         /// <summary>
@@ -173,15 +162,35 @@ namespace AntdUI
         /// </summary>
         public string? ID { get; set; }
 
+        string _text;
         /// <summary>
         /// 文本
         /// </summary>
-        public string Text { get; set; }
+        public string Text
+        {
+            get => Localization.GetLangIN(LocalizationText, _text, new string?[] { "{id}", ID });
+            set => _text = value;
+        }
 
+        /// <summary>
+        /// 国际化（文本）
+        /// </summary>
+        public string? LocalizationText { get; set; }
+
+        string? subText = null;
         /// <summary>
         /// 子文本
         /// </summary>
-        public string? SubText { get; set; }
+        public string? SubText
+        {
+            get => Localization.GetLangI(LocalizationSubText, subText, new string?[] { "{id}", ID });
+            set => subText = value;
+        }
+
+        /// <summary>
+        /// 国际化（子文本）
+        /// </summary>
+        public string? LocalizationSubText { get; set; }
 
         /// <summary>
         /// 文字颜色
@@ -191,7 +200,7 @@ namespace AntdUI
         /// <summary>
         /// 图标
         /// </summary>
-        public Bitmap? Icon { get; set; }
+        public Image? Icon { get; set; }
 
         /// <summary>
         /// 图标SVG

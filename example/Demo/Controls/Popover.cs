@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -38,7 +38,7 @@ namespace Demo.Controls
 
         private void button2_Click(object sender, EventArgs e)
         {
-            AntdUI.Popover.open(button2, new Button(form) { Size = new Size(400, 300) });
+            AntdUI.Popover.open(new AntdUI.Popover.Config(button2, new Button(form) { Size = new Size(800, 300) }) { });
         }
 
         private void buttonTL_Click(object sender, EventArgs e)

@@ -1,4 +1,4 @@
-﻿[首页](Home.md)・[更新日志](UpdateLog.md)・[配置](Config.md)・[主题](Theme.md)・[SVG](SVG.md)
+﻿[首页](Home.md)・[更新日志](UpdateLog.md)・[配置](Config.md)・[主题](Theme.md)
 
 ## SelectItem
 
@@ -12,7 +12,9 @@
 **Icon** | 图标 | Image`?` |✅| `null` |
 **IconSvg** | 图标SVG | string`?` |✅| `null` |
 **Text** | 显示文本 | string |⛔| `必填` |
+🌏 **LocalizationText** | 国际化文本 | string`?` | `null` |
 **SubText** | 显示子文本 | string`?` |✅| `null` |
+🌏 **LocalizationSubText** | 国际化子文本 | string`?` | `null` |
 **Sub** | 子选项 ♾️ | `List<object>?` |✅| `null` |
 **Tag** | 原数据 | object |⛔| `必填` |
 |||||

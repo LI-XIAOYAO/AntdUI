@@ -11,11 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace AntdUI
@@ -37,7 +38,6 @@ namespace AntdUI
             set
             {
                 mode = value;
-                Style.Db = value == TMode.Light ? new Theme.Light() : new Theme.Dark();
                 EventHub.Dispatch(EventType.THEME, value);
             }
         }
@@ -63,15 +63,72 @@ namespace AntdUI
 
         #endregion
 
+        #region 动画使能
+
         /// <summary>
         /// 动画使能
         /// </summary>
         public static bool Animation { get; set; } = true;
 
+        internal static List<string>? AnimationData;
+
+        /// <summary>
+        /// 启用动画
+        /// </summary>
+        public static void EnableAnimation(params string[] controls)
+        {
+            if (AnimationData == null) return;
+            foreach (var it in controls) AnimationData.Remove(it);
+        }
+
+        /// <summary>
+        /// 禁用动画
+        /// </summary>
+        public static void DisableAnimation(params string[] controls)
+        {
+            if (AnimationData == null) AnimationData = new List<string>(controls);
+            else
+            {
+                foreach (var it in controls)
+                {
+                    if (AnimationData.Contains(it)) continue;
+                    AnimationData.Add(it);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 清除动画数据
+        /// </summary>
+        public static void ClearAnimationData() => AnimationData = null;
+
+        public static bool HasAnimation(string control)
+        {
+            if (Animation)
+            {
+                if (AnimationData == null) return true;
+                if (AnimationData.Contains(control)) return false;
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
         /// <summary>
         /// 触屏使能
         /// </summary>
         public static bool TouchEnabled { get; set; } = true;
+
+        /// <summary>
+        /// 触屏阈值
+        /// </summary>
+        public static int TouchThreshold { get; set; } = 20;
+
+        /// <summary>
+        /// 触屏点击使能
+        /// </summary>
+        public static bool TouchClickEnabled { get; set; }
 
         /// <summary>
         /// 阴影使能
@@ -103,14 +160,24 @@ namespace AntdUI
         public static int NoticeWindowOffsetXY { get; set; }
 
         /// <summary>
+        /// 通知满溢关闭
+        /// </summary>
+        public static bool NoticeOverflowClose { get; set; }
+
+        /// <summary>
         /// 文本呈现的质量
         /// </summary>
-        public static System.Drawing.Text.TextRenderingHint? TextRenderingHint { get; set; } = null;
+        public static System.Drawing.Text.TextRenderingHint? TextRenderingHint { get; set; }
+
+        /// <summary>
+        /// 文本高质量呈现
+        /// </summary>
+        public static bool TextRenderingHighQuality { get; set; }
 
         /// <summary>
         /// 默认字体
         /// </summary>
-        public static Font? Font { get; set; } = null;
+        public static Font? Font { get; set; }
 
         #region 滚动条
 
@@ -123,6 +190,11 @@ namespace AntdUI
         /// 滚动条最小大小Y
         /// </summary>
         public static int ScrollMinSizeY { get; set; } = 30;
+
+        /// <summary>
+        /// 滚动条的像素步长
+        /// </summary>
+        public static int ScrollStep { get; set; } = 80;
 
         #endregion
 
@@ -165,10 +237,7 @@ namespace AntdUI
             if (!_dpi_custom.HasValue) EventHub.Dispatch(EventType.DPI, dpi);
         }
 
-        internal static void SetDpi(Graphics g)
-        {
-            SetDpi(g.DpiX / 96F);
-        }
+        internal static void SetDpi(Graphics g) => SetDpi(g.DpiX / 96F);
 
         /// <summary>
         /// 设置修正文本渲染
@@ -178,5 +247,19 @@ namespace AntdUI
         {
             foreach (var it in families) CorrectionTextRendering.Set(it);
         }
+
+        #region 空白图
+
+        public static float EmptyImageRatio = 2.98F;
+        internal static string[]? EmptyImageSvg;
+        /// <summary>
+        /// 设置空白图片
+        /// </summary>
+        /// <param name="light">浅色</param>
+        /// <param name="dark">深色</param>
+        public static void SetEmptyImageSvg(string light, string dark) => EmptyImageSvg = new string[] { light, dark };
+        public static void ClearEmptyImageSvg() => EmptyImageSvg = null;
+
+        #endregion
     }
 }

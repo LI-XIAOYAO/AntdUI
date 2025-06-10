@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -36,14 +36,12 @@ namespace AntdUI
                 ControlStyles.OptimizedDoubleBuffer, true);
             UpdateStyles();
         }
+
         public void SetCursor(bool val)
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                {
-                    SetCursor(val);
-                }));
+                Invoke(() => SetCursor(val));
                 return;
             }
             Cursor = val ? Cursors.Hand : DefaultCursor;
@@ -87,7 +85,7 @@ namespace AntdUI
 
         internal void SetTheme()
         {
-            if (mode == TAMode.Dark || (mode == TAMode.Auto || Config.Mode == TMode.Dark)) DarkUI.UseImmersiveDarkMode(Handle, true);
+            if (mode == TAMode.Dark || (mode == TAMode.Auto && Config.Mode == TMode.Dark)) DarkUI.UseImmersiveDarkMode(Handle, true);
         }
 
         #endregion
@@ -111,15 +109,9 @@ namespace AntdUI
         /// <summary>
         /// 最小化
         /// </summary>
-        public virtual void Min()
-        {
-            WindowState = FormWindowState.Minimized;
-        }
+        public virtual void Min() => WindowState = FormWindowState.Minimized;
 
-        public virtual bool IsMax
-        {
-            get => WindowState == FormWindowState.Maximized;
-        }
+        public virtual bool IsMax => WindowState == FormWindowState.Maximized;
 
         /// <summary>
         /// 最大化/还原
@@ -199,10 +191,13 @@ namespace AntdUI
                 WindowState = FormWindowState.Normal;
                 RefreshDWM();
             }
+            else if (IsMax) MaxRestore();
         }
 
         #endregion
 
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public virtual bool AutoHandDpi { get; set; } = true;
 
         #region DPI
@@ -215,15 +210,9 @@ namespace AntdUI
             base.OnLoad(e);
         }
 
-        public void AutoDpi(Control control)
-        {
-            AutoDpi(Dpi(), control);
-        }
+        public void AutoDpi(Control control) => AutoDpi(Dpi(), control);
 
-        public void AutoDpi(float dpi, Control control)
-        {
-            Helper.DpiAuto(dpi, control);
-        }
+        public void AutoDpi(float dpi, Control control) => Helper.DpiAuto(dpi, control);
 
         #endregion
 
@@ -303,7 +292,7 @@ namespace AntdUI
                 is_resizable = true;
                 SetCursorHit(mode);
                 ReleaseCapture();
-                SendMessage(Handle, (uint)WindowMessage.WM_NCLBUTTONDOWN, (IntPtr)mode, Macros.MAKELPARAM(pointScreen.X, pointScreen.Y));
+                SendMessage(Handle, WindowMessage.WM_NCLBUTTONDOWN, mode, Macros.MAKELPARAM(pointScreen.X, pointScreen.Y));
                 is_resizable = false;
                 return true;
             }
@@ -321,7 +310,7 @@ namespace AntdUI
         public bool EnableHitTest { get; set; } = true;
         internal HitTestValues HitTest(Point point)
         {
-            if (EnableHitTest)
+            if (Window.CanHandMessage && EnableHitTest)
             {
                 float htSize = 8F * Config.Dpi, htSize2 = htSize * 2;
                 GetWindowRect(Handle, out var lpRect);
@@ -371,12 +360,47 @@ namespace AntdUI
 
         internal void LoadCursors(int id)
         {
-            var handle = LoadCursor(lpCursorName: Macros.MAKEINTRESOURCE(id));
-            var oldCursor = User32.SetCursor(handle);
-            oldCursor.Close();
+            var handle = LoadCursor(IntPtr.Zero, id);
+            if (handle == IntPtr.Zero) return;
+            User32.SetCursor(handle);
         }
 
         #endregion
+
+        #endregion
+
+        #region 按钮点击
+
+        internal Action? ONESC;
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            if (ONESC == null) return base.ProcessDialogKey(keyData);
+            if ((keyData & (Keys.Alt | Keys.Control)) == Keys.None)
+            {
+                Keys keyCode = keyData & Keys.KeyCode;
+                switch (keyCode)
+                {
+                    case Keys.Escape:
+                        ONESC();
+                        return true;
+                }
+            }
+            return base.ProcessDialogKey(keyData);
+        }
+
+        #endregion
+
+        #region 委托
+
+#if NET40 || NET46 || NET48
+
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public IAsyncResult BeginInvoke(Action method) => BeginInvoke(method, null);
+
+        public void Invoke(Action method) => _ = Invoke(method, null);
+        public T Invoke<T>(Func<T> method) => (T)Invoke(method, null);
+
+#endif
 
         #endregion
     }

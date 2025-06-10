@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -66,7 +66,7 @@ namespace AntdUI
         /// 是否列表自动宽度
         /// </summary>
         [Description("是否列表自动宽度"), Category("行为"), DefaultValue(false)]
-        public bool ListAutoWidth { get; set; } = false;
+        public bool ListAutoWidth { get; set; }
 
         /// <summary>
         /// 列表最多显示条数
@@ -75,10 +75,16 @@ namespace AntdUI
         public int MaxCount { get; set; } = 4;
 
         /// <summary>
+        /// 下拉圆角
+        /// </summary>
+        [Description("下拉圆角"), Category("外观"), DefaultValue(null)]
+        public int? DropDownRadius { get; set; }
+
+        /// <summary>
         /// 下拉箭头是否显示
         /// </summary>
         [Description("下拉箭头是否显示"), Category("外观"), DefaultValue(false)]
-        public bool DropDownArrow { get; set; } = false;
+        public bool DropDownArrow { get; set; }
 
         /// <summary>
         /// 下拉边距
@@ -87,16 +93,40 @@ namespace AntdUI
         public Size DropDownPadding { get; set; } = new Size(12, 5);
 
         /// <summary>
+        /// 下拉文本方向
+        /// </summary>
+        [Description("下拉文本方向"), Category("外观"), DefaultValue(TAlign.Left)]
+        public TAlign DropDownTextAlign { get; set; } = TAlign.Left;
+
+        /// <summary>
+        /// 下拉为空关闭
+        /// </summary>
+        [Description("下拉为空关闭"), Category("行为"), DefaultValue(false)]
+        public bool DropDownEmptyClose { get; set; }
+
+        /// <summary>
         /// 点击到最里层（无节点才能点击）
         /// </summary>
         [Description("点击到最里层（无节点才能点击）"), Category("行为"), DefaultValue(false)]
-        public bool ClickEnd { get; set; } = false;
+        public bool ClickEnd { get; set; }
 
         /// <summary>
         /// 点击切换下拉
         /// </summary>
         [Description("点击切换下拉"), Category("行为"), DefaultValue(true)]
         public bool ClickSwitchDropdown { get; set; } = true;
+
+        /// <summary>
+        /// 是否显示关闭图标
+        /// </summary>
+        [Description("是否显示关闭图标"), Category("行为"), DefaultValue(false)]
+        public bool CloseIcon { get; set; }
+
+        /// <summary>
+        /// 为空依旧下拉
+        /// </summary>
+        [Description("为空依旧下拉"), Category("外观"), DefaultValue(false)]
+        public bool Empty { get; set; }
 
         #region 数据
 
@@ -129,6 +159,7 @@ namespace AntdUI
             set
             {
                 if (selectedIndex == value) return;
+                TerminateExpand = true;
                 if (items == null || items.Count == 0 || value == -1) ChangeValueNULL();
                 else
                 {
@@ -137,6 +168,7 @@ namespace AntdUI
                     ChangeValue(value, obj);
                 }
                 if (_list) Invalidate();
+                OnPropertyChanged(nameof(SelectedIndex));
             }
         }
 
@@ -151,9 +183,11 @@ namespace AntdUI
             set
             {
                 if (selectedValue == value) return;
+                TerminateExpand = true;
                 if (value == null || items == null || items.Count == 0) ChangeValueNULL();
                 else SetChangeValue(items, value);
                 if (_list) Invalidate();
+                OnPropertyChanged(nameof(SelectedValue));
             }
         }
 
@@ -201,6 +235,22 @@ namespace AntdUI
                     ChangeValue(i, item);
                     return;
                 }
+                else if (item is SelectItem itp && itp.Sub != null && itp.Sub.Count > 0)
+                {
+                    foreach (var sub in itp.Sub)
+                    {
+                        if (val.Equals(sub))
+                        {
+                            ChangeValue(i, sub);
+                            return;
+                        }
+                        else if (sub is SelectItem it2 && it2.Tag.Equals(val))
+                        {
+                            ChangeValue(i, sub);
+                            return;
+                        }
+                    }
+                }
                 else if (item is GroupSelectItem group && group.Sub != null && group.Sub.Count > 0)
                 {
                     foreach (var sub in group.Sub)
@@ -243,21 +293,30 @@ namespace AntdUI
             selectedIndexX = 0;
             if (items == null || items.Count == 0) ChangeValueNULL();
             else ChangeValue(i, items[i]);
+            OnPropertyChanged(nameof(SelectedIndex));
+            OnPropertyChanged(nameof(SelectedValue));
             ExpandDrop = false;
             select_x = 0;
             subForm = null;
         }
 
-        internal bool DropDownChange()
-        {
-            return SelectedIndexsChanged == null;
-        }
+        internal bool DropDownChange() => SelectedIndexsChanged == null;
         internal void DropDownChange(int x, int y, object value)
         {
             ChangeValue(x, y, value);
+            OnPropertyChanged(nameof(SelectedIndex));
+            OnPropertyChanged(nameof(SelectedValue));
             ExpandDrop = false;
             select_x = 0;
             subForm = null;
+        }
+
+        internal bool DropDownClose(object value)
+        {
+            if (ClosedItem == null) return false;
+            if (value is SelectItem it) ClosedItem(this, new ObjectNEventArgs(it.Tag));
+            else ClosedItem(this, new ObjectNEventArgs(value));
+            return true;
         }
 
         #endregion
@@ -280,7 +339,14 @@ namespace AntdUI
         [Description("SelectedValue 属性值更改时发生"), Category("行为")]
         public event ObjectNEventHandler? SelectedValueChanged = null;
 
+        /// <summary>
+        /// 关闭某项 时发生
+        /// </summary>
+        [Description("关闭某项 时发生"), Category("行为")]
+        public event ObjectNEventHandler? ClosedItem = null;
+
         public delegate IList<object>? FilterEventHandler(object sender, string value);
+
         /// <summary>
         /// 控制筛选 Text更改时发生
         /// </summary>
@@ -294,7 +360,11 @@ namespace AntdUI
             base.OnTextChanged(e);
             if (HasFocus)
             {
-                if (TerminateExpand) { TerminateExpand = false; return; }
+                if (TerminateExpand)
+                {
+                    TerminateExpand = false;
+                    return;
+                }
                 filtertext = Text;
 
                 if (FilterChanged == null)
@@ -316,7 +386,7 @@ namespace AntdUI
                             {
                                 Items.AddRange(list);
                                 if (subForm == null) ShowLayeredForm(list);
-                                else subForm.TextChange(Text, list);
+                                else subForm.TextChange(list);
                             }
                         }
                     });
@@ -354,11 +424,11 @@ namespace AntdUI
             get => showicon;
         }
 
-        protected override void PaintRIcon(Graphics g, Rectangle rect_r)
+        protected override void PaintRIcon(Canvas g, Rectangle rect_r)
         {
             if (showicon)
             {
-                using (var pen = new Pen(Style.Db.TextQuaternary, 2F))
+                using (var pen = new Pen(Colour.TextQuaternary.Get("Select", ColorScheme), 2F))
                 {
                     pen.StartCap = pen.EndCap = LineCap.Round;
                     g.DrawLines(pen, rect_r.TriangleLines(ArrowProg));
@@ -378,14 +448,19 @@ namespace AntdUI
         ITask? ThreadExpand = null;
         float ArrowProg = -1F;
         bool expand = false;
-        bool Expand
+        /// <summary>
+        /// 箭头是否展开(UI)
+        /// </summary>
+        [Browsable(false)]
+        [Description("箭头是否展开(UI)"), Category("外观"), DefaultValue(false)]
+        public bool Expand
         {
             get => expand;
             set
             {
                 if (expand == value) return;
                 expand = value;
-                if (Config.Animation)
+                if (Config.HasAnimation(nameof(AntdUI.Select)))
                 {
                     ThreadExpand?.Dispose();
                     var t = Animation.TotalFrames(10, 100);
@@ -430,7 +505,9 @@ namespace AntdUI
         /// <summary>
         /// 展开下拉菜单
         /// </summary>
-        bool ExpandDrop
+        [Browsable(false)]
+        [Description("展开下拉菜单"), Category("行为"), DefaultValue(false)]
+        public bool ExpandDrop
         {
             get => expandDrop;
             set
@@ -441,8 +518,12 @@ namespace AntdUI
                 {
                     if (ReadOnly || items == null || items.Count == 0)
                     {
-                        subForm?.IClose();
-                        expandDrop = false;
+                        if (Empty && subForm == null) ShowLayeredForm(new List<object>(0));
+                        else
+                        {
+                            subForm?.IClose();
+                            expandDrop = false;
+                        }
                     }
                     else
                     {
@@ -466,7 +547,7 @@ namespace AntdUI
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new Action(() => { ShowLayeredForm(list); }));
+                BeginInvoke(() => ShowLayeredForm(list));
                 return;
             }
             Expand = true;
@@ -483,13 +564,17 @@ namespace AntdUI
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
+            var r = base.ProcessCmdKey(ref msg, keyData);
             switch (keyData)
             {
                 case Keys.Down:
                     ExpandDrop = true;
                     return true;
+                case Keys.Enter:
+                    ExpandDrop = true;
+                    break;
             }
-            return base.ProcessCmdKey(ref msg, keyData);
+            return r;
         }
         protected override void OnLostFocus(EventArgs e)
         {
@@ -566,12 +651,12 @@ namespace AntdUI
 
         public SelectItem(object tag)
         {
-            Text = tag.ToString() ?? string.Empty;
+            _text = tag.ToString() ?? string.Empty;
             Tag = tag;
         }
         public SelectItem(string text, object tag)
         {
-            Text = text;
+            _text = text;
             Tag = tag;
         }
         /// <summary>
@@ -582,19 +667,45 @@ namespace AntdUI
         /// 在线自定义颜色
         /// </summary>
         public Color? OnlineCustom { get; set; }
+
         public Image? Icon { get; set; }
+
         public string? IconSvg { get; set; }
-        public string Text { get; set; }
+
+        string _text;
+        /// <summary>
+        /// 文本
+        /// </summary>
+        public string Text
+        {
+            get => Localization.GetLangIN(LocalizationText, _text, new string?[] { "{id}", Tag.ToString() });
+            set => _text = value;
+        }
+
+        /// <summary>
+        /// 国际化（文本）
+        /// </summary>
+        public string? LocalizationText { get; set; }
 
         /// <summary>
         /// 是否启用
         /// </summary>
         public bool Enable { get; set; } = true;
 
+        string? subText = null;
         /// <summary>
         /// 子文本
         /// </summary>
-        public string? SubText { get; set; }
+        public string? SubText
+        {
+            get => Localization.GetLangI(LocalizationSubText, subText, new string?[] { "{id}", Tag.ToString() });
+            set => subText = value;
+        }
+
+        /// <summary>
+        /// 国际化（子文本）
+        /// </summary>
+        public string? LocalizationSubText { get; set; }
 
         /// <summary>
         /// 子选项
@@ -602,6 +713,30 @@ namespace AntdUI
         public IList<object>? Sub { get; set; }
 
         public object Tag { get; set; }
+
+        #region 标签
+
+        /// <summary>
+        /// 文字颜色
+        /// </summary>
+        public Color? Fore { get; set; }
+
+        /// <summary>
+        /// 子文字颜色
+        /// </summary>
+        public Color? ForeSub { get; set; }
+
+        /// <summary>
+        /// 激活背景颜色
+        /// </summary>
+        public Color? BackActive { get; set; }
+
+        /// <summary>
+        /// 激活背景渐变色
+        /// </summary>
+        public string? BackActiveExtend { get; set; }
+
+        #endregion
 
         #region 标签
 
@@ -628,10 +763,23 @@ namespace AntdUI
     {
         public GroupSelectItem(string title)
         {
-            Title = title;
+            _title = title;
         }
 
-        public string Title { get; set; }
+        string _title;
+        /// <summary>
+        /// 文本
+        /// </summary>
+        public string Title
+        {
+            get => Localization.GetLangIN(LocalizationTitle, _title);
+            set => _title = value;
+        }
+
+        /// <summary>
+        /// 国际化（文本）
+        /// </summary>
+        public string? LocalizationTitle { get; set; }
 
         /// <summary>
         /// 子选项
@@ -640,42 +788,69 @@ namespace AntdUI
 
         public object? Tag { get; set; }
 
-        public override string ToString()
-        {
-            return Title;
-        }
+        public override string ToString() => Title;
     }
     public class ISelectItem { }
 
-    internal class ObjectItem
+    public class iItemSearchWeigth
     {
-        public ObjectItem(object _val, int _i, Rectangle rect, Rectangle rect_text)
+        public iItemSearchWeigth(int weigth, object value)
+        {
+            Weight = weigth;
+            Value = value;
+        }
+        public int Weight { get; set; }
+        public virtual object Value { get; set; }
+    }
+    public class ItemSearchWeigth<T> : iItemSearchWeigth
+    {
+        public ItemSearchWeigth(int weigth, T value) : base(weigth, value!)
+        {
+            Value = value;
+        }
+        public new T Value { get; set; }
+    }
+
+    internal class ObjectItem : SelectItem
+    {
+        public ObjectItem(object _val, int _i, Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2) : base(_val)
         {
             Show = true;
             Val = _val;
             Text = _val.ToString() ?? string.Empty;
-            PY = Pinyin.GetPinyin(Text).ToLower();
-            PYS = Pinyin.GetInitials(Text).ToLower();
             ID = _i;
-            SetRect(rect, rect_text);
+            SetRectBase(rect, rect_text, closeIcon, gap_x, gap_x2, gap_y, gap_y2);
+            string pinyin = Text;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
         }
 
-        public ObjectItem(GroupSelectItem _val, int _i, Rectangle rect, Rectangle rect_text)
+        public ObjectItem(GroupSelectItem _val, int _i, Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2) : base(_val)
         {
             Show = Group = true;
             Val = _val;
             Text = _val.Title;
-            PY = Pinyin.GetPinyin(Text).ToLower();
-            PYS = Pinyin.GetInitials(Text).ToLower();
             ID = _i;
-            SetRect(rect, rect_text);
+            SetRectBase(rect, rect_text, closeIcon, gap_x, gap_x2, gap_y, gap_y2);
+            string pinyin = Text;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
         }
 
-        public ObjectItem(SelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        public ObjectItem(SelectItem _val, int _i, Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2) : this(_val)
         {
-            Sub = _val.Sub;
-            if (Sub != null && Sub.Count > 0) has_sub = true;
-            Show = true;
+            ID = _i;
+            SetRect(rect, rect_text, closeIcon, gap_x, gap_x2, gap_y, gap_y2);
+        }
+
+        public ObjectItem(SelectItem _val) : base(_val)
+        {
             Val = _val;
             Online = _val.Online;
             OnlineCustom = _val.OnlineCustom;
@@ -684,62 +859,46 @@ namespace AntdUI
             Text = _val.Text;
             SubText = _val.SubText;
             Enable = _val.Enable;
-            PY = Pinyin.GetPinyin(_val.Text + _val.SubText).ToLower();
-            PYS = Pinyin.GetInitials(_val.Text + _val.SubText).ToLower();
-            ID = _i;
-            SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+            Sub = _val.Sub;
+            if (Sub != null && Sub.Count > 0) has_sub = true;
+            Tag = _val.Tag;
+            TagBack = _val.TagBack;
+            TagBackExtend = _val.TagBackExtend;
+            TagFore = _val.TagFore;
+            Fore = _val.Fore;
+            ForeSub = _val.ForeSub;
+            BackActive = _val.BackActive;
+            BackActiveExtend = _val.BackActiveExtend;
+            string pinyin = _val.Text + _val.SubText;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
+            Show = true;
         }
 
-        public ObjectItem(Rectangle rect)
+        public ObjectItem(Rectangle rect) : base(-1)
         {
             ID = -1;
             Rect = rect;
             Show = true;
+            PY = new string[0];
         }
         public object Val { get; set; }
 
-        /// <summary>
-        /// 是否启用
-        /// </summary>
-        public bool Enable { get; set; } = true;
-
-        /// <summary>
-        /// 子选项
-        /// </summary>
-        public IList<object>? Sub { get; set; }
         internal bool has_sub { get; set; }
-
-        /// <summary>
-        /// 在线状态
-        /// </summary>
-        public int? Online { get; set; }
-        /// <summary>
-        /// 在线自定义颜色
-        /// </summary>
-        public Color? OnlineCustom { get; set; }
-
-        public Image? Icon { get; set; }
-        public string? IconSvg { get; set; }
 
         /// <summary>
         /// 是否包含图标
         /// </summary>
-        public bool HasIcon
-        {
-            get => IconSvg != null || Icon != null;
-        }
+        public bool HasIcon => IconSvg != null || Icon != null;
 
         public Rectangle RectIcon { get; set; }
         public Rectangle RectOnline { get; set; }
 
-        string PY { get; set; }
-        string PYS { get; set; }
-        public string? SubText { get; set; }
-        public string Text { get; set; }
-        public bool Contains(string val)
-        {
-            return Text.Contains(val) || PY.Contains(val) || PYS.Contains(val);
-        }
+        string[] PY { get; set; }
+        public int Contains(string val, out bool select) => Helper.SearchContains(val, Text, PY, out select);
 
         public int ID { get; set; }
 
@@ -751,43 +910,58 @@ namespace AntdUI
         internal bool ShowAndID => ID == -1 || !Show;
 
         internal Rectangle RectArrow { get; set; }
-
+        internal Rectangle RectClose { get; set; }
+        internal Rectangle RectCloseIcon { get; set; }
+        internal bool HoverClose { get; set; }
         public Rectangle Rect { get; set; }
 
-        internal void SetRect(Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        internal void SetRectAuto(Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2)
         {
-            Rect = rect;
-            if (Val is SelectItem)
-            {
-                if (Online > -1 || HasIcon)
-                {
-                    if (Online > -1 && HasIcon)
-                    {
-                        RectOnline = new Rectangle(rect_text.X - gap_y / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
-                        RectIcon = new Rectangle(rect_text.X + gap_y2, rect_text.Y, rect_text.Height, rect_text.Height);
-                        RectText = new Rectangle(rect_text.X + gap_y + gap_y2 + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height - gap_y - gap_y2, rect_text.Height);
-                    }
-                    else if (Online > -1)
-                    {
-                        RectOnline = new Rectangle(rect_text.X - gap_y / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
-                        RectText = new Rectangle(rect_text.X + gap_y2, rect_text.Y, rect_text.Width - gap_y2, rect_text.Height);
-                    }
-                    else
-                    {
-                        RectIcon = new Rectangle(rect.X + gap_x / 2, rect_text.Y, rect_text.Height, rect_text.Height);
-                        RectText = new Rectangle(rect_text.X + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height, rect_text.Height);
-                    }
-                }
-                else RectText = rect_text;
-                RectArrow = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
-            }
-            else RectText = rect_text;
+            if (Val is SelectItem) SetRect(rect, rect_text, closeIcon, gap_x, gap_x2, gap_y, gap_y2);
+            else SetRectBase(rect, rect_text, closeIcon, gap_x, gap_x2, gap_y, gap_y2);
         }
 
-        internal void SetRect(Rectangle rect, Rectangle rect_text)
+        internal void SetRect(Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        {
+            Rect = rect;
+            if (Online > -1 || HasIcon)
+            {
+                if (Online > -1 && HasIcon)
+                {
+                    RectOnline = new Rectangle(rect_text.X - gap_y / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
+                    RectIcon = new Rectangle(rect_text.X + gap_y2, rect_text.Y, rect_text.Height, rect_text.Height);
+                    RectText = new Rectangle(rect_text.X + gap_y + gap_y2 + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height - gap_y - gap_y2, rect_text.Height);
+                }
+                else if (Online > -1)
+                {
+                    RectOnline = new Rectangle(rect_text.X - gap_y / 2, rect_text.Y + (rect_text.Height - gap_y) / 2, gap_y, gap_y);
+                    RectText = new Rectangle(rect_text.X + gap_y2, rect_text.Y, rect_text.Width - gap_y2, rect_text.Height);
+                }
+                else
+                {
+                    RectIcon = new Rectangle(rect.X + gap_x / 2, rect_text.Y, rect_text.Height, rect_text.Height);
+                    RectText = new Rectangle(rect_text.X + rect_text.Height, rect_text.Y, rect_text.Width - rect_text.Height, rect_text.Height);
+                }
+            }
+            else RectText = rect_text;
+            RectArrow = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
+            if (closeIcon)
+            {
+                RectClose = new Rectangle(RectArrow.X + gap_y, RectArrow.Y + gap_y, RectArrow.Width - gap_y2, RectArrow.Height - gap_y2);
+                RectCloseIcon = new Rectangle(RectClose.X + gap_y, RectClose.Y + gap_y, RectClose.Width - gap_y2, RectClose.Height - gap_y2);
+            }
+        }
+
+        internal void SetRectBase(Rectangle rect, Rectangle rect_text, bool closeIcon, int gap_x, int gap_x2, int gap_y, int gap_y2)
         {
             Rect = rect;
             RectText = rect_text;
+            RectArrow = new Rectangle(Rect.Right - Rect.Height - gap_y, Rect.Y, Rect.Height, Rect.Height);
+            if (closeIcon)
+            {
+                RectClose = new Rectangle(RectArrow.X + gap_y, RectArrow.Y + gap_y, RectArrow.Width - gap_y2, RectArrow.Height - gap_y2);
+                RectCloseIcon = new Rectangle(RectClose.X + gap_y, RectClose.Y + gap_y, RectClose.Width - gap_y2, RectClose.Height - gap_y2);
+            }
         }
 
         internal bool SetHover(bool val)
@@ -805,9 +979,9 @@ namespace AntdUI
             }
             return change;
         }
-        internal bool Contains(Point point, int x, int y, out bool change)
+        internal bool Contains(int x, int y, int sx, int sy, out bool change)
         {
-            if (ID > -1 && Rect.Contains(point.X + x, point.Y + y))
+            if (ID > -1 && Rect.Contains(x + sx, y + sy))
             {
                 change = SetHover(true);
                 return true;
@@ -819,34 +993,42 @@ namespace AntdUI
             }
         }
 
-        public RectangleF RectText { get; set; }
+        public Rectangle RectText { get; set; }
     }
 
-    internal class ObjectItemCheck
+    internal class ObjectItemCheck : SelectItem
     {
-        public ObjectItemCheck(object _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        public ObjectItemCheck(object _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2) : base(_val)
         {
             Show = true;
             Val = _val;
             Text = _val.ToString() ?? string.Empty;
-            PY = Pinyin.GetPinyin(Text).ToLower();
-            PYS = Pinyin.GetInitials(Text).ToLower();
             ID = _i;
             SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+            string pinyin = Text;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
         }
 
-        public ObjectItemCheck(GroupSelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        public ObjectItemCheck(GroupSelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2) : base(_val)
         {
             Show = Group = true;
             Val = _val;
             Text = _val.Title;
-            PY = Pinyin.GetPinyin(Text).ToLower();
-            PYS = Pinyin.GetInitials(Text).ToLower();
             ID = _i;
             SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+            string pinyin = Text;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
         }
 
-        public ObjectItemCheck(SelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2)
+        public ObjectItemCheck(SelectItem _val, int _i, Rectangle rect, Rectangle rect_text, int gap_x, int gap_x2, int gap_y, int gap_y2) : this(_val)
         {
             Sub = _val.Sub;
             if (Sub != null && Sub.Count > 0) has_sub = true;
@@ -859,62 +1041,74 @@ namespace AntdUI
             Text = _val.Text;
             SubText = _val.SubText;
             Enable = _val.Enable;
-            PY = Pinyin.GetPinyin(_val.Text + _val.SubText).ToLower();
-            PYS = Pinyin.GetInitials(_val.Text + _val.SubText).ToLower();
             ID = _i;
             SetRect(rect, rect_text, gap_x, gap_x2, gap_y, gap_y2);
+            string pinyin = _val.Text + _val.SubText;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
         }
 
-        public ObjectItemCheck(Rectangle rect)
+        public ObjectItemCheck(SelectItem _val) : base(_val)
+        {
+            Val = _val;
+            Online = _val.Online;
+            OnlineCustom = _val.OnlineCustom;
+            Icon = _val.Icon;
+            IconSvg = _val.IconSvg;
+            Text = _val.Text;
+            SubText = _val.SubText;
+            Enable = _val.Enable;
+            Sub = _val.Sub;
+            if (Sub != null && Sub.Count > 0) has_sub = true;
+            Tag = _val.Tag;
+            TagBack = _val.TagBack;
+            TagBackExtend = _val.TagBackExtend;
+            TagFore = _val.TagFore;
+            Fore = _val.Fore;
+            ForeSub = _val.ForeSub;
+            BackActive = _val.BackActive;
+            BackActiveExtend = _val.BackActiveExtend;
+            string pinyin = _val.Text + _val.SubText;
+            PY = new string[] {
+                pinyin.ToLower(),
+                Pinyin.GetPinyin(pinyin).ToLower(),
+                Pinyin.GetInitials(pinyin).ToLower()
+            };
+            Show = true;
+        }
+
+        public ObjectItemCheck(Rectangle rect) : base(-1)
         {
             ID = -1;
             Rect = rect;
             Show = true;
+            PY = new string[0];
         }
+
         public object Val { get; set; }
 
-        /// <summary>
-        /// 是否启用
-        /// </summary>
-        public bool Enable { get; set; } = true;
-
-        /// <summary>
-        /// 子选项
-        /// </summary>
-        public IList<object>? Sub { get; set; }
         internal bool has_sub { get; set; }
-
-        /// <summary>
-        /// 在线状态
-        /// </summary>
-        public int? Online { get; set; }
-        /// <summary>
-        /// 在线自定义颜色
-        /// </summary>
-        public Color? OnlineCustom { get; set; }
-
-        public Image? Icon { get; set; }
-        public string? IconSvg { get; set; }
 
         /// <summary>
         /// 是否包含图标
         /// </summary>
-        public bool HasIcon
-        {
-            get => IconSvg != null || Icon != null;
-        }
+        public bool HasIcon => IconSvg != null || Icon != null;
 
         public Rectangle RectIcon { get; set; }
         public Rectangle RectOnline { get; set; }
         public Rectangle RectCheck { get; set; }
 
-        string PY { get; set; }
-        string PYS { get; set; }
-        public string? SubText { get; set; }
-        public string Text { get; set; }
+        string[] PY { get; set; }
         public bool Contains(string val)
         {
-            return Text.Contains(val) || PY.Contains(val) || PYS.Contains(val);
+            foreach (var pinyin in PY)
+            {
+                if (pinyin.Contains(val)) return true;
+            }
+            return false;
         }
 
         public int ID { get; set; }
@@ -983,9 +1177,9 @@ namespace AntdUI
             }
             return change;
         }
-        internal bool Contains(Point point, int x, int y, out bool change)
+        internal bool Contains(int x, int y, int sx, int sy, out bool change)
         {
-            if (ID > -1 && Rect.Contains(point.X + x, point.Y + y))
+            if (ID > -1 && Rect.Contains(x + sx, y + sy))
             {
                 change = SetHover(true);
                 return true;
@@ -997,7 +1191,7 @@ namespace AntdUI
             }
         }
 
-        public RectangleF RectText { get; set; }
+        public Rectangle RectText { get; set; }
         public Rectangle RectArrow { get; set; }
     }
 }

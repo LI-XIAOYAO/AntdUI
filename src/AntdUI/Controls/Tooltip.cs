@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -37,14 +37,14 @@ namespace AntdUI
     {
         #region 参数
 
-        string text = null;
+        string? text = null;
         /// <summary>
         /// 文本
         /// </summary>
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public override string? Text
         {
-            get => text;
+            get => this.GetLangI(LocalizationText, text);
             set
             {
                 if (text == value) return;
@@ -52,6 +52,9 @@ namespace AntdUI
                 Invalidate();
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         int radius = 6;
         /// <summary>
@@ -96,7 +99,7 @@ namespace AntdUI
         {
             var rect = ClientRectangle;
             var g = e.Graphics.High();
-            MaximumSize = MinimumSize = this.RenderMeasure(g, out var multiline);
+            MaximumSize = MinimumSize = this.RenderMeasure(g, null, out var multiline);
             this.Render(g, rect, multiline, s_c, s_l);
             base.OnPaint(e);
         }
@@ -111,10 +114,7 @@ namespace AntdUI
         /// <param name="control">所属控件</param>
         /// <param name="text">文本</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, string text, TAlign ArrowAlign = TAlign.Top)
-        {
-            return open(new Config(control, text) { ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, string text, TAlign ArrowAlign = TAlign.Top) => open(new Config(control, text) { ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Tooltip 文字提示
@@ -123,10 +123,7 @@ namespace AntdUI
         /// <param name="text">文本</param>
         /// <param name="rect">偏移量</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, string text, Rectangle rect, TAlign ArrowAlign = TAlign.Top)
-        {
-            return open(new Config(control, text) { Offset = rect, ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, string text, Rectangle rect, TAlign ArrowAlign = TAlign.Top) => open(new Config(control, text) { Offset = rect, ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Tooltip 文字提示
@@ -136,15 +133,7 @@ namespace AntdUI
         {
             if (config.Control.IsHandleCreated)
             {
-                if (config.Control.InvokeRequired)
-                {
-                    Form? form = null;
-                    config.Control.Invoke(new Action(() =>
-                    {
-                        form = open(config);
-                    }));
-                    return form;
-                }
+                if (config.Control.InvokeRequired) return ITask.Invoke(config.Control, new Func<Form?>(() => open(config)));
                 var tip = new TooltipForm(config.Control, config.Text, config);
                 tip.Show(config.Control);
                 return tip;
@@ -161,7 +150,7 @@ namespace AntdUI
             /// Tooltip 配置
             /// </summary>
             /// <param name="control">所属控件</param>
-            /// <param name="content">文本</param>
+            /// <param name="text">文本</param>
             public Config(Control control, string text)
             {
                 Font = control.Font;
@@ -177,7 +166,7 @@ namespace AntdUI
             /// <summary>
             /// 偏移量
             /// </summary>
-            public object? Offset { get; set; } = null;
+            public object? Offset { get; set; }
 
             /// <summary>
             /// 字体
@@ -217,6 +206,7 @@ namespace AntdUI
     {
         readonly Control? ocontrol = null;
         bool multiline = false;
+        int? maxWidth;
         public TooltipForm(Control control, string txt, ITooltipConfig component)
         {
             ocontrol = control;
@@ -224,15 +214,15 @@ namespace AntdUI
             Text = txt;
             if (component.Font != null) Font = component.Font;
             else if (Config.Font != null) Font = Config.Font;
+            else Font = control.Font;
             ArrowSize = component.ArrowSize;
             Radius = component.Radius;
             ArrowAlign = component.ArrowAlign;
             CustomWidth = component.CustomWidth;
-            Helper.GDI(g =>
-            {
-                SetSize(this.RenderMeasure(g, out multiline));
-            });
             var point = control.PointToScreen(Point.Empty);
+            var screen = Screen.FromPoint(point).WorkingArea;
+            maxWidth = screen.Width;
+            Helper.GDI(g => SetSize(this.RenderMeasure(g, maxWidth, out multiline)));
             if (component is Tooltip.Config config)
             {
                 if (config.Offset is RectangleF rectf) SetLocation(ArrowAlign.AlignPoint(new Rectangle(point.X + (int)rectf.X, point.Y + (int)rectf.Y, (int)rectf.Width, (int)rectf.Height), TargetRect.Width, TargetRect.Height));
@@ -240,9 +230,11 @@ namespace AntdUI
                 else SetLocation(ArrowAlign.AlignPoint(point, control.Size, TargetRect.Width, TargetRect.Height));
             }
             else SetLocation(ArrowAlign.AlignPoint(point, control.Size, TargetRect.Width, TargetRect.Height));
-
             control.LostFocus += Control_LostFocus;
             control.MouseLeave += Control_LostFocus;
+            if (component.ArrowAlign == TAlign.Left || component.ArrowAlign == TAlign.Right || component.ArrowAlign == TAlign.RB || component.ArrowAlign == TAlign.RT || component.ArrowAlign == TAlign.LT || component.ArrowAlign == TAlign.LB) return;
+            if (TargetRect.X < screen.X) SetLocationX(screen.X);
+            else if (TargetRect.X > (screen.X + screen.Width) - TargetRect.Width) SetLocationX(screen.Right - TargetRect.Width);
         }
         public TooltipForm(Control control, Rectangle rect, string txt, ITooltipConfig component)
         {
@@ -251,32 +243,38 @@ namespace AntdUI
             Text = txt;
             if (component.Font != null) Font = component.Font;
             else if (Config.Font != null) Font = Config.Font;
+            else Font = control.Font;
             ArrowSize = component.ArrowSize;
             Radius = component.Radius;
             ArrowAlign = component.ArrowAlign;
             CustomWidth = component.CustomWidth;
+            var point = control.PointToScreen(Point.Empty);
+            var screen = Screen.FromPoint(point).WorkingArea;
+            maxWidth = screen.Width;
             Helper.GDI(g =>
             {
-                SetSize(this.RenderMeasure(g, out multiline));
+                SetSize(this.RenderMeasure(g, maxWidth, out multiline));
             });
             SetLocation(ArrowAlign.AlignPoint(rect, TargetRect));
+            if (component.ArrowAlign == TAlign.Left || component.ArrowAlign == TAlign.Right || component.ArrowAlign == TAlign.RB || component.ArrowAlign == TAlign.RT || component.ArrowAlign == TAlign.LT || component.ArrowAlign == TAlign.LB) return;
+            if (TargetRect.X < screen.X) SetLocationX(screen.X);
+            else if (TargetRect.X > (screen.X + screen.Width) - TargetRect.Width) SetLocationX(screen.Right - TargetRect.Width);
         }
+
+        public override string name => nameof(Tooltip);
 
         public void SetText(Rectangle rect, string text)
         {
             Text = text;
             Helper.GDI(g =>
             {
-                SetSize(this.RenderMeasure(g, out multiline));
+                SetSize(this.RenderMeasure(g, maxWidth, out multiline));
             });
             SetLocation(ArrowAlign.AlignPoint(rect, TargetRect));
             Print();
         }
 
-        private void Control_LostFocus(object? sender, EventArgs e)
-        {
-            IClose();
-        }
+        private void Control_LostFocus(object? sender, EventArgs e) => IClose();
 
         #region 参数
 
@@ -342,7 +340,7 @@ namespace AntdUI
         /// 字体
         /// </summary>
         [Description("字体"), DefaultValue(null)]
-        public Font? Font { get; set; } = null;
+        public Font? Font { get; set; }
 
         /// <summary>
         /// 圆角
@@ -371,8 +369,10 @@ namespace AntdUI
         #endregion
 
         readonly Dictionary<Control, string> dic = new Dictionary<Control, string>();
+
         [Description("设置是否提示"), DefaultValue(null)]
         [Editor(typeof(System.ComponentModel.Design.MultilineStringEditor), typeof(UITypeEditor))]
+        [Localizable(true)]
         public string? GetTip(Control item)
         {
             if (dic.TryGetValue(item, out string? value)) return value;
@@ -434,17 +434,26 @@ namespace AntdUI
     {
         #region 渲染
 
-        public static Size RenderMeasure(this ITooltip core, Graphics g, out bool multiline)
+        public static Size RenderMeasure(this ITooltip core, Canvas g, int? maxWidth, out bool multiline)
         {
             multiline = core.Text.Contains("\n");
             int padding = (int)Math.Ceiling(20 * Config.Dpi);
-            var font_size = g.MeasureString(core.Text, core.Font).Size();
+            var font_size = g.MeasureText(core.Text, core.Font);
             if (core.CustomWidth.HasValue)
             {
                 int width = (int)Math.Ceiling(core.CustomWidth.Value * Config.Dpi);
                 if (font_size.Width > width)
                 {
-                    font_size = g.MeasureString(core.Text, core.Font, width).Size();
+                    font_size = g.MeasureText(core.Text, core.Font, width);
+                    multiline = true;
+                }
+            }
+            else if (maxWidth.HasValue)
+            {
+                int width = maxWidth.Value - padding;
+                if (font_size.Width > width)
+                {
+                    font_size = g.MeasureText(core.Text, core.Font, width);
                     multiline = true;
                 }
             }
@@ -454,7 +463,7 @@ namespace AntdUI
             else return new Size(font_size.Width + padding + core.ArrowSize, font_size.Height + padding);
         }
 
-        public static void Render(this ITooltip core, Graphics g, Rectangle rect, bool multiline, StringFormat s_c, StringFormat s_l)
+        public static void Render(this ITooltip core, Canvas g, Rectangle rect, bool multiline, StringFormat s_c, StringFormat s_l)
         {
             int gap = (int)Math.Ceiling(5 * Config.Dpi), padding = gap * 2, padding2 = padding * 2;
             using (var brush = new SolidBrush(Config.Mode == TMode.Dark ? Color.FromArgb(66, 66, 66) : Color.FromArgb(38, 38, 38)))
@@ -465,7 +474,7 @@ namespace AntdUI
                     using (var path = rect_read.RoundPath(core.Radius))
                     {
                         DrawShadow(core, g, rect, rect_read, 3, path);
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                     }
                     RenderText(core, g, rect_read, multiline, padding, padding2, s_c, s_l);
                 }
@@ -493,7 +502,7 @@ namespace AntdUI
                     using (var path = rect_read.RoundPath(core.Radius))
                     {
                         DrawShadow(core, g, rect, rect_read, 3, path);
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                     }
                     g.FillPolygon(brush, core.ArrowAlign.AlignLines(core.ArrowSize, rect, rect_read));
                     RenderText(core, g, rect_text, multiline, padding, padding2, s_c, s_l);
@@ -501,17 +510,17 @@ namespace AntdUI
             }
         }
 
-        static void RenderText(ITooltip core, Graphics g, Rectangle rect, bool multiline, int padding, int padding2, StringFormat s_c, StringFormat s_l)
+        static void RenderText(ITooltip core, Canvas g, Rectangle rect, bool multiline, int padding, int padding2, StringFormat s_c, StringFormat s_l)
         {
-            if (multiline) g.DrawStr(core.Text, core.Font, Brushes.White, new Rectangle(rect.X + padding, rect.Y + padding, rect.Width - padding2, rect.Height - padding2), s_l);
-            else g.DrawStr(core.Text, core.Font, Brushes.White, rect, s_c);
+            if (multiline) g.DrawText(core.Text, core.Font, Brushes.White, new Rectangle(rect.X + padding, rect.Y + padding, rect.Width - padding2, rect.Height - padding2), s_l);
+            else g.DrawText(core.Text, core.Font, Brushes.White, rect, s_c);
         }
 
-        static void DrawShadow(this ITooltip core, Graphics _g, Rectangle brect, Rectangle rect, int size, GraphicsPath path2)
+        static void DrawShadow(this ITooltip core, Canvas _g, Rectangle brect, Rectangle rect, int size, GraphicsPath path2)
         {
             using (var bmp = new Bitmap(brect.Width, brect.Height))
             {
-                using (var g = Graphics.FromImage(bmp))
+                using (var g = Graphics.FromImage(bmp).HighLay())
                 {
                     int size2 = size * 2;
                     using (var path = new Rectangle(rect.X - size, rect.Y - size + 2, rect.Width + size2, rect.Height + size2).RoundPath(core.Radius))
@@ -521,11 +530,11 @@ namespace AntdUI
                         {
                             brush.CenterColor = Color.Black;
                             brush.SurroundColors = new Color[] { Color.Transparent };
-                            g.FillPath(brush, path);
+                            g.Fill(brush, path);
                         }
                     }
                 }
-                _g.DrawImage(bmp, brect);
+                _g.Image(bmp, brect);
             }
         }
 

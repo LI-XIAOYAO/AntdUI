@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -47,6 +47,8 @@ namespace AntdUI
             _state = state;
             _text = text;
         }
+
+        #region 属性
 
         Color? fore;
         /// <summary>
@@ -96,6 +98,21 @@ namespace AntdUI
             }
         }
 
+        float dotratio = .4F;
+        /// <summary>
+        /// 点比例
+        /// </summary>
+        public float DotRatio
+        {
+            get => dotratio;
+            set
+            {
+                if (dotratio == value) return;
+                dotratio = value;
+                OnPropertyChanged();
+            }
+        }
+
         string? _text;
         /// <summary>
         /// 文本
@@ -110,9 +127,36 @@ namespace AntdUI
                 OnPropertyChanged(true);
             }
         }
-        public override string? ToString()
+
+        #endregion
+
+        #region 设置
+
+        public CellBadge SetFore(Color? value)
         {
-            return _text;
+            fore = value;
+            return this;
         }
+        public CellBadge SetFill(Color? value)
+        {
+            fill = value;
+            return this;
+        }
+
+        public CellBadge SetState(TState value = TState.Success)
+        {
+            _state = value;
+            return this;
+        }
+
+        public CellBadge SetDotRatio(float value)
+        {
+            dotratio = value;
+            return this;
+        }
+
+        #endregion
+
+        public override string? ToString() => _text;
     }
 }

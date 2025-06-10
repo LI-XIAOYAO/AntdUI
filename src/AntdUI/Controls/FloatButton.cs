@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -34,10 +34,7 @@ namespace AntdUI
         /// <param name="form">所属窗口</param>
         /// <param name="btns">按钮</param>
         /// <param name="call">回调</param>
-        public static Form? open(Form form, ConfigBtn[] btns, Action<ConfigBtn> call)
-        {
-            return open(new Config(form, btns, call));
-        }
+        public static FormFloatButton? open(Form form, ConfigBtn[] btns, Action<ConfigBtn> call) => open(new Config(form, btns, call));
 
         /// <summary>
         /// FloatButton 悬浮按钮
@@ -46,7 +43,7 @@ namespace AntdUI
         /// <param name="content">所属控件</param>
         /// <param name="btns">按钮</param>
         /// <param name="call">回调</param>
-        public static Form? open(Form form, Control content, ConfigBtn[] btns, Action<ConfigBtn> call)
+        public static FormFloatButton? open(Form form, Control content, ConfigBtn[] btns, Action<ConfigBtn> call)
         {
             return open(new Config(form, btns, call)
             {
@@ -60,10 +57,7 @@ namespace AntdUI
         /// <param name="form">所属窗口</param>
         /// <param name="btns">按钮</param>
         /// <param name="call">回调</param>
-        public static Config config(Form form, ConfigBtn[] btns, Action<ConfigBtn> call)
-        {
-            return new Config(form, btns, call);
-        }
+        public static Config config(Form form, ConfigBtn[] btns, Action<ConfigBtn> call) => new Config(form, btns, call);
 
         /// <summary>
         /// FloatButton 配置
@@ -84,19 +78,11 @@ namespace AntdUI
         /// FloatButton 悬浮按钮
         /// </summary>
         /// <param name="config">配置</param>
-        public static Form? open(this Config config)
+        public static FormFloatButton? open(this Config config)
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.Form.InvokeRequired)
-                {
-                    Form? form = null;
-                    config.Form.Invoke(new Action(() =>
-                    {
-                        form = open(config);
-                    }));
-                    return form;
-                }
+                if (config.Form.InvokeRequired) return ITask.Invoke(config.Form, new Func<FormFloatButton?>(() => open(config)));
                 var floatButton = new LayeredFormFloatButton(config);
                 floatButton.Show(config.Form);
                 return floatButton;
@@ -202,7 +188,7 @@ namespace AntdUI
             /// </summary>
             /// <param name="name">名称</param>
             /// <param name="icon">图标</param>
-            public ConfigBtn(string name, Bitmap icon)
+            public ConfigBtn(string name, Image icon)
             {
                 Name = name;
                 Icon = icon;
@@ -226,6 +212,42 @@ namespace AntdUI
             /// </summary>
             public string Name { get; set; }
 
+            bool enabled = true;
+            /// <summary>
+            /// 使能
+            /// </summary>
+            public bool Enabled
+            {
+                get => enabled;
+                set
+                {
+                    if (enabled == value) return;
+                    enabled = value;
+                    OnPropertyChanged(nameof(Enabled));
+                }
+            }
+
+            bool loading = false;
+            internal int AnimationLoadingValue = 0;
+            /// <summary>
+            /// 加载
+            /// </summary>
+            public bool Loading
+            {
+                get => loading;
+                set
+                {
+                    if (loading == value) return;
+                    loading = value;
+                    OnPropertyChanged(nameof(Loading));
+                }
+            }
+
+            /// <summary>
+            /// 加载进度
+            /// </summary>
+            public float LoadingValue { get; set; } = .3F;
+
             Color? fore;
             /// <summary>
             /// 文字颜色
@@ -237,22 +259,22 @@ namespace AntdUI
                 {
                     if (fore == value) return;
                     fore = value;
-                    OnPropertyChanged("Fore");
+                    OnPropertyChanged(nameof(Fore));
                 }
             }
 
-            Bitmap? icon;
+            Image? icon;
             /// <summary>
             /// 自定义图标
             /// </summary>
-            public Bitmap? Icon
+            public Image? Icon
             {
                 get => icon;
                 set
                 {
                     if (icon == value) return;
                     icon = value;
-                    OnPropertyChanged("Icon");
+                    OnPropertyChanged(nameof(Icon));
                 }
             }
 
@@ -267,7 +289,7 @@ namespace AntdUI
                 {
                     if (iconSvg == value) return;
                     iconSvg = value;
-                    OnPropertyChanged("IconSvg");
+                    OnPropertyChanged(nameof(IconSvg));
                 }
             }
 
@@ -282,14 +304,29 @@ namespace AntdUI
                 {
                     if (iconSize == value) return;
                     iconSize = value;
-                    OnPropertyChanged("IconSize");
+                    OnPropertyChanged(nameof(IconSize));
+                }
+            }
+
+            string? text = null;
+            /// <summary>
+            /// 文字及其它内容
+            /// </summary>
+            public string? Text
+            {
+                get => Localization.GetLangI(LocalizationText, text, new string?[] { "{id}", Name });
+                set
+                {
+                    if (text == value) return;
+                    text = value;
+                    OnPropertyChanged(nameof(Text));
                 }
             }
 
             /// <summary>
-            /// 文字及其它内容
+            /// 国际化（文本）
             /// </summary>
-            public string? Text { get; set; }
+            public string? LocalizationText { get; set; }
 
             /// <summary>
             /// 气泡的内容
@@ -307,7 +344,7 @@ namespace AntdUI
                 {
                     if (type == value) return;
                     type = value;
-                    OnPropertyChanged("Type");
+                    OnPropertyChanged(nameof(Type));
                 }
             }
 
@@ -327,7 +364,7 @@ namespace AntdUI
                 {
                     if (round == value) return;
                     round = value;
-                    OnPropertyChanged("Round");
+                    OnPropertyChanged(nameof(Round));
                 }
             }
 
@@ -342,7 +379,7 @@ namespace AntdUI
                 {
                     if (badge == value) return;
                     badge = value;
-                    OnPropertyChanged("Badge");
+                    OnPropertyChanged(nameof(Badge));
                 }
             }
 
@@ -357,29 +394,54 @@ namespace AntdUI
                 {
                     if (badgeSvg == value) return;
                     badgeSvg = value;
-                    OnPropertyChanged("Badge");
+                    OnPropertyChanged(nameof(Badge));
                 }
             }
 
-            TAlignFrom badgeAlign = TAlignFrom.TR;
+            TAlign badgeAlign = TAlign.TR;
             /// <summary>
             /// 徽标方向
             /// </summary>
-            public TAlignFrom BadgeAlign
+            public TAlign BadgeAlign
             {
                 get => badgeAlign;
                 set
                 {
                     if (badgeAlign == value) return;
                     badgeAlign = value;
-                    OnPropertyChanged("Badge");
+                    OnPropertyChanged(nameof(Badge));
                 }
             }
 
             /// <summary>
             /// 徽标大小
             /// </summary>
-            public float BadgeSize { get; set; } = 9F;
+            public float BadgeSize { get; set; } = .6F;
+
+            bool badgeMode = false;
+            /// <summary>
+            /// 徽标模式（镂空）
+            /// </summary>
+            public bool BadgeMode
+            {
+                get => badgeMode;
+                set
+                {
+                    if (badgeMode == value) return;
+                    badgeMode = value;
+                    OnPropertyChanged(nameof(BadgeMode));
+                }
+            }
+
+            /// <summary>
+            /// 徽标偏移X
+            /// </summary>
+            public int BadgeOffsetX { get; set; }
+
+            /// <summary>
+            /// 徽标偏移Y
+            /// </summary>
+            public int BadgeOffsetY { get; set; }
 
             /// <summary>
             /// 徽标背景颜色

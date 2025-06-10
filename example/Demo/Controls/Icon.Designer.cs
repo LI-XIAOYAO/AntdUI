@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,14 +43,9 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             AntdUI.SegmentedItem segmentedItem1 = new AntdUI.SegmentedItem();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Icon));
             AntdUI.SegmentedItem segmentedItem2 = new AntdUI.SegmentedItem();
             header1 = new AntdUI.PageHeader();
             segmented1 = new AntdUI.Segmented();
@@ -65,6 +60,8 @@ namespace Demo.Controls
             header1.Description = "语义化的矢量图形。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Icon.Description";
+            header1.LocalizationText = "Icon.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -77,8 +74,23 @@ namespace Demo.Controls
             // 
             segmented1.Dock = DockStyle.Left;
             segmented1.IconAlign = AntdUI.TAlignMini.Left;
-            segmentedItem1.IconSvg = resources.GetString("segmentedItem1.IconSvg");
+            segmentedItem1.Badge = null;
+            segmentedItem1.BadgeAlign = AntdUI.TAlign.TR;
+            segmentedItem1.BadgeBack = null;
+            segmentedItem1.BadgeMode = false;
+            segmentedItem1.BadgeOffsetX = 0;
+            segmentedItem1.BadgeOffsetY = 0;
+            segmentedItem1.BadgeSize = 0.6F;
+            segmentedItem1.BadgeSvg = null;
             segmentedItem1.Text = "线框风格";
+            segmentedItem2.Badge = null;
+            segmentedItem2.BadgeAlign = AntdUI.TAlign.TR;
+            segmentedItem2.BadgeBack = null;
+            segmentedItem2.BadgeMode = false;
+            segmentedItem2.BadgeOffsetX = 0;
+            segmentedItem2.BadgeOffsetY = 0;
+            segmentedItem2.BadgeSize = 0.6F;
+            segmentedItem2.BadgeSvg = null;
             segmentedItem2.IconSvg = "<svg viewBox=\"0 0 1024 1024\"><path d=\"M864 64H160C107 64 64 107 64 160v704c0 53 43 96 96 96h704c53 0 96-43 96-96V160c0-53-43-96-96-96z\"></path></svg>";
             segmentedItem2.Text = "实底风格";
             segmented1.Items.Add(segmentedItem1);
@@ -104,6 +116,7 @@ namespace Demo.Controls
             // txt_search
             // 
             txt_search.Dock = DockStyle.Right;
+            txt_search.LocalizationPlaceholderText = "Icon.PlaceholderText";
             txt_search.Location = new Point(505, 0);
             txt_search.Name = "txt_search";
             txt_search.PlaceholderText = "在此搜索图标，点击图标可复制代码";

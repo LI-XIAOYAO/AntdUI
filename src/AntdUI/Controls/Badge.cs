@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -31,7 +31,7 @@ namespace AntdUI
     [Description("Badge 徽标数")]
     [ToolboxItem(true)]
     [DefaultProperty("Text")]
-    public class Badge : IControl
+    public class Badge : IControl, IEventListener
     {
         #region 属性
 
@@ -46,9 +46,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -66,6 +67,41 @@ namespace AntdUI
                 state = value;
                 StartAnimation();
                 Invalidate();
+                OnPropertyChanged(nameof(State));
+            }
+        }
+
+        float dotratio = .4F;
+        /// <summary>
+        /// 点比例
+        /// </summary>
+        [Description("点比例"), Category("外观"), DefaultValue(.4F)]
+        public float DotRatio
+        {
+            get => dotratio;
+            set
+            {
+                if (dotratio == value) return;
+                dotratio = value;
+                if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(DotRatio));
+            }
+        }
+
+        int gap = 0;
+        /// <summary>
+        /// 间隔
+        /// </summary>
+        [Description("间隔"), Category("外观"), DefaultValue(0)]
+        public int Gap
+        {
+            get => gap;
+            set
+            {
+                if (gap == value) return;
+                gap = value;
+                if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(Gap));
             }
         }
 
@@ -77,7 +113,7 @@ namespace AntdUI
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public override string? Text
         {
-            get => text;
+            get => this.GetLangI(LocalizationText, text);
             set
             {
                 if (text == value) return;
@@ -85,10 +121,14 @@ namespace AntdUI
                 has_text = string.IsNullOrEmpty(text);
                 if (BeforeAutoSize()) Invalidate();
                 OnTextChanged(EventArgs.Empty);
+                OnPropertyChanged(nameof(Text));
             }
         }
 
-        StringFormat stringFormat = Helper.SF_ALL(lr: StringAlignment.Near);
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
+
+        StringFormat s_f = Helper.SF_ALL(lr: StringAlignment.Near);
         ContentAlignment textAlign = ContentAlignment.MiddleLeft;
         /// <summary>
         /// 文本位置
@@ -101,8 +141,9 @@ namespace AntdUI
             {
                 if (textAlign == value) return;
                 textAlign = value;
-                textAlign.SetAlignment(ref stringFormat);
+                textAlign.SetAlignment(ref s_f);
                 Invalidate();
+                OnPropertyChanged(nameof(TextAlign));
             }
         }
 
@@ -120,6 +161,7 @@ namespace AntdUI
                 if (fill == value) return;
                 fill = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Fill));
             }
         }
 
@@ -128,13 +170,13 @@ namespace AntdUI
         void StartAnimation()
         {
             StopAnimation();
-            if (Config.Animation && state == TState.Processing)
+            if (Config.HasAnimation(nameof(AntdUI.Badge)) && state == TState.Processing)
             {
                 ThreadState = new ITask(this, i =>
                 {
                     AnimationStateValue = i;
                     Invalidate();
-                }, 50, 1F, 0.05F);
+                }, 50, 1F, .05F);
             }
         }
         void StopAnimation()
@@ -162,40 +204,34 @@ namespace AntdUI
             if (has_text)
             {
                 var size = g.MeasureString(Config.NullText, Font);
-                float dot_size = size.Height / 2.5F;
+                int dot_size = (int)(size.Height * dotratio);
                 using (var brush = new SolidBrush(GetColor(fill, state)))
                 {
                     g.FillEllipse(brush, new RectangleF((rect.Width - dot_size) / 2F, (rect.Height - dot_size) / 2F, dot_size, dot_size));
                     if (state == TState.Processing)
                     {
-                        float max = (size.Height - 6F) * AnimationStateValue, alpha = 255 * (1F - AnimationStateValue);
-                        using (var pen = new Pen(Helper.ToColor(alpha, brush.Color), 4F))
-                        {
-                            g.DrawEllipse(pen, new RectangleF((rect.Width - max) / 2F, (rect.Height - max) / 2F, max, max));
-                        }
+                        float max = size.Height * AnimationStateValue, alpha = 255 * (1F - AnimationStateValue);
+                        g.DrawEllipse(Helper.ToColor(alpha, brush.Color), 4F * Config.Dpi, new RectangleF((rect.Width - max) / 2F, (rect.Height - max) / 2F, max, max));
                     }
                 }
             }
             else
             {
-                var size = g.MeasureString(text, Font);
-                float dot_size = size.Height / 2.5F;
+                var size = g.MeasureText(Text, Font);
+                int dot_size = (int)(size.Height * dotratio), _gap = (int)(gap * Config.Dpi);
                 using (var brush = new SolidBrush(GetColor(fill, state)))
                 {
                     var rect_dot = new RectangleF(rect.X + (size.Height - dot_size) / 2, rect.Y + (rect.Height - dot_size) / 2, dot_size, dot_size);
                     g.FillEllipse(brush, rect_dot);
                     if (state == TState.Processing)
                     {
-                        float max = (size.Height - 6F) * AnimationStateValue, alpha = 255 * (1F - AnimationStateValue);
-                        using (var pen = new Pen(Helper.ToColor(alpha, brush.Color), 4F))
-                        {
-                            g.DrawEllipse(pen, new RectangleF(rect_dot.X + (rect_dot.Width - max) / 2F, rect_dot.Y + (rect_dot.Height - max) / 2F, max, max));
-                        }
+                        float max = size.Height * AnimationStateValue, alpha = 255 * (1F - AnimationStateValue);
+                        g.DrawEllipse(Helper.ToColor(alpha, brush.Color), 4F * Config.Dpi, new RectangleF(rect_dot.X + (rect_dot.Width - max) / 2F, rect_dot.Y + (rect_dot.Height - max) / 2F, max, max));
                     }
                 }
-                using (var brush = fore.Brush(Style.Db.Text, Style.Db.TextQuaternary, Enabled))
+                using (var brush = fore.Brush(Colour.Text.Get("Badge", ColorScheme), Colour.TextQuaternary.Get("Badge", ColorScheme), Enabled))
                 {
-                    g.DrawStr(text, Font, brush, new RectangleF(rect.X + size.Height, rect.Y, rect.Width - size.Height, rect.Height), stringFormat);
+                    g.DrawText(Text, Font, brush, new Rectangle(rect.X + _gap + size.Height, rect.Y, rect.Width - size.Height, rect.Height), s_f);
                 }
             }
             this.PaintBadge(g);
@@ -204,21 +240,21 @@ namespace AntdUI
 
         #region 渲染帮助
 
-        internal Color GetColor(Color? color, TState state)
+        Color GetColor(Color? color, TState state)
         {
             if (color.HasValue) return color.Value;
             return GetColor(state);
         }
-        internal Color GetColor(TState state)
+        Color GetColor(TState state)
         {
             switch (state)
             {
-                case TState.Success: return Style.Db.Success;
-                case TState.Error: return Style.Db.Error;
+                case TState.Success: return Colour.Success.Get("Badge", ColorScheme);
+                case TState.Error: return Colour.Error.Get("Badge", ColorScheme);
                 case TState.Primary:
-                case TState.Processing: return Style.Db.Primary;
-                case TState.Warn: return Style.Db.Warning;
-                default: return Style.Db.TextQuaternary;
+                case TState.Processing: return Colour.Primary.Get("Badge", ColorScheme);
+                case TState.Warn: return Colour.Warning.Get("Badge", ColorScheme);
+                default: return Colour.TextQuaternary.Get("Badge", ColorScheme);
             }
         }
 
@@ -280,7 +316,7 @@ namespace AntdUI
             return PSize;
         }
 
-        internal Size PSize
+        public Size PSize
         {
             get
             {
@@ -288,13 +324,13 @@ namespace AntdUI
                 {
                     if (has_text)
                     {
-                        var font_size = g.MeasureString(Config.NullText, Font).Size();
+                        var font_size = g.MeasureString(Config.NullText, Font);
                         font_size.Width = font_size.Height;
                         return font_size;
                     }
                     else
                     {
-                        var font_size = g.MeasureString(text ?? Config.NullText, Font).Size();
+                        var font_size = g.MeasureText(Text ?? Config.NullText, Font);
                         font_size.Width += font_size.Height;
                         return font_size;
                     }
@@ -308,18 +344,10 @@ namespace AntdUI
             base.OnResize(e);
         }
 
-        internal bool BeforeAutoSize()
+        bool BeforeAutoSize()
         {
             if (autoSize == TAutoSize.None) return true;
-            if (InvokeRequired)
-            {
-                bool flag = false;
-                Invoke(new Action(() =>
-                {
-                    flag = BeforeAutoSize();
-                }));
-                return flag;
-            }
+            if (InvokeRequired) return ITask.Invoke(this, BeforeAutoSize);
             var PS = PSize;
             switch (autoSize)
             {
@@ -338,6 +366,26 @@ namespace AntdUI
                     break;
             }
             return false;
+        }
+
+        #endregion
+
+        #region 语言变化
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            this.AddListener();
+        }
+
+        public void HandleEvent(EventType id, object? tag)
+        {
+            switch (id)
+            {
+                case EventType.LANG:
+                    BeforeAutoSize();
+                    break;
+            }
         }
 
         #endregion

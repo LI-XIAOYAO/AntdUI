@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,18 +43,16 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
-            panel2 = new System.Windows.Forms.Panel();
-            button2 = new AntdUI.Button();
+            panel1 = new FlowLayoutPanel();
             button1 = new AntdUI.Button();
+            button2 = new AntdUI.Button();
+            button3 = new AntdUI.Button();
+            button4 = new AntdUI.Button();
             divider1 = new AntdUI.Divider();
-            panel2.SuspendLayout();
+            panel1.SuspendLayout();
             SuspendLayout();
             // 
             // header1
@@ -62,6 +60,8 @@ namespace Demo.Controls
             header1.Description = "图片预览框。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Preview.Description";
+            header1.LocalizationText = "Preview.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -70,64 +70,99 @@ namespace Demo.Controls
             header1.Text = "Preview 图片预览";
             header1.UseTitleFont = true;
             // 
-            // panel2
+            // panel1
             // 
-            panel2.Controls.Add(button2);
-            panel2.Controls.Add(button1);
-            panel2.Dock = DockStyle.Top;
-            panel2.Location = new Point(0, 96);
-            panel2.Name = "panel2";
-            panel2.Size = new Size(614, 62);
-            panel2.TabIndex = 6;
+            panel1.Controls.Add(button1);
+            panel1.Controls.Add(button2);
+            panel1.Controls.Add(button3);
+            panel1.Controls.Add(button4);
+            panel1.Dock = DockStyle.Top;
+            panel1.Location = new Point(0, 102);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(614, 110);
+            panel1.TabIndex = 2;
+            // 
+            // button1
+            // 
+            button1.AutoSizeMode = AntdUI.TAutoSize.Auto;
+            button1.BorderWidth = 1F;
+            button1.LocalizationText = "Preview.{id}";
+            button1.Location = new Point(3, 3);
+            button1.Name = "button1";
+            button1.Size = new Size(166, 47);
+            button1.TabIndex = 0;
+            button1.Text = "弹出一张图片预览";
+            button1.Click += button1_Click;
             // 
             // button2
             // 
+            button2.AutoSizeMode = AntdUI.TAutoSize.Auto;
             button2.BorderWidth = 1F;
-            button2.Location = new Point(169, 3);
+            button2.LocalizationText = "Preview.{id}";
+            button2.Location = new Point(175, 3);
             button2.Name = "button2";
-            button2.Size = new Size(160, 41);
+            button2.Size = new Size(166, 47);
             button2.TabIndex = 0;
             button2.Text = "弹出多张图片预览";
             button2.Click += button2_Click;
             // 
-            // button1
+            // button3
             // 
-            button1.BorderWidth = 1F;
-            button1.Location = new Point(3, 3);
-            button1.Name = "button1";
-            button1.Size = new Size(160, 41);
-            button1.TabIndex = 0;
-            button1.Text = "弹出一张图片预览";
-            button1.Click += button1_Click;
+            button3.AutoSizeMode = AntdUI.TAutoSize.Auto;
+            button3.BorderWidth = 1F;
+            button3.LocalizationText = "Preview.{id}";
+            button3.Location = new Point(347, 3);
+            button3.Name = "button3";
+            button3.Size = new Size(133, 47);
+            button3.TabIndex = 1;
+            button3.Text = "动态加载图片";
+            button3.Click += button3_Click;
+            // 
+            // button4
+            // 
+            button4.AutoSizeMode = AntdUI.TAutoSize.Auto;
+            button4.BorderWidth = 1F;
+            button4.LocalizationText = "Preview.{id}";
+            button4.Location = new Point(3, 56);
+            button4.Name = "button4";
+            button4.Size = new Size(215, 47);
+            button4.TabIndex = 2;
+            button4.Text = "弹出多张图片带文字预览";
+            button4.Click += button4_Click;
             // 
             // divider1
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Preview.{id}";
             divider1.Location = new Point(0, 74);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(614, 22);
+            divider1.Size = new Size(614, 28);
             divider1.TabIndex = 5;
             divider1.Text = "基本";
             // 
             // Preview
             // 
-            Controls.Add(panel2);
+            Controls.Add(panel1);
             Controls.Add(divider1);
             Controls.Add(header1);
             Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Preview";
             Size = new Size(614, 446);
-            panel2.ResumeLayout(false);
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             ResumeLayout(false);
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
-        private System.Windows.Forms.Panel panel2;
+        private System.Windows.Forms.FlowLayoutPanel panel1;
         private AntdUI.Divider divider1;
         private AntdUI.Button button1;
         private AntdUI.Button button2;
+        private AntdUI.Button button3;
+        private AntdUI.Button button4;
     }
 }

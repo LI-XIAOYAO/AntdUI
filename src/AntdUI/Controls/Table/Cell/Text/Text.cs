@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -41,6 +41,8 @@ namespace AntdUI
             _text = text;
             _fore = fore;
         }
+
+        #region 属性
 
         Color? _back;
         /// <summary>
@@ -152,10 +154,7 @@ namespace AntdUI
         /// <summary>
         /// 是否包含前缀
         /// </summary>
-        public bool HasPrefix
-        {
-            get => prefixSvg != null || prefix != null;
-        }
+        public bool HasPrefix => prefixSvg != null || prefix != null;
 
         Image? suffix = null;
         /// <summary>
@@ -190,16 +189,57 @@ namespace AntdUI
         /// <summary>
         /// 是否包含后缀
         /// </summary>
-        public bool HasSuffix
+        public bool HasSuffix => suffixSvg != null || suffix != null;
+
+        #endregion
+
+        #endregion
+
+        #region 设置
+
+        public CellText SetBack(Color? value)
         {
-            get => suffixSvg != null || suffix != null;
+            _back = value;
+            return this;
+        }
+        public CellText SetFore(Color? value)
+        {
+            _fore = value;
+            return this;
+        }
+        public CellText SetFont(Font? value)
+        {
+            _font = value;
+            return this;
+        }
+        public CellText SetPrefix(Image? value)
+        {
+            prefix = value;
+            return this;
+        }
+        public CellText SetPrefix(string? value)
+        {
+            prefixSvg = value;
+            return this;
+        }
+        public CellText SetSuffix(Image? value)
+        {
+            suffix = value;
+            return this;
+        }
+        public CellText SetSuffix(string? value)
+        {
+            suffixSvg = value;
+            return this;
+        }
+        public CellText SetIconRatio(float value)
+        {
+            iconratio = value;
+            return this;
         }
 
         #endregion
 
-        public override string? ToString()
-        {
-            return _text;
-        }
+        public override string? ToString() => _text;
     }
 }

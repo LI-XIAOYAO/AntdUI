@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -44,9 +44,9 @@ namespace AntdUI
 
         #endregion
 
-        public static void SetBits(Bitmap? bmp, Rectangle rect, IntPtr intPtr, byte a = 255)
+        public static RenderResult SetBits(Bitmap? bmp, Rectangle rect, IntPtr intPtr, byte alpha = 255)
         {
-            if (bmp == null) return;
+            if (bmp == null || bmp.PixelFormat == System.Drawing.Imaging.PixelFormat.DontCare) return RenderResult.Invalid;
             IntPtr hBitmap = bmp.GetHbitmap(Color.FromArgb(0)), oldBits = SelectObject(memDc, hBitmap);
             try
             {
@@ -54,7 +54,7 @@ namespace AntdUI
                 var blendFunc = new BLENDFUNCTION
                 {
                     BlendOp = AC_SRC_OVER,
-                    SourceConstantAlpha = a,
+                    SourceConstantAlpha = alpha,
                     AlphaFormat = AC_SRC_ALPHA,
                     BlendFlags = 0
                 };
@@ -62,6 +62,7 @@ namespace AntdUI
                 var topSize = new Win32Size(rect.Width, rect.Height);
                 UpdateLayeredWindow(intPtr, screenDC, ref topLoc, ref topSize, memDc, ref srcLoc, 0, ref blendFunc, ULW_ALPHA);
             }
+            catch { return RenderResult.Error; }
             finally
             {
                 if (hBitmap != IntPtr.Zero)
@@ -70,10 +71,11 @@ namespace AntdUI
                     DeleteObject(hBitmap);
                 }
             }
+            return RenderResult.OK;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct Win32Size
+        ref struct Win32Size
         {
             public int cx, cy;
             public Win32Size(int x, int y)
@@ -84,13 +86,13 @@ namespace AntdUI
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct Win32Point
+        ref struct Win32Point
         {
             public int x, y;
-            public Win32Point(int x, int y)
+            public Win32Point(int _x, int _y)
             {
-                this.x = x;
-                this.y = y;
+                x = _x;
+                y = _y;
             }
         }
 
@@ -145,23 +147,34 @@ namespace AntdUI
 
         #region 文本框
 
-        [DllImport("imm32.dll")]
+        [DllImport("Imm32.dll")]
         public static extern IntPtr ImmGetContext(IntPtr hWnd);
+
+        [DllImport("Imm32.dll")]
+        public static extern bool ImmGetOpenStatus(IntPtr himc);
+
         [DllImport("Imm32.dll")]
         public static extern bool ImmReleaseContext(IntPtr hWnd, IntPtr hIMC);
         [DllImport("Imm32.dll", CharSet = CharSet.Unicode)]
         public static extern int ImmGetCompositionString(IntPtr hIMC, int dwIndex, byte[] lpBuf, int dwBufLen);
-        [DllImport("imm32.dll")]
+        [DllImport("Imm32.dll")]
         public static extern bool ImmSetCandidateWindow(IntPtr hImc, ref CANDIDATEFORM fuck);
-        [DllImport("imm32.dll")]
+        [DllImport("Imm32.dll")]
         public static extern bool ImmSetCompositionWindow(IntPtr hIMC, ref COMPOSITIONFORM lpCompForm);
-        [DllImport("imm32.dll")]
+        [DllImport("Imm32.dll")]
         public static extern bool ImmSetCompositionFont(IntPtr hIMC, ref LOGFONT logFont);
 
         public const int SRCCOPY = 0x00CC0020;
 
         public const int GCS_COMPSTR = 0x0008;
         public const int GCS_RESULTSTR = 0x0800;
+
+        public const int WM_GETDLGCODE = 0x0087;
+        public const int DLGC_WANTALLKEYS = 0x0004;
+        public const int DLGC_WANTARROWS = 0x0001;
+        public const int DLGC_WANTCHARS = 0x0080;
+        public const int DLGC_WANTTAB = 0x0001;
+
         public const int WM_IME_REQUEST = 0x0288;
         public const int WM_IME_COMPOSITION = 0x010F;
         public const int WM_IME_ENDCOMPOSITION = 0x010E;
@@ -173,6 +186,11 @@ namespace AntdUI
         public const int CFS_FORCE_POSITION = 0x0020;
         public const int CFS_CANDIDATEPOS = 0x0040;
         public const int CFS_EXCLUDE = 0x0080;
+
+        public const int WM_KEYFIRST = 0x100;
+        public const int WM_KEYLAST = 0x108;
+
+        public const int WM_IME_CHAR = 0x0286;
 
         public struct CANDIDATEFORM
         {
@@ -213,31 +231,34 @@ namespace AntdUI
         {
             if (hIMC == IntPtr.Zero) return null;
             int nLen = ImmGetCompositionString(hIMC, dwIndex, m_byString, m_byString.Length);
-            return Encoding.Unicode.GetString(m_byString, 0, nLen);
+            if (nLen > 0) return Encoding.Unicode.GetString(m_byString, 0, nLen);
+            return null;
         }
 
         #endregion
 
         #region 剪贴板
 
-        internal static string? GetClipBoardText()
+        internal static bool GetClipBoardText(out string? text)
         {
             IntPtr handle = default, pointer = default;
             try
             {
-                if (!OpenClipboard(IntPtr.Zero)) return null;
+                if (!OpenClipboard(IntPtr.Zero)) { text = null; return false; }
                 handle = GetClipboardData(13);
-                if (handle == default) return null;
+                if (handle == default) { text = null; return false; }
                 pointer = GlobalLock(handle);
-                if (pointer == default) return null;
+                if (pointer == default) { text = null; return false; }
                 var size = GlobalSize(handle);
                 var buff = new byte[size];
                 Marshal.Copy(pointer, buff, 0, size);
-                return Encoding.Unicode.GetString(buff).TrimEnd('\0');
+                text = Encoding.Unicode.GetString(buff).TrimEnd('\0');
+                return true;
             }
             catch
             {
-                return null;
+                text = null;
+                return false;
             }
             finally
             {
@@ -279,7 +300,7 @@ namespace AntdUI
             }
         }
 
-        [DllImport("User32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         extern static IntPtr GetClipboardData(uint uFormat);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -296,20 +317,20 @@ namespace AntdUI
         /// 打开剪切板
         /// </summary>
         /// <param name="hWndNewOwner"></param>
-        [DllImport("User32.dll")]
+        [DllImport("user32.dll")]
         extern static bool OpenClipboard(IntPtr hWndNewOwner);
 
         /// <summary>
         /// 关闭剪切板
         /// </summary>
-        [DllImport("User32.dll")]
+        [DllImport("user32.dll")]
         extern static bool CloseClipboard();
 
         /// <summary>
         /// 清空剪贴板
         /// </summary>
         /// <returns></returns>
-        [DllImport("User32.dll")]
+        [DllImport("user32.dll")]
         extern static bool EmptyClipboard();
 
         /// <summary>
@@ -317,9 +338,29 @@ namespace AntdUI
         /// </summary>
         /// <param name="uFormat"></param>
         /// <param name="hMem"></param>
-        [DllImport("User32.dll")]
+        [DllImport("user32.dll")]
         extern static IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
 
         #endregion
+    }
+
+    public enum RenderResult
+    {
+        /// <summary>
+        /// 成功
+        /// </summary>
+        OK,
+        /// <summary>
+        /// 异常
+        /// </summary>
+        Error,
+        /// <summary>
+        /// 跳过
+        /// </summary>
+        Skip,
+        /// <summary>
+        /// 图片无效
+        /// </summary>
+        Invalid
     }
 }

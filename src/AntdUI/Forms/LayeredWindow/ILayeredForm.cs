@@ -11,21 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
-using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Drawing;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace AntdUI
 {
     public abstract class ILayeredForm : Form, IMessageFilter
     {
+        IntPtr? handle;
         public ILayeredForm()
         {
             SetStyle(
@@ -38,19 +38,31 @@ namespace AntdUI
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             Size = new Size(0, 0);
-            renderQueue = new RenderQueue(this);
+            actionLoadMessage = LoadMessage;
+            actionCursor = val => SetCursor(val);
         }
-        RenderQueue renderQueue;
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public virtual bool ShowLeft { get; set; } = false;
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            handle = Handle;
+            base.OnHandleCreated(e);
+        }
 
         public Control? PARENT = null;
         public Func<Keys, bool>? KeyCall = null;
 
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public virtual bool CanLoadMessage { get; set; } = true;
+        Action actionLoadMessage;
         public virtual void LoadMessage()
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(LoadMessage));
+                Invoke(actionLoadMessage);
                 return;
             }
             if (MessageEnable) Application.AddMessageFilter(this);
@@ -62,11 +74,13 @@ namespace AntdUI
             if (CanLoadMessage) LoadMessage();
         }
 
+        bool FunRun = true;
         protected override void Dispose(bool disposing)
         {
+            handle = null;
+            FunRun = false;
             Application.RemoveMessageFilter(this);
             base.Dispose(disposing);
-            renderQueue.Dispose();
         }
 
         public virtual bool UFocus => true;
@@ -75,7 +89,13 @@ namespace AntdUI
 
         public byte alpha = 10;
 
-        public bool CanRender => IsHandleCreated && target_rect.Width > 0 && target_rect.Height > 0;
+        public bool CanRender(out IntPtr han)
+        {
+            if (handle.HasValue && FunRun && target_rect.Width > 0 && target_rect.Height > 0)
+            { han = handle.Value; return true; }
+            han = IntPtr.Zero;
+            return false;
+        }
 
         #region 渲染坐标
 
@@ -83,14 +103,8 @@ namespace AntdUI
         /// <summary>
         /// 目标区域
         /// </summary>
-        public Rectangle TargetRect
-        {
-            get => target_rect;
-        }
-        public Rectangle TargetRectXY
-        {
-            get => new Rectangle(0, 0, target_rect.Width, target_rect.Height);
-        }
+        public Rectangle TargetRect => target_rect;
+        public Rectangle TargetRectXY => new Rectangle(0, 0, target_rect.Width, target_rect.Height);
 
         public void SetRect(Rectangle rect)
         {
@@ -143,67 +157,56 @@ namespace AntdUI
 
         #endregion
 
-        public void Print(bool fore = false)
+        public RenderResult Print(bool fore = false)
         {
-            if (fore) Render();
-            else renderQueue.Set();
-        }
-        public void Print(Bitmap bmp) => renderQueue.Set(alpha, bmp);
-        public void Print(Bitmap bmp, Rectangle rect) => renderQueue.Set(alpha, bmp, rect);
-
-        void Render()
-        {
-            try
+            if (CanRender(out var handle))
             {
-                using (var bmp = PrintBit())
+                try
                 {
-                    if (bmp == null) return;
-                    Render(bmp);
+                    using (var bmp = PrintBit())
+                    {
+                        if (bmp == null) return RenderResult.Skip;
+                        return Render(handle, alpha, bmp, target_rect);
+                    }
                 }
-                GC.Collect();
+                catch { }
+                return RenderResult.Error;
             }
-            catch { }
+            else return RenderResult.Skip;
+        }
+        public RenderResult Print(Bitmap bmp)
+        {
+            if (CanRender(out var handle)) return Render(handle, alpha, bmp, target_rect);
+            else return RenderResult.Skip;
+        }
+        public RenderResult Print(Bitmap bmp, Rectangle rect)
+        {
+            using (bmp)
+            {
+                if (CanRender(out var handle)) return Render(handle, alpha, bmp, rect);
+                else return RenderResult.Skip;
+            }
         }
 
-        void Render(Bitmap bmp)
-        {
-            try
-            {
-                if (InvokeRequired) Invoke(new Action(() => { Render(bmp); }));
-                else Win32.SetBits(bmp, target_rect, Handle, alpha);
-            }
-            catch { }
-        }
-        void Render(byte alpha, Bitmap bmp)
-        {
-            try
-            {
-                if (InvokeRequired) Invoke(new Action(() => { Render(alpha, bmp); }));
-                else Win32.SetBits(bmp, target_rect, Handle, alpha);
-            }
-            catch { }
-        }
-        void Render(byte alpha, Bitmap bmp, Rectangle rect)
-        {
-            try
-            {
-                if (InvokeRequired) Invoke(new Action(() => { Render(alpha, bmp, rect); }));
-                else Win32.SetBits(bmp, rect, Handle, alpha);
-            }
-            catch { }
-        }
-
-        public void SetCursor(bool val)
+        RenderResult Render(IntPtr handle, byte alpha, Bitmap bmp, Rectangle rect)
         {
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
+                try
                 {
-                    SetCursor(val);
-                }));
-                return;
+                    if (IsDisposed || Disposing) return RenderResult.Skip;
+                    return Invoke(() => Win32.SetBits(bmp, rect, handle, alpha));
+                }
+                catch { }
             }
-            Cursor = val ? Cursors.Hand : DefaultCursor;
+            return Win32.SetBits(bmp, rect, handle, alpha);
+        }
+
+        Action<bool> actionCursor;
+        public void SetCursor(bool val)
+        {
+            if (InvokeRequired) Invoke(actionCursor, val);
+            else Cursor = val ? Cursors.Hand : DefaultCursor;
         }
 
         #region 无焦点窗体
@@ -219,10 +222,7 @@ namespace AntdUI
             }
         }
 
-        protected override bool ShowWithoutActivation
-        {
-            get => UFocus;
-        }
+        protected override bool ShowWithoutActivation => UFocus;
 
         protected override void WndProc(ref System.Windows.Forms.Message m)
         {
@@ -236,25 +236,25 @@ namespace AntdUI
 
         #endregion
 
+        bool switchClose = true, switchDispose = true;
         public void IClose(bool isdispose = false)
         {
-            if (IsHandleCreated)
+            try
             {
-                try
+                if (InvokeRequired)
                 {
-                    if (InvokeRequired)
-                    {
-                        Invoke(new Action(() =>
-                        {
-                            IClose(isdispose);
-                        }));
-                        return;
-                    }
-                    Close();
-                    if (isdispose) Dispose();
+                    Invoke(() => IClose(isdispose));
+                    return;
                 }
-                catch { }
+                if (switchClose) Close();
+                switchClose = false;
+                if (isdispose)
+                {
+                    if (switchDispose) Dispose();
+                    switchDispose = false;
+                }
             }
+            catch { }
         }
 
         /// <summary>
@@ -262,10 +262,12 @@ namespace AntdUI
         /// </summary>
         public virtual bool MessageEnable => false;
         public virtual bool MessageCloseSub => false;
+        public virtual bool MessageClickMe => true;
 
         /// <summary>
         /// 鼠标离开关闭
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool MessageCloseMouseLeave { get; set; }
 
         public bool PreFilterMessage(ref System.Windows.Forms.Message m)
@@ -282,8 +284,11 @@ namespace AntdUI
                     {
                         if (PARENT != null && PARENT.IsHandleCreated)
                         {
-                            if (ContainsPosition(PARENT, mousePosition)) return false;
-                            if (new Rectangle(PARENT.PointToScreen(Point.Empty), PARENT.Size).Contains(mousePosition)) return false;
+                            if (MessageClickMe)
+                            {
+                                if (ContainsPosition(PARENT, mousePosition)) return false;
+                                if (new Rectangle(PARENT.PointToScreen(Point.Empty), PARENT.Size).Contains(mousePosition)) return false;
+                            }
 
                             #region 判断内容
 
@@ -402,31 +407,26 @@ namespace AntdUI
         {
             if (mdown)
             {
-                int moveX = oldX - x, moveY = oldY - y, moveXa = Math.Abs(moveX), moveYa = Math.Abs(moveY);
-                oldMY = moveY;
-                if (mdownd > 0)
+                int moveX = oldX - x, moveY = oldY - y, moveXa = Math.Abs(moveX), moveYa = Math.Abs(moveY), threshold = (int)(Config.TouchThreshold * Config.Dpi);
+                if (mdownd > 0 || (moveXa > threshold || moveYa > threshold))
                 {
-                    if (mdownd == 1) OnTouchScrollY(-moveY);
-                    else OnTouchScrollX(-moveX);
-                    oldX = x;
-                    oldY = y;
-                    return false;
-                }
-                else if (moveXa > 2 || moveYa > 2)
-                {
-                    if (moveYa > moveXa)
+                    oldMY = moveY;
+                    if (mdownd > 0)
                     {
-                        mdownd = 1;
-                        OnTouchScrollY(-moveY);
+                        if (mdownd == 1) OnTouchScrollY(-moveY);
+                        else OnTouchScrollX(-moveX);
+                        oldX = x;
+                        oldY = y;
+                        return false;
                     }
                     else
                     {
-                        mdownd = 2;
-                        OnTouchScrollX(-moveX);
+                        if (moveYa > moveXa) mdownd = 1;
+                        else mdownd = 2;
+                        oldX = x;
+                        oldY = y;
+                        return false;
                     }
-                    oldX = x;
-                    oldY = y;
-                    return false;
                 }
             }
             return true;
@@ -489,118 +489,19 @@ namespace AntdUI
 
         #endregion
 
-        /// <summary>
-        /// 逐帧渲染
-        /// </summary>
-        class RenderQueue : IDisposable
-        {
-            ILayeredForm call;
-            public RenderQueue(ILayeredForm it)
-            {
-                call = it;
-                new Thread(LongTask) { IsBackground = true }.Start();
-            }
+        #region 委托
 
-            ConcurrentQueue<M?> Queue = new ConcurrentQueue<M?>();
-            ManualResetEvent Event = new ManualResetEvent(false);
-            /// <summary>
-            /// 渲染
-            /// </summary>
-            public void Set()
-            {
-                if (isDispose) return;
-                Queue.Enqueue(null);
-                Event.SetWait();
-            }
-            /// <summary>
-            /// 渲染
-            /// </summary>
-            public void Set(byte alpha, Bitmap bmp)
-            {
-                if (isDispose) return;
-                Queue.Enqueue(new M(alpha, bmp));
-                Event.SetWait();
-            }
-            /// <summary>
-            /// 渲染
-            /// </summary>
-            public void Set(byte alpha, Bitmap bmp, Rectangle rect)
-            {
-                if (isDispose) return;
-                Queue.Enqueue(new M(alpha, bmp, rect));
-                Event.SetWait();
-            }
+#if NET40 || NET46 || NET48
 
-            void LongTask()
-            {
-                while (true)
-                {
-                    if (Event.Wait()) return;
-                    int count = 0;
-                    while (Queue.TryDequeue(out var cmd))
-                    {
-                        if (call.CanRender)
-                        {
-                            if (cmd == null)
-                            {
-                                count++;
-                                if (count > 2)
-                                {
-                                    count = 0;
-                                    call.Render();
-                                }
-                            }
-                            else if (cmd.rect.HasValue)
-                            {
-                                using (cmd.bmp) call.Render(cmd.alpha, cmd.bmp, cmd.rect.Value);
-                            }
-                            else call.Render(cmd.alpha, cmd.bmp);
-                        }
-                    }
-                    if (count > 0) call.Render();
-                    if (isDispose) return;
-                    try
-                    {
-                        Event.ResetWait();
-                    }
-                    catch
-                    {
-                        return;
-                    }
-                }
-            }
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public IAsyncResult BeginInvoke(Action method) => BeginInvoke(method, null);
 
-            bool isDispose = false;
-            public void Dispose()
-            {
-                if (isDispose) return;
-                isDispose = true;
-#if NET40 || NET45 || NET46 || NET48
-                while (Queue.TryDequeue(out _)) { }
-#else
-                Queue.Clear();
+        public void Invoke(Action method) => _ = Invoke(method, null);
+        public T Invoke<T>(Func<T> method) => (T)Invoke(method, null);
+
 #endif
-                Event.WaitDispose();
-            }
 
-            public class M
-            {
-                public M(byte a, Bitmap b)
-                {
-                    bmp = b;
-                    alpha = a;
-                }
-                public M(byte a, Bitmap b, Rectangle r)
-                {
-                    bmp = b;
-                    alpha = a;
-                    rect = r;
-                }
-                public byte alpha { get; private set; }
-                public Bitmap bmp { get; private set; }
-                public Rectangle? rect { get; private set; }
-            }
-        }
+        #endregion
     }
 
     public interface SubLayeredForm

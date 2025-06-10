@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -246,7 +246,7 @@ namespace AntdUI
                         while (++x < rect.Width)
                         {
                             var srcPt = new Point(x, y);
-                            srcPt.Offset(rect.Location);
+                            srcPt.Offset(rect.X, rect.Y);
 
                             if ((!Vector.IsCCW(srcPt, vertex[0], vertex[1])) && (!Vector.IsCCW(srcPt, vertex[1], vertex[2])) && (!Vector.IsCCW(srcPt, vertex[2], vertex[3])) && (!Vector.IsCCW(srcPt, vertex[3], vertex[0])))
                             {

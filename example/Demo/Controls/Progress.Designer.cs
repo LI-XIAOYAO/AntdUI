@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -89,6 +85,8 @@ namespace Demo.Controls
             header1.Description = "展示操作的当前进度。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Progress.Description";
+            header1.LocalizationText = "Progress.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -99,9 +97,8 @@ namespace Demo.Controls
             // 
             // progress1
             // 
-            progress1.ContainerControl = this;
             progress1.Dock = DockStyle.Top;
-            progress1.Location = new Point(0, 22);
+            progress1.Location = new Point(0, 28);
             progress1.Name = "progress1";
             progress1.Padding = new Padding(10, 0, 10, 0);
             progress1.Size = new Size(367, 30);
@@ -130,10 +127,9 @@ namespace Demo.Controls
             // 
             // progress8
             // 
-            progress8.ContainerControl = this;
             progress8.Dock = DockStyle.Top;
             progress8.Font = new Font("Microsoft YaHei UI", 8F);
-            progress8.Location = new Point(0, 224);
+            progress8.Location = new Point(0, 236);
             progress8.Name = "progress8";
             progress8.Padding = new Padding(10, 0, 80, 0);
             progress8.Size = new Size(367, 20);
@@ -143,10 +139,9 @@ namespace Demo.Controls
             // 
             // progress9
             // 
-            progress9.ContainerControl = this;
             progress9.Dock = DockStyle.Top;
             progress9.Font = new Font("Microsoft YaHei UI", 8F);
-            progress9.Location = new Point(0, 204);
+            progress9.Location = new Point(0, 216);
             progress9.Name = "progress9";
             progress9.Padding = new Padding(10, 0, 80, 0);
             progress9.Size = new Size(367, 20);
@@ -156,11 +151,10 @@ namespace Demo.Controls
             // 
             // progress10
             // 
-            progress10.ContainerControl = this;
             progress10.Dock = DockStyle.Top;
             progress10.Font = new Font("Microsoft YaHei UI", 8F);
             progress10.Loading = true;
-            progress10.Location = new Point(0, 184);
+            progress10.Location = new Point(0, 196);
             progress10.Name = "progress10";
             progress10.Padding = new Padding(10, 0, 80, 0);
             progress10.Size = new Size(367, 20);
@@ -169,10 +163,9 @@ namespace Demo.Controls
             // 
             // progress11
             // 
-            progress11.ContainerControl = this;
             progress11.Dock = DockStyle.Top;
             progress11.Font = new Font("Microsoft YaHei UI", 8F);
-            progress11.Location = new Point(0, 164);
+            progress11.Location = new Point(0, 176);
             progress11.Name = "progress11";
             progress11.Padding = new Padding(10, 0, 80, 0);
             progress11.Size = new Size(367, 20);
@@ -183,19 +176,18 @@ namespace Demo.Controls
             // 
             divider4.Dock = DockStyle.Top;
             divider4.Font = new Font("Microsoft YaHei UI", 10F);
-            divider4.Location = new Point(0, 142);
-            divider4.Margin = new Padding(10);
+            divider4.LocalizationText = "Progress.{id}";
+            divider4.Location = new Point(0, 148);
             divider4.Name = "divider4";
             divider4.Orientation = AntdUI.TOrientation.Left;
-            divider4.Size = new Size(367, 22);
+            divider4.Size = new Size(367, 28);
             divider4.TabIndex = 19;
             divider4.Text = "小型进度条";
             // 
             // progress4
             // 
-            progress4.ContainerControl = this;
             progress4.Dock = DockStyle.Top;
-            progress4.Location = new Point(0, 112);
+            progress4.Location = new Point(0, 118);
             progress4.Name = "progress4";
             progress4.Padding = new Padding(10, 0, 10, 0);
             progress4.Size = new Size(367, 30);
@@ -205,9 +197,8 @@ namespace Demo.Controls
             // 
             // progress3
             // 
-            progress3.ContainerControl = this;
             progress3.Dock = DockStyle.Top;
-            progress3.Location = new Point(0, 82);
+            progress3.Location = new Point(0, 88);
             progress3.Name = "progress3";
             progress3.Padding = new Padding(10, 0, 10, 0);
             progress3.Size = new Size(367, 30);
@@ -217,10 +208,9 @@ namespace Demo.Controls
             // 
             // progress2
             // 
-            progress2.ContainerControl = this;
             progress2.Dock = DockStyle.Top;
             progress2.Loading = true;
-            progress2.Location = new Point(0, 52);
+            progress2.Location = new Point(0, 58);
             progress2.Name = "progress2";
             progress2.Padding = new Padding(10, 0, 10, 0);
             progress2.Size = new Size(367, 30);
@@ -231,11 +221,11 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Progress.{id}";
             divider1.Location = new Point(0, 0);
-            divider1.Margin = new Padding(10);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(367, 22);
+            divider1.Size = new Size(367, 28);
             divider1.TabIndex = 1;
             divider1.Text = "标准的进度条";
             // 
@@ -243,11 +233,11 @@ namespace Demo.Controls
             // 
             divider3.Dock = DockStyle.Top;
             divider3.Font = new Font("Microsoft YaHei UI", 10F);
-            divider3.Location = new Point(0, 154);
-            divider3.Margin = new Padding(10);
+            divider3.LocalizationText = "Progress.{id}";
+            divider3.Location = new Point(0, 160);
             divider3.Name = "divider3";
             divider3.Orientation = AntdUI.TOrientation.Left;
-            divider3.Size = new Size(368, 22);
+            divider3.Size = new Size(368, 28);
             divider3.TabIndex = 19;
             divider3.Text = "响应式进度圈";
             // 
@@ -255,11 +245,11 @@ namespace Demo.Controls
             // 
             divider2.Dock = DockStyle.Top;
             divider2.Font = new Font("Microsoft YaHei UI", 10F);
+            divider2.LocalizationText = "Progress.{id}";
             divider2.Location = new Point(0, 0);
-            divider2.Margin = new Padding(10);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(368, 22);
+            divider2.Size = new Size(368, 28);
             divider2.TabIndex = 0;
             divider2.Text = "圈形的进度";
             // 
@@ -297,9 +287,8 @@ namespace Demo.Controls
             // 
             // progress15
             // 
-            progress15.ContainerControl = this;
             progress15.Dock = DockStyle.Top;
-            progress15.Location = new Point(0, 316);
+            progress15.Location = new Point(0, 334);
             progress15.Name = "progress15";
             progress15.Padding = new Padding(10, 0, 10, 0);
             progress15.Shape = AntdUI.TShapeProgress.Steps;
@@ -312,9 +301,8 @@ namespace Demo.Controls
             // 
             // progress16
             // 
-            progress16.ContainerControl = this;
             progress16.Dock = DockStyle.Top;
-            progress16.Location = new Point(0, 286);
+            progress16.Location = new Point(0, 304);
             progress16.Name = "progress16";
             progress16.Padding = new Padding(10, 0, 10, 0);
             progress16.Shape = AntdUI.TShapeProgress.Steps;
@@ -325,9 +313,8 @@ namespace Demo.Controls
             // 
             // progress17
             // 
-            progress17.ContainerControl = this;
             progress17.Dock = DockStyle.Top;
-            progress17.Location = new Point(0, 256);
+            progress17.Location = new Point(0, 274);
             progress17.Name = "progress17";
             progress17.Padding = new Padding(10, 0, 10, 0);
             progress17.Shape = AntdUI.TShapeProgress.Steps;
@@ -339,13 +326,14 @@ namespace Demo.Controls
             // 
             divider5.Dock = DockStyle.Top;
             divider5.Font = new Font("Microsoft YaHei UI", 10F);
-            divider5.Location = new Point(0, 234);
+            divider5.LocalizationText = "Progress.{id}";
+            divider5.Location = new Point(0, 246);
             divider5.Margin = new Padding(10);
             divider5.Name = "divider5";
             divider5.Orientation = AntdUI.TOrientation.Left;
-            divider5.Size = new Size(368, 22);
+            divider5.Size = new Size(368, 28);
             divider5.TabIndex = 21;
-            divider5.Text = "步骤进度条\r\n";
+            divider5.Text = "步骤进度条";
             // 
             // tableLayoutPanel2
             // 
@@ -357,7 +345,7 @@ namespace Demo.Controls
             tableLayoutPanel2.Controls.Add(progress13, 1, 0);
             tableLayoutPanel2.Controls.Add(progress12, 0, 0);
             tableLayoutPanel2.Dock = DockStyle.Top;
-            tableLayoutPanel2.Location = new Point(0, 176);
+            tableLayoutPanel2.Location = new Point(0, 188);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
             tableLayoutPanel2.Padding = new Padding(0, 8, 0, 8);
             tableLayoutPanel2.RowCount = 1;
@@ -422,7 +410,7 @@ namespace Demo.Controls
             tableLayoutPanel1.Controls.Add(progress6, 1, 0);
             tableLayoutPanel1.Controls.Add(progress5, 0, 0);
             tableLayoutPanel1.Dock = DockStyle.Top;
-            tableLayoutPanel1.Location = new Point(0, 22);
+            tableLayoutPanel1.Location = new Point(0, 28);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.Padding = new Padding(0, 8, 0, 8);
             tableLayoutPanel1.RowCount = 1;
@@ -485,6 +473,7 @@ namespace Demo.Controls
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
         private AntdUI.Progress progress1;
         private System.Windows.Forms.Panel panel_l;

@@ -1,4 +1,4 @@
-﻿[首页](Home.md)・[更新日志](UpdateLog.md)・[配置](Config.md)・[主题](Theme.md)・[SVG](SVG.md)
+﻿[首页](Home.md)・[更新日志](UpdateLog.md)・[配置](Config.md)・[主题](Theme.md)
 
 ### 色彩模式
 
@@ -32,7 +32,7 @@ AntdUI.Config.IsDark = true;// 设置为深色模式
 AntdUI.Config.Animation = false;
 ```
 
-### 触屏使能 🔴
+### 触屏使能
 
 > 默认启用触屏使能
 
@@ -40,7 +40,7 @@ AntdUI.Config.Animation = false;
 AntdUI.Config.TouchEnabled = true;
 ```
 
-### 阴影使能 🔴
+### 阴影使能
 
 > 默认启用阴影
 
@@ -48,7 +48,7 @@ AntdUI.Config.TouchEnabled = true;
 AntdUI.Config.ShadowEnabled = false;
 ```
 
-### 滚动条隐藏样式 🔴
+### 滚动条隐藏样式
 
 > 默认一直显示 `false`
 
@@ -56,7 +56,7 @@ AntdUI.Config.ShadowEnabled = false;
 AntdUI.Config.ScrollBarHide = false;
 ```
 
-### 滚动条最小大小Y 🔴
+### 滚动条最小大小Y
 
 > 默认 `30`
 
@@ -73,7 +73,7 @@ AntdUI.Config.ShowInWindow = true;
 ```
 
 <details>
-<summary>针对配置 🔴</summary>
+<summary>针对配置</summary>
 
 > 弹出是否在窗口里而不是在系统里（Message）
 ``` csharp
@@ -95,10 +95,24 @@ AntdUI.Config.ShowInWindowByNotification = true;
 AntdUI.Config.NoticeWindowOffsetXY = 0;
 ```
 
+### 通知超出显示后立即关闭旧的（Message/Notification） 🔴
+
+> 默认超出后等待有旧的关闭才显示
+
+``` csharp
+AntdUI.Config.NoticeOverflowClose = false;
+```
+
 ### 文本呈现质量
 
 ``` csharp
 AntdUI.Config.TextRenderingHint = System.Drawing.Text.ClearTypeGridFit;
+```
+
+### 文本高质量呈现 🔴
+
+``` csharp
+AntdUI.Config.TextRenderingHighQuality = true;
 ```
 
 ### 默认字体

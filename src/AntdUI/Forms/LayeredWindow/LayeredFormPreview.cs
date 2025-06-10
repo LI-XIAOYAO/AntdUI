@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -38,20 +39,7 @@ namespace AntdUI
             form = _config.Form;
             Font = form.Font;
             TopMost = _config.Form.TopMost;
-            if (form.WindowState != FormWindowState.Maximized)
-            {
-                if (form is BorderlessForm borderless) Radius = (int)(borderless.Radius * Config.Dpi);
-                else if (OS.Win11) Radius = (int)(8 * Config.Dpi); //Win11
-                if (form is Window || form is FormNoBar)
-                {
-                    //无边框处理
-                }
-                else if (form.FormBorderStyle != FormBorderStyle.None)
-                {
-                    HasBor = true;
-                    Bor = (int)(7 * Config.Dpi);
-                }
-            }
+            HasBor = form.FormFrame(out Radius, out Bor);
             if (form is Window window)
             {
                 SetSize(window.Size);
@@ -68,23 +56,26 @@ namespace AntdUI
             }
             PageSize = config.ContentCount;
 
-            var btnwiths = new PreBtns[] {
-                new PreBtns("@t_flipY",SvgDb.IcoFlip.Insert(28," transform=\"rotate(90),translate(0 -100%)\"")),
-                new PreBtns("@t_flipX",SvgDb.IcoFlip),
-                new PreBtns("@t_rotateL",SvgDb.IcoRotateLeft),
-                new PreBtns("@t_rotateR",SvgDb.IcoRotateRight),
-                new PreBtns("@t_zoomOut",SvgDb.IcoZoomOut),
-                new PreBtns("@t_zoomIn",SvgDb.IcoZoomIn),
-            };
-            if (config.Btns == null || config.Btns.Length == 0) btns = btnwiths;
-            else
+            int len = 8;
+            if (config.Btns != null && config.Btns.Length > 0) len += config.Btns.Length;
+            var btnwiths = new List<PreBtns>(len)
             {
-                var btntmp = new List<PreBtns>(config.Btns.Length + btnwiths.Length);
-                foreach (var it in config.Btns) btntmp.Add(new PreBtns(it.Name, it.IconSvg, it.Tag));
-                btntmp.AddRange(btnwiths);
-                btns = btntmp.ToArray();
+                new PreBtns("@t_flipY",SvgDb.Custom["SwapOutlined"].Insert(28," transform=\"rotate(90),translate(0 -100%)\"")),
+                new PreBtns("@t_flipX","SwapOutlined"),
+                new PreBtns("@t_rotateL","RotateLeftOutlined"),
+                new PreBtns("@t_rotateR","RotateRightOutlined"),
+                new PreBtns("@t_zoomOut","ZoomOutOutlined"),
+                new PreBtns("@t_zoomIn","ZoomInOutlined"),
+            };
+            if (config.Content is IList<Preview.ImageTextContent>) btnwiths.Add(new PreBtns("@t_copyText", SvgDb.Custom["CopyOutlined"]));//这里是如果存在文字，则添加一个可以复制文本的按钮
+            if (config.Btns != null && config.Btns.Length > 0)
+            {
+                foreach (var it in config.Btns) btnwiths.Add(new PreBtns(it.Name, it.IconSvg, it.Tag));
             }
+            btns = btnwiths.ToArray();
         }
+
+        public override string name => nameof(Preview);
 
         int PageSize = 0;
 
@@ -108,6 +99,7 @@ namespace AntdUI
             form.SizeChanged += Form_LSChanged;
             LoadImg();
             base.OnLoad(e);
+            if (OS.Win7OrLower) Select();
         }
 
         private void Form_LSChanged(object? sender, EventArgs e)
@@ -144,6 +136,7 @@ namespace AntdUI
         /// <summary>
         /// 加载状态
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool Loading
         {
             get => loading;
@@ -160,6 +153,7 @@ namespace AntdUI
         /// <summary>
         /// 加载进度
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public float LoadingProgress
         {
             get => _value;
@@ -175,6 +169,7 @@ namespace AntdUI
 
         Image? Img = null;
         int SelectIndex = 0;
+        object? SelectValue;
         Size ImgSize = new Size();
         void LoadImg()
         {
@@ -185,12 +180,20 @@ namespace AntdUI
                 ImgSize = Img.Size;
                 FillScaleImg();
             }
+            else if (config.Content is IList<Preview.ImageTextContent> imgTxtList)
+            {
+                Img = imgTxtList[SelectIndex].Image;
+                Tag = imgTxtList[SelectIndex];
+                ImgSize = Img.Size;
+                FillScaleImg();
+            }
             else if (config.Content is object[] list && list[0] is IList<object> data)
             {
                 if (list[1] is Func<int, object, Image?> call)
                 {
                     Img?.Dispose();
-                    Img = call.Invoke(SelectIndex, data[SelectIndex]);
+                    SelectValue = data[SelectIndex];
+                    Img = call.Invoke(SelectIndex, SelectValue);
                     if (Img == null)
                     {
                         Print();
@@ -204,23 +207,43 @@ namespace AntdUI
                     LoadingProgressStr = null;
                     _value = -1F;
                     Loading = true;
+                    int selectIndex = SelectIndex;
+                    SelectValue = data[SelectIndex];
+                    DateTime now = DateTime.Now, now2 = DateTime.Now;
                     ITask.Run(() =>
                     {
-                        var img = callprog.Invoke(SelectIndex, data[SelectIndex], (prog, progstr) => { LoadingProgressStr = progstr; LoadingProgress = prog; });
-                        if (img == null)
+                        var img = callprog.Invoke(SelectIndex, SelectValue, (prog, progstr) =>
                         {
+                            LoadingProgressStr = progstr;
+                            LoadingProgress = prog;
+                        });
+                        now2 = DateTime.Now;
+                        if (selectIndex == SelectIndex)
+                        {
+                            if (img == null)
+                            {
+                                Img?.Dispose();
+                                Img = null;
+                                return;
+                            }
+                            LoadingProgressStr = null;
                             Img?.Dispose();
-                            Img = null;
-                            return;
+                            Img = img;
+                            ImgSize = Img.Size;
+                            FillScaleImg();
                         }
-                        LoadingProgressStr = null;
-                        Img?.Dispose();
-                        Img = img;
-                        ImgSize = Img.Size;
-                        FillScaleImg();
+                        else img?.Dispose();
                     }, () =>
                     {
-                        Loading = false;
+                        if (selectIndex == SelectIndex)
+                        {
+                            Loading = false;
+                            if ((now2 - now).TotalMilliseconds < 100)
+                            {
+                                System.Threading.Thread.Sleep(100);
+                                if (selectIndex == SelectIndex) Print();
+                            }
+                        }
                     });
                 }
             }
@@ -325,71 +348,31 @@ namespace AntdUI
                     {
                         using (var path = rect_read.RoundPath(Radius))
                         {
-                            g.FillPath(brush, path);
+                            g.Fill(brush, path);
                         }
                     }
-                    else g.FillRectangle(brush, rect_read);
+                    else g.Fill(brush, rect_read);
                 }
 
-                if (Img != null)
+                if (Img == null)
                 {
-                    try
-                    {
-                        g.DrawImage(Img, rect_img_dpi, new RectangleF(0, 0, ImgSize.Width, ImgSize.Height), GraphicsUnit.Pixel);
-                    }
-                    catch { }
+                    if (LoadingProgressStr != null) PaintLoading(g, true);
                 }
-                if (loading)
+                else
                 {
-                    using (var pen = new Pen(Color.FromArgb(220, Style.Db.PrimaryColor), 6 * Config.Dpi))
-                    using (var penpro = new Pen(Style.Db.Primary, pen.Width))
-                    {
-                        int loading_size = (int)(40 * Config.Dpi);
-                        var rect_loading = new Rectangle(rect_read.X + (rect_read.Width - loading_size) / 2, rect_read.Y + (rect_read.Height - loading_size) / 2, loading_size, loading_size);
-                        g.DrawEllipse(pen, rect_loading);
-                        if (_value > -1)
-                        {
-                            try
-                            {
-                                g.DrawArc(penpro, rect_loading, -90, 360F * _value);
-                            }
-                            catch { }
-
-                            if (LoadingProgressStr != null)
-                            {
-                                rect_loading.Offset(0, loading_size);
-                                using (var brush = new SolidBrush(Style.Db.PrimaryColor))
-                                {
-                                    g.DrawString(LoadingProgressStr, Font, brush, rect_loading, s_f);
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (LoadingProgressStr != null)
-                {
-                    using (var pen = new Pen(Style.Db.Error, 6 * Config.Dpi))
-                    {
-                        int loading_size = (int)(40 * Config.Dpi);
-                        var rect_loading = new Rectangle(rect_read.X + (rect_read.Width - loading_size) / 2, rect_read.Y + (rect_read.Height - loading_size) / 2, loading_size, loading_size);
-                        g.DrawEllipse(pen, rect_loading);
-                        rect_loading.Offset(0, loading_size);
-                        using (var brush = new SolidBrush(Style.Db.ErrorColor))
-                        {
-                            g.DrawString(LoadingProgressStr, Font, brush, rect_loading, s_f);
-                        }
-                    }
+                    g.Image(Img, rect_img_dpi, new RectangleF(0, 0, ImgSize.Width, ImgSize.Height), GraphicsUnit.Pixel);
+                    if (loading) PaintLoading(g);
                 }
                 using (var path = rect_panel.RoundPath(rect_panel.Height))
                 {
                     using (var brush = new SolidBrush(Color.FromArgb(26, 0, 0, 0)))
                     {
-                        g.FillPath(brush, path);
+                        g.Fill(brush, path);
                         PaintBtn(g, brush, rect_close, rect_close_icon, SvgDb.IcoClose, hoverClose, true);
                         if (PageSize > 1)
                         {
-                            PaintBtn(g, brush, rect_left, rect_left_icon, SvgDb.IcoLeft, hoverLeft, enabledLeft);
-                            PaintBtn(g, brush, rect_right, rect_right_icon, SvgDb.IcoRight, hoverRight, enabledRight);
+                            PaintBtn(g, brush, rect_left, rect_left_icon, "LeftOutlined", hoverLeft, enabledLeft);
+                            PaintBtn(g, brush, rect_right, rect_right_icon, "RightOutlined", hoverRight, enabledRight);
                         }
                     }
                 }
@@ -399,16 +382,124 @@ namespace AntdUI
                     {
                         if (bmp != null)
                         {
-                            if (it.enabled) g.DrawImage(bmp, it.rect);
-                            else g.DrawImage(bmp, it.rect, 0.3F);
+                            if (it.enabled) g.Image(bmp, it.rect);
+                            else g.Image(bmp, it.rect, 0.3F);
                         }
                     }
                 }
+
+                if (Tag is Preview.ImageTextContent content && content.Text != null)
+                {
+                    // 测量文本大小
+                    var size = g.MeasureText(content.Text, content.Font ?? Font);
+                    using (var brush = new SolidBrush(content.ForeColor ?? Style.Db.Text))
+                    using (var format = new StringFormat())
+                    {
+                        Rectangle textRect;
+                        int width = TargetRect.Width, height = size.Height;
+
+                        if (size.Width > TargetRect.Width)
+                        {
+                            format.FormatFlags = StringFormatFlags.LineLimit;
+                            format.Trimming = StringTrimming.Word;
+                            // 重新测量换行后的文本所需区域
+                            size = g.MeasureText(content.Text, content.Font ?? Font, TargetRect.Width, format);
+
+                            //重新测量后重新赋值矩形高度
+                            height = Math.Min(size.Height, TargetRect.Height);
+                            width = TargetRect.Width;
+                        }
+
+                        switch (content.TextAlign)
+                        {
+                            case ContentAlignment.TopLeft:
+                                textRect = new Rectangle(0, 0, width, height);
+                                format.Alignment = StringAlignment.Near;
+                                break;
+                            case ContentAlignment.TopCenter:
+                                textRect = new Rectangle(0, 0, width, height);
+                                format.Alignment = StringAlignment.Center;
+                                break;
+                            case ContentAlignment.TopRight:
+                                textRect = new Rectangle(0, 0, width, height);
+                                format.Alignment = StringAlignment.Far;
+                                break;
+                            case ContentAlignment.MiddleLeft:
+                                textRect = new Rectangle(0, TargetRect.Height / 2, width, height);
+                                format.Alignment = StringAlignment.Near;
+                                break;
+                            case ContentAlignment.MiddleCenter:
+                                textRect = new Rectangle(0, TargetRect.Height / 2, width, height);
+                                format.Alignment = StringAlignment.Center;
+                                break;
+                            case ContentAlignment.MiddleRight:
+                                textRect = new Rectangle(0, TargetRect.Height / 2, width, height);
+                                format.Alignment = StringAlignment.Far;
+                                break;
+                            case ContentAlignment.BottomLeft:
+                                textRect = new Rectangle(0, TargetRect.Height - height, width, height);
+                                format.Alignment = StringAlignment.Near;
+                                break;
+                            case ContentAlignment.BottomCenter:
+                                textRect = new Rectangle(0, TargetRect.Height - height, width, height);
+                                format.Alignment = StringAlignment.Center;
+                                break;
+                            case ContentAlignment.BottomRight:
+                                textRect = new Rectangle(0, TargetRect.Height - height, width, height);
+                                format.Alignment = StringAlignment.Far;
+                                break;
+                            default:
+                                throw new Exception("什么鬼，你怎么可能进入这个异常");
+                        }
+
+                        format.LineAlignment = StringAlignment.Far;
+
+                        g.DrawText(content.Text, content.Font ?? Font, brush, textRect, format);
+                    }
+                }
             }
+
             return original_bmp;
         }
 
-        void PaintBtn(Graphics g, SolidBrush brush, Rectangle rect, Rectangle rect_ico, string svg, bool hover, bool enabled)
+        void PaintLoading(Canvas g, bool error = false)
+        {
+            var bor6 = 6F * Config.Dpi;
+            int loading_size = (int)(40 * Config.Dpi);
+            var rect_loading = new Rectangle(rect_read.X + (rect_read.Width - loading_size) / 2, rect_read.Y + (rect_read.Height - loading_size) / 2, loading_size, loading_size);
+            Color color, bg;
+            if (error)
+            {
+                bg = Colour.Error.Get("Preview");
+                color = Colour.ErrorColor.Get("Preview");
+            }
+            else
+            {
+                bg = Colour.Primary.Get("Preview");
+                color = Colour.PrimaryColor.Get("Preview");
+            }
+            g.DrawEllipse(Color.FromArgb(220, color), bor6, rect_loading);
+            if (_value > -1)
+            {
+                using (var penpro = new Pen(bg, bor6))
+                {
+                    g.DrawArc(penpro, rect_loading, -90, 360F * _value);
+                }
+                if (LoadingProgressStr != null)
+                {
+                    rect_loading.Offset(0, loading_size);
+                    g.String(LoadingProgressStr, Font, color, rect_loading, s_f);
+                }
+            }
+            else if (LoadingProgressStr != null)
+            {
+                g.DrawEllipse(Colour.Error.Get("Preview"), bor6, rect_loading);
+                rect_loading.Offset(0, loading_size);
+                g.String(LoadingProgressStr, Font, Colour.ErrorColor.Get("Preview"), rect_loading, s_f);
+            }
+        }
+
+        void PaintBtn(Canvas g, SolidBrush brush, Rectangle rect, Rectangle rect_ico, string svg, bool hover, bool enabled)
         {
             using (var bmp = SvgExtend.GetImgExtend(svg, rect_ico, Color.White))
             {
@@ -420,8 +511,8 @@ namespace AntdUI
                         { g.FillEllipse(brush_hover, rect); }
                     }
                     else g.FillEllipse(brush, rect);
-                    if (enabled) g.DrawImage(bmp, rect_ico);
-                    else g.DrawImage(bmp, rect_ico, 0.3F);
+                    if (enabled) g.Image(bmp, rect_ico);
+                    else g.Image(bmp, rect_ico, 0.3F);
                 }
             }
         }
@@ -460,9 +551,8 @@ namespace AntdUI
         protected override void OnSizeChanged(EventArgs e)
         {
             if (btns == null) return;
-            if (HasBor) rect_read = new Rectangle(Bor, 0, TargetRect.Width - Bor * 2, TargetRect.Height - Bor);
-            else rect_read = TargetRectXY;
-
+            var rect_target = TargetRectXY;
+            rect_read = HasBor ? new Rectangle(Bor, 0, rect_target.Width - Bor * 2, rect_target.Height - Bor) : rect_target;
             int btn_height = (int)(46 * Config.Dpi), lr_size = (int)(40 * Config.Dpi), btn_width = (int)(42 * Config.Dpi),
                 padding = (int)(24 * Config.Dpi), padding_lr = (int)(12 * Config.Dpi), padding_buttom = (int)(32 * Config.Dpi),
                 icon_size = (int)(18 * Config.Dpi);
@@ -501,14 +591,8 @@ namespace AntdUI
         #region 鼠标
 
         bool hoverClose = false, hoverLeft = false, hoverRight = false;
-        bool enabledLeft
-        {
-            get => SelectIndex > 0;
-        }
-        bool enabledRight
-        {
-            get => SelectIndex < PageSize - 1;
-        }
+        bool enabledLeft => SelectIndex > 0;
+        bool enabledRight => SelectIndex < PageSize - 1;
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             if (Img != null)
@@ -557,31 +641,55 @@ namespace AntdUI
             if (rect_close.Contains(e.Location))
             {
                 hand++;
-                if (!hoverClose) { hoverClose = true; count++; }
+                if (!hoverClose)
+                {
+                    hoverClose = true;
+                    count++;
+                }
             }
             else
             {
-                if (hoverClose) { hoverClose = false; count++; }
+                if (hoverClose)
+                {
+                    hoverClose = false;
+                    count++;
+                }
             }
             if (PageSize > 1)
             {
                 if (enabledLeft && rect_left.Contains(e.Location))
                 {
                     hand++;
-                    if (!hoverLeft) { hoverLeft = true; count++; }
+                    if (!hoverLeft)
+                    {
+                        hoverLeft = true;
+                        count++;
+                    }
                 }
                 else
                 {
-                    if (hoverLeft) { hoverLeft = false; count++; }
+                    if (hoverLeft)
+                    {
+                        hoverLeft = false;
+                        count++;
+                    }
                 }
                 if (enabledRight && rect_right.Contains(e.Location))
                 {
                     hand++;
-                    if (!hoverRight) { hoverRight = true; count++; }
+                    if (!hoverRight)
+                    {
+                        hoverRight = true;
+                        count++;
+                    }
                 }
                 else
                 {
-                    if (hoverRight) { hoverRight = false; count++; }
+                    if (hoverRight)
+                    {
+                        hoverRight = false;
+                        count++;
+                    }
                 }
             }
             foreach (var it in btns)
@@ -589,18 +697,23 @@ namespace AntdUI
                 if (it.enabled && it.Rect.Contains(e.Location))
                 {
                     hand++;
-                    if (!it.hover) { it.hover = true; count++; }
+                    if (!it.hover)
+                    {
+                        it.hover = true;
+                        count++;
+                    }
                 }
                 else
                 {
-                    if (it.hover) { it.hover = false; count++; }
+                    if (it.hover)
+                    {
+                        it.hover = false;
+                        count++;
+                    }
                 }
             }
             SetCursor(hand > 0);
-            if (count > 0)
-            {
-                Print();
-            }
+            if (count > 0) Print();
         }
 
         protected override void OnMouseDown(MouseEventArgs e)
@@ -706,8 +819,20 @@ namespace AntdUI
                                 SetBtnEnabled("@t_zoomOut", true);
                                 Print();
                                 break;
+                            case "@t_copyText":
+                                if (Tag is Preview.ImageTextContent content && content.Text != null && content.Text.Length > 0)
+                                {
+                                    if (Helper.ClipboardSetText(this, content.Text))
+                                    {
+                                        Message.open(new Message.Config(this, "复制成功", TType.Success, Font)
+                                        {
+                                            ShowInWindow = true
+                                        });
+                                    }
+                                }
+                                break;
                             default:
-                                config.OnBtns?.Invoke(it.id, it.tag);
+                                config.OnBtns?.Invoke(it.id, new Preview.BtnEvent(SelectIndex, SelectValue, it.tag));
                                 break;
                         }
                     }

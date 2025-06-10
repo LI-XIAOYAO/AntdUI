@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -67,7 +63,7 @@ namespace Demo.Controls
             divider2 = new AntdUI.Divider();
             panel2 = new System.Windows.Forms.Panel();
             tooltip1 = new AntdUI.Tooltip();
-            label4 = new Label();
+            label4 = new AntdUI.Label();
             divider1 = new AntdUI.Divider();
             tooltipComponent1 = new AntdUI.TooltipComponent();
             tooltipTL = new AntdUI.TooltipComponent();
@@ -92,6 +88,8 @@ namespace Demo.Controls
             header1.Description = "简单的文字提示气泡框。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Tooltip.Description";
+            header1.LocalizationText = "Tooltip.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -128,7 +126,7 @@ namespace Demo.Controls
             panel3.Controls.Add(button10);
             panel3.Controls.Add(button1);
             panel3.Dock = DockStyle.Top;
-            panel3.Location = new Point(0, 106);
+            panel3.Location = new Point(0, 118);
             panel3.Name = "panel3";
             panel3.Size = new Size(589, 247);
             panel3.TabIndex = 5;
@@ -257,11 +255,11 @@ namespace Demo.Controls
             // 
             divider2.Dock = DockStyle.Top;
             divider2.Font = new Font("Microsoft YaHei UI", 10F);
-            divider2.Location = new Point(0, 84);
-            divider2.Margin = new Padding(10);
+            divider2.LocalizationText = "Tooltip.{id}";
+            divider2.Location = new Point(0, 90);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(589, 22);
+            divider2.Size = new Size(589, 28);
             divider2.TabIndex = 4;
             divider2.Text = "位置";
             // 
@@ -270,7 +268,7 @@ namespace Demo.Controls
             panel2.Controls.Add(tooltip1);
             panel2.Controls.Add(label4);
             panel2.Dock = DockStyle.Top;
-            panel2.Location = new Point(0, 22);
+            panel2.Location = new Point(0, 28);
             panel2.Name = "panel2";
             panel2.Size = new Size(589, 62);
             panel2.TabIndex = 3;
@@ -287,10 +285,11 @@ namespace Demo.Controls
             // 
             // label4
             // 
-            label4.AutoSize = true;
+            label4.AutoSizeMode = AntdUI.TAutoSize.Auto;
+            label4.LocalizationText = "Tooltip.{id}";
             label4.Location = new Point(12, 10);
             label4.Name = "label4";
-            label4.Size = new Size(106, 21);
+            label4.Size = new Size(96, 21);
             label4.TabIndex = 0;
             label4.Text = "最简单的用法";
             tooltipComponent1.SetTip(label4, "prompt text");
@@ -299,11 +298,11 @@ namespace Demo.Controls
             // 
             divider1.Dock = DockStyle.Top;
             divider1.Font = new Font("Microsoft YaHei UI", 10F);
+            divider1.LocalizationText = "Tooltip.{id}";
             divider1.Location = new Point(0, 0);
-            divider1.Margin = new Padding(10);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(589, 22);
+            divider1.Size = new Size(589, 28);
             divider1.TabIndex = 1;
             divider1.Text = "基本";
             // 
@@ -385,11 +384,12 @@ namespace Demo.Controls
         }
 
         #endregion
+
         private AntdUI.PageHeader header1;
         private System.Windows.Forms.Panel panel1;
         private AntdUI.Divider divider1;
         private System.Windows.Forms.Panel panel2;
-        private Label label4;
+        private AntdUI.Label label4;
         private AntdUI.TooltipComponent tooltipComponent1;
         private System.Windows.Forms.Panel panel3;
         private AntdUI.Divider divider2;

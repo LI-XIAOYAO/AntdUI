@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -65,6 +61,8 @@ namespace Demo.Controls
             header1.Description = "开关选择器。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Switch.Description";
+            header1.LocalizationText = "Switch.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -75,7 +73,6 @@ namespace Demo.Controls
             // 
             // switch8
             // 
-            switch8.AutoCheck = true;
             switch8.Enabled = false;
             switch8.Location = new Point(323, 167);
             switch8.Name = "switch8";
@@ -84,7 +81,6 @@ namespace Demo.Controls
             // 
             // switch4
             // 
-            switch4.AutoCheck = true;
             switch4.CheckedText = "on";
             switch4.Location = new Point(109, 167);
             switch4.Name = "switch4";
@@ -94,7 +90,6 @@ namespace Demo.Controls
             // 
             // switch7
             // 
-            switch7.AutoCheck = true;
             switch7.Checked = true;
             switch7.Enabled = false;
             switch7.Location = new Point(231, 167);
@@ -104,7 +99,6 @@ namespace Demo.Controls
             // 
             // switch2
             // 
-            switch2.AutoCheck = true;
             switch2.Location = new Point(17, 167);
             switch2.Name = "switch2";
             switch2.Size = new Size(60, 38);
@@ -112,7 +106,6 @@ namespace Demo.Controls
             // 
             // switch6
             // 
-            switch6.AutoCheck = true;
             switch6.Enabled = false;
             switch6.Location = new Point(323, 96);
             switch6.Name = "switch6";
@@ -121,7 +114,6 @@ namespace Demo.Controls
             // 
             // switch3
             // 
-            switch3.AutoCheck = true;
             switch3.Checked = true;
             switch3.CheckedText = "开启";
             switch3.Location = new Point(109, 96);
@@ -132,7 +124,6 @@ namespace Demo.Controls
             // 
             // switch5
             // 
-            switch5.AutoCheck = true;
             switch5.Checked = true;
             switch5.Enabled = false;
             switch5.Location = new Point(231, 96);
@@ -142,7 +133,6 @@ namespace Demo.Controls
             // 
             // switch1
             // 
-            switch1.AutoCheck = true;
             switch1.Checked = true;
             switch1.Location = new Point(17, 96);
             switch1.Name = "switch1";
@@ -152,12 +142,12 @@ namespace Demo.Controls
             // Switch
             // 
             Controls.Add(switch8);
-            Controls.Add(switch4);
-            Controls.Add(switch7);
-            Controls.Add(switch2);
             Controls.Add(switch6);
-            Controls.Add(switch3);
+            Controls.Add(switch7);
             Controls.Add(switch5);
+            Controls.Add(switch4);
+            Controls.Add(switch3);
+            Controls.Add(switch2);
             Controls.Add(switch1);
             Controls.Add(header1);
             Font = new Font("Microsoft YaHei UI", 9F);

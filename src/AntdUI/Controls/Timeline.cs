@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -48,7 +48,7 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
             }
@@ -56,6 +56,12 @@ namespace AntdUI
 
         [Description("描述字体"), Category("外观"), DefaultValue(null)]
         public Font? FontDescription { get; set; }
+
+        /// <summary>
+        /// 间距
+        /// </summary>
+        [Description("间距"), Category("外观"), DefaultValue(null)]
+        public int? Gap { get; set; }
 
         TimelineItemCollection? items;
         /// <summary>
@@ -75,8 +81,7 @@ namespace AntdUI
 
         protected override void OnSizeChanged(EventArgs e)
         {
-            var rect = ChangeList();
-            ScrollBar.SizeChange(rect);
+            ChangeList();
             base.OnSizeChanged(e);
         }
 
@@ -95,6 +100,7 @@ namespace AntdUI
                     ChangeList();
                     Invalidate();
                 }
+                OnPropertyChanged(nameof(PauseLayout));
             }
         }
 
@@ -104,20 +110,17 @@ namespace AntdUI
         [Browsable(false)]
         public ScrollBar ScrollBar;
 
-        internal Rectangle ChangeList()
+        internal void ChangeList()
         {
             var rect = ClientRectangle.DeflateRect(Padding);
-            if (pauseLayout || items == null || items.Count == 0) return rect;
-            if (rect.Width == 0 || rect.Height == 0) return rect;
-
+            if (pauseLayout || items == null || items.Count == 0 || (rect.Width == 0 || rect.Height == 0)) return;
             int y = rect.Y;
             Helper.GDI(g =>
             {
-                var size_def = g.MeasureString(Config.NullText, Font).Size();
+                var size_def = g.MeasureString(Config.NullText, Font);
                 int text_size = size_def.Height;
                 float pen_w = text_size * 0.136F, split = pen_w * 0.666F, split_gap = split * 2F;
-                int gap = (int)Math.Round(8F * Config.Dpi), gap_x = (int)Math.Round(text_size * 1.1D), gap_x_icon = (int)Math.Round(text_size * 0.846D), gap_y = (int)Math.Round(text_size * 0.91D),
-                    ico_size = (int)Math.Round(text_size * 0.636D);
+                int gap = (int)Math.Round(8 * Config.Dpi), gap_x = (int)Math.Round(text_size * 1.1D), gap_x_icon = (int)Math.Round(text_size * .846D), gap_y = (int)Math.Round((Gap * Config.Dpi) ?? (text_size * .91D)), ico_size = (int)Math.Round(text_size * .636D);
 
                 int max_w = rect.Width - ico_size - gap_x_icon - (gap_x * 2);
                 y += gap_x;
@@ -132,17 +135,18 @@ namespace AntdUI
 
                     if (it.Visible)
                     {
-                        var size = g.MeasureString(it.Text, Font, max_w).Size();
-
+                        var size = g.MeasureText(it.Text, Font, max_w);
+                        int ytmp = y, htmp = size.Height;
                         it.ico_rect = new Rectangle(rect.X + gap_x, y + (text_size - ico_size) / 2, ico_size, ico_size);
                         it.txt_rect = new Rectangle(it.ico_rect.Right + gap_x_icon, y, size.Width, size.Height);
                         if (!string.IsNullOrEmpty(it.Description))
                         {
-                            var DescriptionSize = g.MeasureString(it.Description, font_Description, max_w).Size();
+                            var DescriptionSize = g.MeasureText(it.Description, font_Description, max_w);
                             it.description_rect = new Rectangle(it.txt_rect.X, it.txt_rect.Bottom + gap, DescriptionSize.Width, DescriptionSize.Height);
                             y += gap * 2 + DescriptionSize.Height;
+                            htmp += DescriptionSize.Height + gap;
                         }
-                        it.rect = new Rectangle(it.ico_rect.X - gap, y - gap, it.txt_rect.Width + ico_size + gap_x_icon + gap2, size.Height + gap2);
+                        it.rect = new Rectangle(it.ico_rect.X - gap, ytmp - gap, it.txt_rect.Width + ico_size + gap_x_icon + gap2, htmp + gap2);
                         y += size.Height + gap_y;
 
                         if (i > 0)
@@ -157,7 +161,7 @@ namespace AntdUI
                 y = y - gap_y + gap_x;
             });
             ScrollBar.SetVrSize(y);
-            return rect;
+            ScrollBar.SizeChange(rect);
         }
 
         RectangleF[] splits = new RectangleF[0];
@@ -177,30 +181,31 @@ namespace AntdUI
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (items == null || items.Count == 0) return;
             var rect = ClientRectangle;
             if (rect.Width == 0 || rect.Height == 0) return;
+            if (items == null || items.Count == 0)
+            {
+                base.OnPaint(e);
+                return;
+            }
             var g = e.Graphics.High();
             g.TranslateTransform(0, -ScrollBar.Value);
-            Color color_fore = fore ?? Style.Db.Text;
-            using (var brush_split = new SolidBrush(Style.Db.Split))
+            Color color_fore = fore ?? Colour.Text.Get("Timeline", ColorScheme);
+            using (var brush_split = new SolidBrush(Colour.Split.Get("Timeline", ColorScheme)))
             {
-                foreach (var it in splits)
-                {
-                    g.FillRectangle(brush_split, it);
-                }
+                foreach (var it in splits) g.Fill(brush_split, it);
             }
             var font_Description = FontDescription ?? Font;
             using (var brush_fore = new SolidBrush(color_fore))
-            using (var brush_fore2 = new SolidBrush(Style.Db.TextTertiary))
-            using (var brush_dotback = new SolidBrush(Style.Db.BgBase))
+            using (var brush_fore2 = new SolidBrush(Colour.TextTertiary.Get("Timeline", ColorScheme)))
+            using (var brush_dotback = new SolidBrush(Colour.BgBase.Get("Timeline", ColorScheme)))
             {
-                foreach (TimelineItem it in items)
+                foreach (var it in items)
                 {
                     if (it.Visible)
                     {
-                        g.DrawStr(it.Text, Font, brush_fore, it.txt_rect, stringFormatLeft);
-                        g.DrawStr(it.Description, font_Description, brush_fore2, it.description_rect, stringFormatLeft);
+                        g.DrawText(it.Text, Font, brush_fore, it.txt_rect, stringFormatLeft);
+                        g.DrawText(it.Description, font_Description, brush_fore2, it.description_rect, stringFormatLeft);
                         if (PaintIcon(g, it, color_fore))
                         {
                             Color fill;
@@ -210,32 +215,29 @@ namespace AntdUI
                                 switch (it.Type)
                                 {
                                     case TTypeMini.Error:
-                                        fill = Style.Db.Error;
+                                        fill = Colour.Error.Get("Timeline", ColorScheme);
                                         break;
                                     case TTypeMini.Success:
-                                        fill = Style.Db.Success;
+                                        fill = Colour.Success.Get("Timeline", ColorScheme);
                                         break;
                                     case TTypeMini.Info:
-                                        fill = Style.Db.Info;
+                                        fill = Colour.Info.Get("Timeline", ColorScheme);
                                         break;
                                     case TTypeMini.Warn:
-                                        fill = Style.Db.Warning;
+                                        fill = Colour.Warning.Get("Timeline", ColorScheme);
                                         break;
                                     case TTypeMini.Default:
-                                        fill = Style.Db.TextQuaternary;
+                                        fill = Colour.TextQuaternary.Get("Timeline", ColorScheme);
                                         break;
                                     case TTypeMini.Primary:
                                     default:
-                                        fill = Style.Db.Primary;
+                                        fill = Colour.Primary.Get("Timeline", ColorScheme);
                                         break;
                                 }
                             }
 
                             g.FillEllipse(brush_dotback, it.ico_rect);
-                            using (var pen = new Pen(fill, it.pen_w))
-                            {
-                                g.DrawEllipse(pen, it.ico_rect);
-                            }
+                            g.DrawEllipse(fill, it.pen_w, it.ico_rect);
                         }
                     }
                 }
@@ -246,14 +248,12 @@ namespace AntdUI
             base.OnPaint(e);
         }
 
-        bool PaintIcon(Graphics g, TimelineItem it, Color fore)
+        bool PaintIcon(Canvas g, TimelineItem it, Color fore)
         {
-            if (it.Icon != null) { g.DrawImage(it.Icon, it.ico_rect); return false; }
-            else if (it.IconSvg != null)
-            {
-                if (g.GetImgExtend(it.IconSvg, it.ico_rect, fore)) return false;
-            }
-            return true;
+            int count = 0;
+            if (it.Icon != null) { g.Image(it.Icon, it.ico_rect); count++; }
+            if (it.IconSvg != null && g.GetImgExtend(it.IconSvg, it.ico_rect, fore)) count++;
+            return count == 0;
         }
 
         #endregion
@@ -307,8 +307,8 @@ namespace AntdUI
             base.OnLeave(e);
             ScrollBar.Leave();
         }
-        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelX(value);
-        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelY(value);
+        protected override bool OnTouchScrollX(int value) => ScrollBar.MouseWheelXCore(value);
+        protected override bool OnTouchScrollY(int value) => ScrollBar.MouseWheelYCore(value);
 
         #endregion
 
@@ -390,6 +390,12 @@ namespace AntdUI
         }
 
         /// <summary>
+        /// ID
+        /// </summary>
+        [Description("ID"), Category("数据"), DefaultValue(null)]
+        public string? ID { get; set; }
+
+        /// <summary>
         /// 图标
         /// </summary>
         [Description("图标"), Category("外观"), DefaultValue(null)]
@@ -407,19 +413,46 @@ namespace AntdUI
         [Description("名称"), Category("数据"), DefaultValue(null)]
         public string? Name { get; set; }
 
+        string? description = null;
         /// <summary>
         /// 描述，可选
         /// </summary>
         [Description("描述，可选"), Category("外观"), DefaultValue(null)]
         [Editor(typeof(System.ComponentModel.Design.MultilineStringEditor), typeof(UITypeEditor))]
-        public string? Description { get; set; }
+        public string? Description
+        {
+            get => Localization.GetLangI(LocalizationDescription, description, new string?[] { "{id}", ID });
+            set
+            {
+                if (description == value) return;
+                description = value;
+                Invalidates();
+            }
+        }
 
+        [Description("详情描述"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationDescription { get; set; }
+
+
+        string? text;
         /// <summary>
         /// 文本
         /// </summary>
         [Description("文本"), Category("外观"), DefaultValue(null)]
         [Editor(typeof(System.ComponentModel.Design.MultilineStringEditor), typeof(UITypeEditor))]
-        public string? Text { get; set; }
+        public string? Text
+        {
+            get => Localization.GetLangI(LocalizationText, text, new string?[] { "{id}", ID });
+            set
+            {
+                if (text == value) return;
+                text = value;
+                Invalidates();
+            }
+        }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         [Description("颜色类型"), Category("外观"), DefaultValue(TTypeMini.Primary)]
         public TTypeMini Type { get; set; } = TTypeMini.Primary;

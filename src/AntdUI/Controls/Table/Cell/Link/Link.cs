@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -32,6 +32,8 @@ namespace AntdUI
         /// <param name="id">id</param>
         /// <param name="text">文本</param>
         public CellLink(string id, string? text) { Id = id; _text = text; }
+
+        #region 属性
 
         /// <summary>
         /// ID
@@ -95,9 +97,35 @@ namespace AntdUI
         /// </summary>
         public string? Tooltip { get; set; }
 
-        public override string? ToString()
+        #endregion
+
+        #region 设置
+
+        public CellLink SetText(string? text)
         {
-            return _text;
+            _text = text;
+            return this;
         }
+        public CellLink SetTextAlign(ContentAlignment align = ContentAlignment.MiddleLeft)
+        {
+            textAlign = align;
+            textAlign.SetAlignment(ref stringFormat);
+            return this;
+        }
+        public CellLink SetEnabled(bool value = false)
+        {
+            enabled = value;
+            return this;
+        }
+        public CellLink SetTooltip(string? tooltip)
+        {
+            Tooltip = tooltip;
+            return this;
+        }
+
+
+        #endregion
+
+        public override string? ToString() => _text;
     }
 }

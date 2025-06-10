@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -35,10 +35,7 @@ namespace AntdUI
         /// <param name="title">标题</param>
         /// <param name="content">内容</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, string title, string content, TAlign ArrowAlign = TAlign.Bottom)
-        {
-            return open(new Config(control, title, content) { ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, string title, string content, TAlign ArrowAlign = TAlign.Bottom) => open(new Config(control, title, content) { ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Popover 气泡卡片
@@ -46,10 +43,7 @@ namespace AntdUI
         /// <param name="control">所属控件</param>
         /// <param name="content">内容</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, string content, TAlign ArrowAlign = TAlign.Bottom)
-        {
-            return open(new Config(control, content) { ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, string content, TAlign ArrowAlign = TAlign.Bottom) => open(new Config(control, content) { ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Popover 气泡卡片
@@ -58,10 +52,7 @@ namespace AntdUI
         /// <param name="title">标题</param>
         /// <param name="content">控件/内容</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, string title, object content, TAlign ArrowAlign = TAlign.Bottom)
-        {
-            return open(new Config(control, title, content) { ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, string title, object content, TAlign ArrowAlign = TAlign.Bottom) => open(new Config(control, title, content) { ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Popover 气泡卡片
@@ -69,10 +60,7 @@ namespace AntdUI
         /// <param name="control">所属控件</param>
         /// <param name="content">控件/内容</param>
         /// <param name="ArrowAlign">箭头方向</param>
-        public static Form? open(Control control, object content, TAlign ArrowAlign = TAlign.Bottom)
-        {
-            return open(new Config(control, content) { ArrowAlign = ArrowAlign });
-        }
+        public static Form? open(Control control, object content, TAlign ArrowAlign = TAlign.Bottom) => open(new Config(control, content) { ArrowAlign = ArrowAlign });
 
         /// <summary>
         /// Popover 气泡卡片
@@ -82,16 +70,9 @@ namespace AntdUI
         {
             if (config.Control.IsHandleCreated)
             {
-                if (config.Control.InvokeRequired)
-                {
-                    Form? form = null;
-                    config.Control.Invoke(new Action(() =>
-                    {
-                        form = open(config);
-                    }));
-                    return form;
-                }
-                var popover = new LayeredFormPopover(config); popover.Show(config.Control);
+                if (config.Control.InvokeRequired) return ITask.Invoke(config.Control, new Func<Form?>(() => open(config)));
+                var popover = new LayeredFormPopover(config);
+                popover.Show(config.Control);
                 return popover;
             }
             return null;
@@ -157,7 +138,7 @@ namespace AntdUI
             /// <summary>
             /// 偏移量
             /// </summary>
-            public object? Offset { get; set; } = null;
+            public object? Offset { get; set; }
 
             /// <summary>
             /// 标题
@@ -182,12 +163,22 @@ namespace AntdUI
             /// <summary>
             /// 自动关闭时间（秒）0等于不关闭
             /// </summary>
-            public int AutoClose { get; set; } = 0;
+            public int AutoClose { get; set; }
 
             /// <summary>
             /// 圆角
             /// </summary>
             public int Radius { get; set; } = 6;
+
+            /// <summary>
+            /// 边距
+            /// </summary>
+            public Size Padding { get; set; } = new Size(14, 12);
+
+            /// <summary>
+            /// 间距
+            /// </summary>
+            public int Gap { get; set; } = 4;
 
             /// <summary>
             /// 箭头大小
@@ -203,6 +194,16 @@ namespace AntdUI
             /// 用户定义数据
             /// </summary>
             public object? Tag { get; set; }
+
+            /// <summary>
+            /// 自定义位置
+            /// </summary>
+            public Rectangle? CustomPoint { get; set; }
+
+            /// <summary>
+            /// 获取焦点
+            /// </summary>
+            public bool Focus { get; set; } = true;
         }
 
         /// <summary>

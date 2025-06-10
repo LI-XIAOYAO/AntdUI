@@ -11,19 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace AntdUI
 {
-    internal class LayeredFormModal : Window, IEventListener
+    internal class LayeredFormModal : Window, IEventListener, LayeredFormAsynLoad
     {
         Modal.Config config;
         Panel? panel_main;
@@ -41,20 +42,25 @@ namespace AntdUI
             FormBorderStyle = FormBorderStyle.FixedSingle;
             config = _config;
             if (config.Form != null) TopMost = config.Form.TopMost;
-            close_button = new ITaskOpacity(this);
+            close_button = new ITaskOpacity(nameof(AntdUI.Modal), this);
 
             #region InitializeComponent
 
             SuspendLayout();
 
             int butt_h = (int)Math.Round(config.BtnHeight * Config.Dpi);
-            BackColor = Style.Db.BgElevated;
+            BackColor = Colour.BgElevated.Get("Modal");
             Size = new Size(416, 122 + butt_h);
-            if (config.Form == null) { if (config.Font != null) Font = config.Font; }
-            else Font = config.Font ?? config.Form.Font;
-            ForeColor = Style.Db.TextBase;
+            if (config.Form == null)
+            {
+                if (config.Font != null) Font = config.Font;
+                else if (Config.Font != null) Font = Config.Font;
+            }
+            else Font = config.Font ?? Config.Font ?? config.Form.Font;
+            ForeColor = Colour.TextBase.Get("Modal");
             ShowInTaskbar = false;
             if (config.Form == null) StartPosition = FormStartPosition.CenterScreen;
+            else if (config.Form.WindowState == FormWindowState.Minimized || !config.Form.Visible) StartPosition = FormStartPosition.CenterScreen;
             else StartPosition = FormStartPosition.CenterParent;
 
             if (butt_h > 0)
@@ -95,7 +101,7 @@ namespace AntdUI
                 panel_main = new Panel
                 {
                     Dock = DockStyle.Bottom,
-                    Back = Style.Db.BgElevated,
+                    Back = Colour.BgElevated.Get("Modal"),
                     Size = new Size(368, butt_h)
                 };
                 if (btn_no != null) panel_main.Controls.Add(btn_no);
@@ -143,33 +149,43 @@ namespace AntdUI
                                 if (result)
                                 {
                                     System.Threading.Thread.Sleep(10);
-                                    BeginInvoke(new Action(() =>
+                                    BeginInvoke(() =>
                                     {
                                         if (IsHandleCreated && !IsDisposed) Close();
-                                    }));
+                                    });
                                 }
                                 else if (DisableCancel && btn_no != null)
                                 {
-                                    BeginInvoke(new Action(() =>
+                                    BeginInvoke(() =>
                                     {
                                         if (btn_no.IsHandleCreated && !btn_no.IsDisposed) btn_no.Enabled = true;
-                                    }));
+                                    });
                                 }
                             });
                         };
                     }
                 }
                 Controls.Add(panel_main);
-                panel_main.MouseMove += Window_MouseDown;
+                if (config.Draggable) panel_main.MouseMove += Window_MouseDown;
             }
 
             if (config.Keyboard)
             {
-                if (btn_no == null) AcceptButton = CancelButton = btn_ok;
+                if (butt_h > 0)
+                {
+                    if (btn_no == null) AcceptButton = CancelButton = btn_ok;
+                    else
+                    {
+                        AcceptButton = btn_ok;
+                        CancelButton = btn_no;
+                    }
+                }
                 else
                 {
-                    AcceptButton = btn_ok;
-                    CancelButton = btn_no;
+                    ONESC = () =>
+                    {
+                        DialogResult = DialogResult.No;
+                    };
                 }
             }
 
@@ -193,26 +209,33 @@ namespace AntdUI
                         w = control.Width + paddingx * 2;
                         wp = control.Width;
                         Controls.Add(control);
-                        control.Disposed += (a, b) =>
+                        control.Disposed += (a, b) => Close();
+                        if (_config.Icon == TType.None && _config.IconCustom == null)
                         {
-                            Close();
-                        };
-                        if (_config.Icon == TType.None)
-                        {
-                            var sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size();
+                            if (config.Title == null && !config.CloseIcon)
+                            {
+                                rectTitle = new Rectangle(0, 0, 0, 0);
+                                int h = control.Height + butt_h;
+                                rectContent = new Rectangle(paddingx, paddingy, wp, h - butt_h);
+                                MinimumSize = MaximumSize = Size = new Size(w, h + paddingy * 2);
+                            }
+                            else
+                            {
+                                var sizeTitle = g.MeasureText(config.Title, fontTitle, wp);
 
-                            int h = sizeTitle.Height + gap + control.Height + butt_h;
+                                int h = sizeTitle.Height + gap + control.Height + butt_h;
 
-                            rectTitle = new Rectangle(paddingx, paddingy, wp, sizeTitle.Height + gap);
-                            rectContent = new Rectangle(rectTitle.X, rectTitle.Bottom, wp, h - butt_h - sizeTitle.Height - gap);
-                            MinimumSize = MaximumSize = Size = new Size(w, h + paddingy * 2);
+                                rectTitle = new Rectangle(paddingx, paddingy, wp, sizeTitle.Height + gap);
+                                rectContent = new Rectangle(rectTitle.X, rectTitle.Bottom, wp, h - butt_h - sizeTitle.Height - gap);
+                                MinimumSize = MaximumSize = Size = new Size(w, h + paddingy * 2);
+                            }
                         }
                         else
                         {
-                            var sizeT = g.MeasureString(Config.NullText, fontTitle).Size();
+                            var sizeT = g.MeasureString(Config.NullText, fontTitle);
                             int icon_size = tmpicon = sizeT.Height, icon_size_x = (int)(icon_size * 0.54F);
                             wp -= icon_size + icon_size_x;
-                            var sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size();
+                            var sizeTitle = g.MeasureText(config.Title, fontTitle, wp);
                             int h = sizeTitle.Height + gap + control.Height + butt_h;
 
                             rectTitle = new Rectangle(paddingx + icon_size + icon_size_x, paddingy, wp, sizeTitle.Height + gap);
@@ -224,7 +247,7 @@ namespace AntdUI
                         }
                         if (config.CloseIcon)
                         {
-                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Size().Height;
+                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Height;
                             int close_size = tmpicon;
                             rect_close = new Rectangle(rectTitle.Right - close_size, rectTitle.Y, close_size, close_size);
                         }
@@ -234,54 +257,52 @@ namespace AntdUI
                     else if (config.Content is IList<Modal.TextLine> list)
                     {
                         rtext = true;
-                        var texts = new List<RectangleF>(list.Count);
-                        if (_config.Icon == TType.None)
+                        var texts = new List<Rectangle>(list.Count);
+                        if (_config.Icon == TType.None && _config.IconCustom == null)
                         {
-                            var sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size();
+                            var sizeTitle = g.MeasureText(config.Title, fontTitle, wp);
                             rectTitle = new Rectangle(paddingx, paddingy, wp, sizeTitle.Height + gap);
 
-                            float has_y = paddingy + sizeTitle.Height + gap;
-                            float h_temp = 0;
+                            int has_y = paddingy + sizeTitle.Height + gap, h_temp = 0;
                             foreach (var txt in list)
                             {
-                                var sizeContent = g.MeasureString(txt.Text, txt.Font ?? Font, wp);
-                                float txt_h = sizeContent.Height + txt.Gap * dpi;
-                                texts.Add(new RectangleF(rectTitle.X, has_y, wp, txt_h));
+                                var sizeContent = g.MeasureText(txt.Text, txt.Font ?? Font, wp);
+                                int txt_h = sizeContent.Height + (int)(txt.Gap * dpi);
+                                texts.Add(new Rectangle(rectTitle.X, has_y, wp, txt_h));
                                 has_y += txt_h;
                                 h_temp += txt_h;
                             }
 
-                            int h = (int)Math.Round(sizeTitle.Height + gap + h_temp + butt_h);
+                            int h = sizeTitle.Height + gap + h_temp + butt_h;
                             rectContent = new Rectangle(rectTitle.X, rectTitle.Bottom, wp, h - butt_h - sizeTitle.Height - gap);
                             MinimumSize = MaximumSize = Size = new Size(w, h + paddingy * 2);
                         }
                         else
                         {
-                            var sizeT = g.MeasureString(Config.NullText, fontTitle).Size();
+                            var sizeT = g.MeasureString(Config.NullText, fontTitle);
                             int icon_size = tmpicon = sizeT.Height, icon_size_x = (int)(icon_size * 0.54F);
                             wp -= icon_size + icon_size_x;
-                            var sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size();
+                            var sizeTitle = g.MeasureText(config.Title, fontTitle, wp);
                             rectTitle = new Rectangle(paddingx + icon_size + icon_size_x, paddingy, wp, sizeTitle.Height + gap);
                             rectIcon = new Rectangle(paddingx, rectTitle.Y + (rectTitle.Height - icon_size) / 2, icon_size, icon_size);
 
-                            float has_y = paddingy + sizeTitle.Height + gap;
-                            float h_temp = 0;
+                            int has_y = paddingy + sizeTitle.Height + gap, h_temp = 0;
                             foreach (var txt in list)
                             {
-                                var sizeContent = g.MeasureString(txt.Text, txt.Font ?? Font, wp);
-                                float txt_h = sizeContent.Height + txt.Gap * dpi;
-                                texts.Add(new RectangleF(rectTitle.X, has_y, wp, txt_h));
+                                var sizeContent = g.MeasureText(txt.Text, txt.Font ?? Font, wp);
+                                int txt_h = sizeContent.Height + (int)(txt.Gap * dpi);
+                                texts.Add(new Rectangle(rectTitle.X, has_y, wp, txt_h));
                                 has_y += txt_h;
                                 h_temp += txt_h;
                             }
 
-                            int h = (int)Math.Round(sizeTitle.Height + gap + h_temp + butt_h);
+                            int h = sizeTitle.Height + gap + h_temp + butt_h;
                             rectContent = new Rectangle(rectTitle.X, rectTitle.Bottom, wp, h - butt_h - sizeTitle.Height - gap);
                             MinimumSize = MaximumSize = Size = new Size(w, h + paddingy * 2);
                         }
                         if (config.CloseIcon)
                         {
-                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Size().Height;
+                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Height;
                             int close_size = tmpicon;
                             rect_close = new Rectangle(rectTitle.Right - close_size, rectTitle.Y, close_size, close_size);
                         }
@@ -291,9 +312,9 @@ namespace AntdUI
                     {
                         rtext = true;
                         var content = config.Content.ToString();
-                        if (_config.Icon == TType.None)
+                        if (_config.Icon == TType.None && _config.IconCustom == null)
                         {
-                            Size sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size(), sizeContent = g.MeasureString(content, Font, wp).Size();
+                            Size sizeTitle = g.MeasureText(config.Title, fontTitle, wp), sizeContent = g.MeasureText(content, Font, wp);
                             int h = sizeTitle.Height + gap + sizeContent.Height + butt_h;
 
                             rectTitle = new Rectangle(paddingx, paddingy, wp, sizeTitle.Height + gap);
@@ -303,10 +324,10 @@ namespace AntdUI
                         }
                         else
                         {
-                            var sizeT = g.MeasureString(Config.NullText, fontTitle).Size();
+                            var sizeT = g.MeasureString(Config.NullText, fontTitle);
                             int icon_size = tmpicon = sizeT.Height, icon_size_x = (int)(icon_size * 0.54F);
                             wp -= icon_size + icon_size_x;
-                            Size sizeTitle = g.MeasureString(config.Title, fontTitle, wp).Size(), sizeContent = g.MeasureString(content, Font, wp).Size();
+                            Size sizeTitle = g.MeasureText(config.Title, fontTitle, wp), sizeContent = g.MeasureText(content, Font, wp);
                             int h = sizeTitle.Height + gap + sizeContent.Height + butt_h;
 
                             rectTitle = new Rectangle(paddingx + icon_size + icon_size_x, paddingy, wp, sizeTitle.Height + gap);
@@ -318,25 +339,68 @@ namespace AntdUI
                         }
                         if (config.CloseIcon)
                         {
-                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Size().Height;
+                            if (tmpicon == 0) tmpicon = g.MeasureString(Config.NullText, fontTitle).Height;
                             int close_size = tmpicon;
                             rect_close = new Rectangle(rectTitle.Right - close_size, rectTitle.Y, close_size, close_size);
                         }
                     }
-                    return new RectangleF[0];
+                    return new Rectangle[0];
                 }
             });
             ResumeLayout();
             config.Layered = this;
         }
 
-        public override bool AutoHandDpi { get; set; } = false;
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        [Description("是否正在加载"), Category("参数"), DefaultValue(true)]
+        public bool IsLoad { get; set; } = true;
+
+        /// <summary>
+        /// 加载完成回调
+        /// </summary>
+        [Description("加载完成回调"), Category("参数"), DefaultValue(null)]
+        public Action? LoadCompleted { get; set; }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            IsLoad = false;
+            LoadCompleted?.Invoke();
+            if (config.Content is Control control)
+            {
+                control.ControlEvent();
+                if (config.DefaultFocus)
+                {
+                    ITask.Run(() => System.Threading.Thread.Sleep(100), () =>
+                    {
+                        if (IsDisposed) return;
+                        BeginInvoke(() => control.Focus());
+                    });
+                }
+            }
+            if (config.Content is ControlEvent controlEvent) controlEvent.LoadCompleted();
+        }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public override bool AutoHandDpi { get; set; }
 
         protected override void DestroyHandle()
         {
             base.DestroyHandle();
+            btn_ok?.Dispose();
+            btn_no?.Dispose();
             close_button.Dispose();
+            if (panel_main != null)
+            {
+                panel_main.MouseMove -= Window_MouseDown;
+                panel_main?.Dispose();
+                panel_main = null;
+            }
             if (config.Content is Control control) control.Dispose();
+            stringLeft.Dispose();
+            stringTL.Dispose();
             Dispose();
         }
 
@@ -362,13 +426,10 @@ namespace AntdUI
             base.WndProc(ref m);
         }
 
-        void Window_MouseDown(object? sender, MouseEventArgs e)
-        {
-            DraggableMouseDown();
-        }
+        void Window_MouseDown(object? sender, MouseEventArgs e) => DraggableMouseDown();
 
         Rectangle rectIcon, rectTitle, rectContent;
-        RectangleF[] rectsContent;
+        Rectangle[] rectsContent;
         bool rtext = false;
 
         readonly StringFormat stringLeft = Helper.SF_Ellipsis(lr: StringAlignment.Near);
@@ -376,38 +437,33 @@ namespace AntdUI
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics.High();
-            if (config.Icon != TType.None) g.PaintIcons(config.Icon, rectIcon);
+            if (config.IconCustom != null) g.PaintIcons(config.IconCustom, rectIcon);
+            else if (config.Icon != TType.None) g.PaintIcons(config.Icon, rectIcon, "Modal", TAMode.Auto);
             if (config.CloseIcon)
             {
                 if (close_button.Animation)
                 {
-                    using (var brush = new SolidBrush(Helper.ToColor(close_button.Value, Style.Db.FillSecondary)))
+                    using (var path = rect_close.RoundPath((int)(4 * Config.Dpi)))
                     {
-                        using (var path = rect_close.RoundPath((int)(4 * Config.Dpi)))
-                        {
-                            g.FillPath(brush, path);
-                        }
+                        g.Fill(Helper.ToColor(close_button.Value, Colour.FillSecondary.Get("Modal")), path);
                     }
-                    g.PaintIconClose(rect_close, Style.Db.Text, .6F);
+                    g.PaintIconClose(rect_close, Colour.Text.Get("Modal"), .6F);
                 }
                 else if (close_button.Switch)
                 {
-                    using (var brush = new SolidBrush(Style.Db.FillSecondary))
+                    using (var path = rect_close.RoundPath((int)(4 * Config.Dpi)))
                     {
-                        using (var path = rect_close.RoundPath((int)(4 * Config.Dpi)))
-                        {
-                            g.FillPath(brush, path);
-                        }
+                        g.Fill(Colour.FillSecondary.Get("Modal"), path);
                     }
-                    g.PaintIconClose(rect_close, Style.Db.Text, .6F);
+                    g.PaintIconClose(rect_close, Colour.Text.Get("Modal"), .6F);
                 }
-                else g.PaintIconClose(rect_close, Style.Db.TextTertiary, .6F);
+                else g.PaintIconClose(rect_close, Colour.TextTertiary.Get("Modal"), .6F);
             }
-            using (var brush = new SolidBrush(Style.Db.Text))
+            using (var brush = new SolidBrush(Colour.Text.Get("Modal")))
             {
                 using (var fontTitle = new Font(Font.FontFamily, Font.Size * 1.14F, FontStyle.Bold))
                 {
-                    g.DrawStr(config.Title, fontTitle, brush, rectTitle, stringLeft);
+                    g.DrawText(config.Title, fontTitle, brush, rectTitle, stringLeft);
                 }
                 if (rtext)
                 {
@@ -420,16 +476,15 @@ namespace AntdUI
                             {
                                 using (var fore = new SolidBrush(txt.Fore.Value))
                                 {
-                                    g.DrawStr(txt.Text, txt.Font ?? Font, fore, rectsContent[i], stringLeft);
+                                    g.DrawText(txt.Text, txt.Font ?? Font, fore, rectsContent[i], stringLeft);
                                 }
                             }
-                            else g.DrawStr(txt.Text, txt.Font ?? Font, brush, rectsContent[i], stringLeft);
+                            else g.DrawText(txt.Text, txt.Font ?? Font, brush, rectsContent[i], stringLeft);
                         }
                     }
-                    else g.DrawStr(config.Content.ToString(), Font, brush, rectContent, stringTL);
+                    else g.DrawText(config.Content.ToString(), Font, brush, rectContent, stringTL);
                 }
             }
-            base.OnPaint(e);
         }
 
         #region 鼠标
@@ -440,7 +495,7 @@ namespace AntdUI
         {
             if (config.CloseIcon)
             {
-                close_button.MaxValue = Style.Db.FillSecondary.A;
+                close_button.MaxValue = Colour.FillSecondary.Get("Modal").A;
                 close_button.Switch = rect_close.Contains(e.Location);
                 SetCursor(close_button.Switch);
             }
@@ -454,7 +509,7 @@ namespace AntdUI
                 base.OnMouseUp(e);
                 return;
             }
-            DraggableMouseDown();
+            if (config.Draggable) DraggableMouseDown();
             base.OnMouseDown(e);
         }
 
@@ -468,10 +523,7 @@ namespace AntdUI
             base.OnMouseUp(e);
         }
 
-        void btn_no_Click(object? sender, EventArgs e)
-        {
-            DialogResult = DialogResult.No;
-        }
+        void btn_no_Click(object? sender, EventArgs e) => DialogResult = DialogResult.No;
 
         bool isclose = true;
         void btn_ok_Click(object? sender, EventArgs e)
@@ -504,17 +556,17 @@ namespace AntdUI
                         if (result)
                         {
                             System.Threading.Thread.Sleep(10);
-                            BeginInvoke(new Action(() =>
+                            BeginInvoke(() =>
                             {
                                 if (IsHandleCreated && !IsDisposed) DialogResult = DialogResult.OK;
-                            }));
+                            });
                         }
                         else if (DisableCancel && btn_no != null)
                         {
-                            BeginInvoke(new Action(() =>
+                            BeginInvoke(() =>
                             {
                                 if (btn_no.IsHandleCreated && !btn_no.IsDisposed) btn_no.Enabled = true;
-                            }));
+                            });
                         }
                     }
                 });
@@ -577,13 +629,19 @@ namespace AntdUI
             switch (id)
             {
                 case EventType.THEME:
-                    BackColor = Style.Db.BgElevated;
-                    ForeColor = Style.Db.TextBase;
-                    if (panel_main != null) panel_main.Back = Style.Db.BgElevated;
+                    BackColor = Colour.BgElevated.Get("Modal");
+                    ForeColor = Colour.TextBase.Get("Modal");
+                    if (panel_main != null) panel_main.Back = Colour.BgElevated.Get("Modal");
                     break;
             }
         }
 
         #endregion
+    }
+
+    internal interface LayeredFormAsynLoad
+    {
+        bool IsLoad { get; set; }
+        Action? LoadCompleted { get; set; }
     }
 }

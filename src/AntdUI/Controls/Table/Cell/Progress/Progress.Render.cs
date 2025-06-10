@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
 
-using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 
@@ -24,18 +23,15 @@ namespace AntdUI
 {
     partial class CellProgress
     {
-        internal override void PaintBack(Graphics g) { }
+        public override void PaintBack(Canvas g) { }
 
-        internal override void Paint(Graphics g, Font font, SolidBrush fore)
+        public override void Paint(Canvas g, Font font, bool enable, SolidBrush fore)
         {
-            Color _color = Fill ?? Style.Db.Primary, _back = Back ?? Style.Db.FillSecondary;
+            Color _color = Fill ?? Colour.Primary.Get("Progress", PARENT.PARENT.ColorScheme), _back = Back ?? Colour.FillSecondary.Get("Progress", PARENT.PARENT.ColorScheme);
             if (Shape == TShape.Circle)
             {
                 float w = Radius * Config.Dpi;
-                using (var brush = new Pen(_back, w))
-                {
-                    g.DrawEllipse(brush, Rect);
-                }
+                g.DrawEllipse(_back, w, Rect);
                 if (Value > 0)
                 {
                     int max = (int)(360 * Value);
@@ -53,10 +49,7 @@ namespace AntdUI
 
                 using (var path = Rect.RoundPath(radius))
                 {
-                    using (var brush = new SolidBrush(_back))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(_back, path);
                     if (Value > 0)
                     {
                         var _w = Rect.Width * Value;
@@ -64,10 +57,7 @@ namespace AntdUI
                         {
                             using (var path_prog = new RectangleF(Rect.X, Rect.Y, _w, Rect.Height).RoundPath(radius))
                             {
-                                using (var brush = new SolidBrush(_color))
-                                {
-                                    g.FillPath(brush, path_prog);
-                                }
+                                g.Fill(_color, path_prog);
                             }
                         }
                         else
@@ -84,7 +74,7 @@ namespace AntdUI
                                 using (var brush = new TextureBrush(bmp, WrapMode.Clamp))
                                 {
                                     brush.TranslateTransform(Rect.X, Rect.Y);
-                                    g.FillPath(brush, path);
+                                    g.Fill(brush, path);
                                 }
                             }
                         }
@@ -93,25 +83,21 @@ namespace AntdUI
             }
         }
 
-        internal override Size GetSize(Graphics g, Font font, int gap, int gap2)
+        public override Size GetSize(Canvas g, Font font, int gap, int gap2)
         {
-            int height = (int)Math.Round(g.MeasureString(Config.NullText, font).Height);
+            if (Size.HasValue) return new Size((int)(Size.Value.Width * Config.Dpi), (int)(Size.Value.Height * Config.Dpi));
+            int height = g.MeasureString(Config.NullText, font, 0, PARENT.PARENT.sf).Height;
             if (Shape == TShape.Circle)
             {
                 int size = gap2 + height;
                 return new Size(size, size);
             }
-            else
-            {
-                int size = gap2 + height;
-                return new Size(size, height / 2);
-            }
+            else return new Size(height * 2, height / 2);
         }
 
-        Rectangle Rect;
-        internal override void SetRect(Graphics g, Font font, Rectangle rect, Size size, int gap, int gap2)
+        public override void SetRect(Canvas g, Font font, Rectangle rect, Size size, int maxwidth, int gap, int gap2)
         {
-            int w = rect.Width - gap2, h = size.Height;
+            int w = rect.Width, h = size.Height;
             if (Shape == TShape.Circle)
             {
                 w = size.Width - gap2;

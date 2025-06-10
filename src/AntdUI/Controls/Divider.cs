@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -39,7 +39,7 @@ namespace AntdUI
         /// 是否竖向
         /// </summary>
         [Description("是否竖向"), Category("外观"), DefaultValue(false)]
-        public bool Vertical { get; set; } = false;
+        public bool Vertical { get; set; }
 
         TOrientation orientation = TOrientation.None;
         /// <summary>
@@ -102,6 +102,7 @@ namespace AntdUI
                 if (thickness == value) return;
                 thickness = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Thickness));
             }
         }
 
@@ -119,6 +120,7 @@ namespace AntdUI
                 if (color == value) return;
                 color = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ColorSplit));
             }
         }
 
@@ -129,15 +131,19 @@ namespace AntdUI
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public override string? Text
         {
-            get => text;
+            get => this.GetLangI(LocalizationText, text);
             set
             {
                 if (text == value) return;
                 text = value;
                 Invalidate();
                 OnTextChanged(EventArgs.Empty);
+                OnPropertyChanged(nameof(Text));
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         #endregion
 
@@ -148,16 +154,17 @@ namespace AntdUI
             var rect = _rect.PaddingRect(Margin);
             if (rect.Width == 0 || rect.Height == 0) return;
             var g = e.Graphics.High();
-            using (var brush = color.Brush(Style.Db.Split))
+            using (var brush = color.Brush(Colour.Split.Get("Divider", ColorScheme)))
             {
-                if (text != null)
+                if (Text != null)
                 {
+                    var enabled = Enabled;
                     if (Vertical)
                     {
-                        var text_ = string.Join(Environment.NewLine, text.ToCharArray());
-                        var size = g.MeasureString(text_, Font, 0, s_f_all).Size();
+                        var text_ = string.Join(Environment.NewLine, Text.ToCharArray());
+                        var size = g.MeasureText(text_, Font, 0, s_f_all);
 
-                        int f_margin = (int)(rect.Height * orientationMargin), font_margin = (int)(size.Width * textPadding);
+                        int f_margin = (int)(rect.Height * orientationMargin), font_margin = (int)(size.Width * TextPadding);
                         float x = rect.X + (rect.Width - thickness) / 2F;
                         switch (Orientation)
                         {
@@ -165,44 +172,44 @@ namespace AntdUI
                                 if (f_margin > 0)
                                 {
                                     var font_irect = new Rectangle(rect.X + (rect.Width - size.Width) / 2, rect.Y + f_margin + font_margin, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(x, rect.Y, thickness, f_margin));
-                                    g.FillRectangle(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, rect.Height - size.Height - f_margin - font_margin * 2F));
-                                    PaintText(g, text_, font_irect, s_f, Enabled);
+                                    g.Fill(brush, new RectangleF(x, rect.Y, thickness, f_margin));
+                                    g.Fill(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, rect.Height - size.Height - f_margin - font_margin * 2F));
+                                    g.DrawText(text_, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f);
                                 }
                                 else
                                 {
                                     var font_irect = new Rectangle(rect.X + (rect.Width - size.Width) / 2, rect.Y, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, rect.Height - size.Height - font_margin));
-                                    PaintText(g, text_, font_irect, s_f, Enabled);
+                                    g.Fill(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, rect.Height - size.Height - font_margin));
+                                    g.DrawText(text_, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f);
                                 }
                                 break;
                             case TOrientation.Right:
                                 if (f_margin > 0)
                                 {
                                     var font_irect = new Rectangle(rect.X + (rect.Width - size.Width) / 2, rect.Bottom - size.Height - f_margin - font_margin, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(x, rect.Y, thickness, rect.Height - size.Height - f_margin - font_margin * 2F));
-                                    g.FillRectangle(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, f_margin));
-                                    PaintText(g, text, font_irect, s_f, Enabled);
+                                    g.Fill(brush, new RectangleF(x, rect.Y, thickness, rect.Height - size.Height - f_margin - font_margin * 2F));
+                                    g.Fill(brush, new RectangleF(x, font_irect.Bottom + font_margin, thickness, f_margin));
+                                    g.DrawText(text_, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f);
                                 }
                                 else
                                 {
                                     var font_irect = new Rectangle(rect.X + (rect.Width - size.Width) / 2, rect.Bottom - size.Height, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(x, rect.Y, thickness, rect.Height - size.Height - font_margin));
-                                    PaintText(g, text, font_irect, s_f, Enabled);
+                                    g.Fill(brush, new RectangleF(x, rect.Y, thickness, rect.Height - size.Height - font_margin));
+                                    g.DrawText(text_, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f);
                                 }
                                 break;
                             default:
                                 float f_h = (rect.Height - size.Height) / 2 - f_margin - font_margin;
-                                g.FillRectangle(brush, new RectangleF(x, rect.Y, thickness, f_h));
-                                g.FillRectangle(brush, new RectangleF(x, rect.Y + f_h + size.Height + (f_margin + font_margin) * 2F, thickness, f_h));
-                                PaintText(g, text_, _rect, s_f, Enabled);
+                                g.Fill(brush, new RectangleF(x, rect.Y, thickness, f_h));
+                                g.Fill(brush, new RectangleF(x, rect.Y + f_h + size.Height + (f_margin + font_margin) * 2F, thickness, f_h));
+                                g.DrawText(text_, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), _rect, s_f);
                                 break;
                         }
                     }
                     else
                     {
-                        var size = g.MeasureString(text, Font).Size();
-                        int f_margin = (int)(rect.Width * orientationMargin), font_margin = (int)(size.Height * textPadding);
+                        var size = g.MeasureString(Text, Font);
+                        int f_margin = (int)(rect.Width * orientationMargin), font_margin = (int)(size.Height * TextPadding);
                         float y = rect.Y + (rect.Height - thickness) / 2F;
                         switch (Orientation)
                         {
@@ -210,45 +217,45 @@ namespace AntdUI
                                 if (f_margin > 0)
                                 {
                                     var font_irect = new Rectangle(rect.X + f_margin + font_margin, rect.Y + (rect.Height - size.Height) / 2, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(rect.X, y, f_margin, thickness));
-                                    g.FillRectangle(brush, new RectangleF(font_irect.Right + font_margin, y, rect.Width - size.Width - f_margin - font_margin * 2F, thickness));
-                                    PaintText(g, text, font_irect, s_f_all, Enabled);
+                                    g.Fill(brush, new RectangleF(rect.X, y, f_margin, thickness));
+                                    g.Fill(brush, new RectangleF(font_irect.Right + font_margin, y, rect.Width - size.Width - f_margin - font_margin * 2F, thickness));
+                                    g.DrawText(Text, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f_all);
                                 }
                                 else
                                 {
                                     var font_irect = new Rectangle(rect.X, rect.Y + (rect.Height - size.Height) / 2, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(font_irect.Right + font_margin, y, rect.Width - size.Width - font_margin, thickness));
-                                    PaintText(g, text, font_irect, s_f_all, Enabled);
+                                    g.Fill(brush, new RectangleF(font_irect.Right + font_margin, y, rect.Width - size.Width - font_margin, thickness));
+                                    g.DrawText(Text, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f_all);
                                 }
                                 break;
                             case TOrientation.Right:
                                 if (f_margin > 0)
                                 {
                                     var font_irect = new Rectangle(rect.Right - size.Width - f_margin - font_margin, rect.Y + (rect.Height - size.Height) / 2, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(rect.X, y, rect.Width - size.Width - f_margin - font_margin * 2F, thickness));
-                                    g.FillRectangle(brush, new RectangleF(font_irect.Right + font_margin, y, f_margin, thickness));
-                                    PaintText(g, text, font_irect, s_f_all, Enabled);
+                                    g.Fill(brush, new RectangleF(rect.X, y, rect.Width - size.Width - f_margin - font_margin * 2F, thickness));
+                                    g.Fill(brush, new RectangleF(font_irect.Right + font_margin, y, f_margin, thickness));
+                                    g.DrawText(Text, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f_all);
                                 }
                                 else
                                 {
                                     var font_irect = new Rectangle(rect.Right - size.Width, rect.Y + (rect.Height - size.Height) / 2, size.Width, size.Height);
-                                    g.FillRectangle(brush, new RectangleF(rect.X, y, rect.Width - size.Width - font_margin, thickness));
-                                    PaintText(g, text, font_irect, s_f_all, Enabled);
+                                    g.Fill(brush, new RectangleF(rect.X, y, rect.Width - size.Width - font_margin, thickness));
+                                    g.DrawText(Text, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), font_irect, s_f_all);
                                 }
                                 break;
                             default:
                                 float f_w = (rect.Width - size.Width) / 2 - f_margin - font_margin;
-                                g.FillRectangle(brush, new RectangleF(rect.X, y, f_w, thickness));
-                                g.FillRectangle(brush, new RectangleF(rect.X + f_w + size.Width + (f_margin + font_margin) * 2F, y, f_w, thickness));
-                                PaintText(g, text, _rect, s_f_all, Enabled);
+                                g.Fill(brush, new RectangleF(rect.X, y, f_w, thickness));
+                                g.Fill(brush, new RectangleF(rect.X + f_w + size.Width + (f_margin + font_margin) * 2F, y, f_w, thickness));
+                                g.DrawText(Text, Font, enabled ? ForeColor : Colour.TextQuaternary.Get("Divider", ColorScheme), _rect, s_f_all);
                                 break;
                         }
                     }
                 }
                 else
                 {
-                    if (Vertical) g.FillRectangle(brush, new RectangleF(rect.X + (rect.Width - thickness) / 2, rect.Y, thickness, rect.Height));
-                    else g.FillRectangle(brush, new RectangleF(rect.X, rect.Y + (rect.Height - thickness) / 2, rect.Width, thickness));
+                    if (Vertical) g.Fill(brush, new RectangleF(rect.X + (rect.Width - thickness) / 2, rect.Y, thickness, rect.Height));
+                    else g.Fill(brush, new RectangleF(rect.X, rect.Y + (rect.Height - thickness) / 2, rect.Width, thickness));
                 }
             }
             this.PaintBadge(g);

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -26,22 +26,22 @@ namespace AntdUI
         /// <summary>
         /// 无
         /// </summary>
-        None,
+        None = 0,
 
         #region 上
 
         /// <summary>
         /// ↖ 上左
         /// </summary>
-        TL,
+        TL = 11,
         /// <summary>
         /// ↑上
         /// </summary>
-        Top,
+        Top = 10,
         /// <summary>
         /// ↗ 上右
         /// </summary>
-        TR,
+        TR = 12,
 
         #endregion
 
@@ -50,15 +50,15 @@ namespace AntdUI
         /// <summary>
         /// ↗ 右上
         /// </summary>
-        RT,
+        RT = 21,
         /// <summary>
         /// → 右
         /// </summary>
-        Right,
+        Right = 20,
         /// <summary>
         /// ↘ 右下
         /// </summary>
-        RB,
+        RB = 22,
 
         #endregion
 
@@ -67,15 +67,15 @@ namespace AntdUI
         /// <summary>
         /// ↘ 下右
         /// </summary>
-        BR,
+        BR = 31,
         /// <summary>
         /// ↓ 下
         /// </summary>
-        Bottom,
+        Bottom = 30,
         /// <summary>
         /// ↙ 下左
         /// </summary>
-        BL,
+        BL = 32,
 
         #endregion
 
@@ -84,16 +84,16 @@ namespace AntdUI
         /// <summary>
         /// ↙ 左下
         /// </summary>
-        LB,
+        LB = 41,
         /// <summary>
         /// ← 左
         /// </summary>
-        Left,
+        Left = 40,
 
         /// <summary>
         /// ↖ 左上
         /// </summary>
-        LT,
+        LT = 42,
 
         #endregion
     }
@@ -106,31 +106,89 @@ namespace AntdUI
         /// <summary>
         /// 无
         /// </summary>
-        None,
+        None = 0,
 
 
         /// <summary>
         /// ↑上
         /// </summary>
-        Top,
+        Top = 10,
 
 
         /// <summary>
         /// → 右
         /// </summary>
-        Right,
+        Right = 20,
 
 
         /// <summary>
         /// ↓ 下
         /// </summary>
-        Bottom,
+        Bottom = 30,
 
 
         /// <summary>
         /// ← 左
         /// </summary>
-        Left
+        Left = 40
+    }
+
+    /// <summary>
+    /// 圆角方向
+    /// </summary>
+    public enum TAlignRound
+    {
+        /// <summary>
+        /// 无
+        /// </summary>
+        ALL = 1,
+
+
+        /// <summary>
+        /// ↑上
+        /// </summary>
+        Top = 10,
+
+
+        /// <summary>
+        /// → 右
+        /// </summary>
+        Right = 20,
+
+
+        /// <summary>
+        /// ↓ 下
+        /// </summary>
+        Bottom = 30,
+
+
+        /// <summary>
+        /// ← 左
+        /// </summary>
+        Left = 40,
+
+
+        /// <summary>
+        /// ↖左上
+        /// </summary>
+        TL = 11,
+
+
+        /// <summary>
+        /// ↗右上
+        /// </summary>
+        TR = 12,
+
+
+        /// <summary>
+        /// ↘右下
+        /// </summary>
+        BR = 31,
+
+        /// <summary>
+        /// ↙左下
+        /// </summary>
+        BL = 32
     }
 
     /// <summary>
@@ -143,15 +201,15 @@ namespace AntdUI
         /// <summary>
         /// ↖ 上左
         /// </summary>
-        TL,
+        TL = 11,
         /// <summary>
         /// ↑上
         /// </summary>
-        Top,
+        Top = 10,
         /// <summary>
         /// ↗ 上右
         /// </summary>
-        TR,
+        TR = 12,
 
         #endregion
 
@@ -160,15 +218,15 @@ namespace AntdUI
         /// <summary>
         /// ↘ 下右
         /// </summary>
-        BR,
+        BR = 31,
         /// <summary>
         /// ↓ 下
         /// </summary>
-        Bottom,
+        Bottom = 30,
         /// <summary>
         /// ↙ 下左
         /// </summary>
-        BL
+        BL = 32
 
         #endregion
     }

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -32,7 +32,7 @@ namespace AntdUI
     [Description("Tag 标签")]
     [ToolboxItem(true)]
     [DefaultProperty("Text")]
-    public class Tag : IControl
+    public class Tag : IControl, IEventListener
     {
         #region 属性
 
@@ -57,9 +57,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -79,6 +80,7 @@ namespace AntdUI
                 if (back == value) return;
                 back = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackColor));
             }
         }
 
@@ -95,6 +97,7 @@ namespace AntdUI
                 if (backImage == value) return;
                 backImage = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackgroundImage));
             }
         }
 
@@ -111,6 +114,7 @@ namespace AntdUI
                 if (backFit == value) return;
                 backFit = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BackgroundImageLayout));
             }
         }
 
@@ -131,12 +135,13 @@ namespace AntdUI
                 if (borderWidth == value) return;
                 borderWidth = value;
                 Invalidate();
+                OnPropertyChanged(nameof(BorderWidth));
             }
         }
 
         #endregion
 
-        internal int radius = 6;
+        int radius = 6;
         /// <summary>
         /// 圆角
         /// </summary>
@@ -149,6 +154,7 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -165,6 +171,7 @@ namespace AntdUI
                 if (type == value) return;
                 type = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Type));
             }
         }
 
@@ -181,12 +188,13 @@ namespace AntdUI
                 if (closeIcon == value) return;
                 closeIcon = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(CloseIcon));
             }
         }
 
         #region 文本
 
-        internal string? text = null;
+        string? text = null;
         /// <summary>
         /// 文本
         /// </summary>
@@ -194,15 +202,19 @@ namespace AntdUI
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public override string? Text
         {
-            get => text;
+            get => this.GetLangI(LocalizationText, text);
             set
             {
                 if (text == value) return;
                 text = value;
                 if (BeforeAutoSize()) Invalidate();
                 OnTextChanged(EventArgs.Empty);
+                OnPropertyChanged(nameof(Text));
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         StringFormat stringFormat = Helper.SF_NoWrap();
 
@@ -220,6 +232,7 @@ namespace AntdUI
                 textAlign = value;
                 textAlign.SetAlignment(ref stringFormat);
                 Invalidate();
+                OnPropertyChanged(nameof(TextAlign));
             }
         }
 
@@ -236,6 +249,7 @@ namespace AntdUI
                 if (autoEllipsis == value) return;
                 autoEllipsis = value;
                 stringFormat.Trimming = value ? StringTrimming.EllipsisCharacter : StringTrimming.None;
+                OnPropertyChanged(nameof(AutoEllipsis));
             }
         }
 
@@ -253,6 +267,7 @@ namespace AntdUI
                 textMultiLine = value;
                 stringFormat.FormatFlags = value ? 0 : StringFormatFlags.NoWrap;
                 Invalidate();
+                OnPropertyChanged(nameof(TextMultiLine));
             }
         }
 
@@ -273,6 +288,7 @@ namespace AntdUI
                 if (image == value) return;
                 image = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(Image));
             }
         }
 
@@ -286,16 +302,14 @@ namespace AntdUI
                 if (imageSvg == value) return;
                 imageSvg = value;
                 if (BeforeAutoSize()) Invalidate();
+                OnPropertyChanged(nameof(ImageSvg));
             }
         }
 
         /// <summary>
         /// 是否包含图片
         /// </summary>
-        public bool HasImage
-        {
-            get => imageSvg != null || image != null;
-        }
+        public bool HasImage => imageSvg != null || image != null;
 
         /// <summary>
         /// 图像大小
@@ -322,86 +336,68 @@ namespace AntdUI
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics.High();
-
             var rect_read = ReadRectangle;
-
-            if (backImage != null) g.PaintImg(rect_read, backImage, backFit, radius, false);
-
+            if (backImage != null) g.Image(rect_read, backImage, backFit, radius, false);
             float _radius = radius * Config.Dpi;
-
             Color _fore, _back, _bor;
             switch (type)
             {
                 case TTypeMini.Default:
-                    _back = Style.Db.TagDefaultBg;
-                    _fore = Style.Db.TagDefaultColor;
-                    _bor = Style.Db.DefaultBorder;
+                    _back = Colour.TagDefaultBg.Get("Tag", ColorScheme);
+                    _fore = Colour.TagDefaultColor.Get("Tag", ColorScheme);
+                    _bor = Colour.DefaultBorder.Get("Tag", ColorScheme);
                     break;
                 case TTypeMini.Error:
-                    _back = Style.Db.ErrorBg;
-                    _fore = Style.Db.Error;
-                    _bor = Style.Db.ErrorBorder;
+                    _back = Colour.ErrorBg.Get("Tag", ColorScheme);
+                    _fore = Colour.Error.Get("Tag", ColorScheme);
+                    _bor = Colour.ErrorBorder.Get("Tag", ColorScheme);
                     break;
                 case TTypeMini.Success:
-                    _back = Style.Db.SuccessBg;
-                    _fore = Style.Db.Success;
-                    _bor = Style.Db.SuccessBorder;
+                    _back = Colour.SuccessBg.Get("Tag", ColorScheme);
+                    _fore = Colour.Success.Get("Tag", ColorScheme);
+                    _bor = Colour.SuccessBorder.Get("Tag", ColorScheme);
                     break;
                 case TTypeMini.Info:
-                    _back = Style.Db.InfoBg;
-                    _fore = Style.Db.Info;
-                    _bor = Style.Db.InfoBorder;
+                    _back = Colour.InfoBg.Get("Tag", ColorScheme);
+                    _fore = Colour.Info.Get("Tag", ColorScheme);
+                    _bor = Colour.InfoBorder.Get("Tag", ColorScheme);
                     break;
                 case TTypeMini.Warn:
-                    _back = Style.Db.WarningBg;
-                    _fore = Style.Db.Warning;
-                    _bor = Style.Db.WarningBorder;
+                    _back = Colour.WarningBg.Get("Tag", ColorScheme);
+                    _fore = Colour.Warning.Get("Tag", ColorScheme);
+                    _bor = Colour.WarningBorder.Get("Tag", ColorScheme);
                     break;
                 case TTypeMini.Primary:
                 default:
-                    _back = Style.Db.PrimaryBg;
-                    _fore = Style.Db.Primary;
-                    _bor = Style.Db.Primary;
+                    _back = Colour.PrimaryBg.Get("Tag", ColorScheme);
+                    _fore = Colour.Primary.Get("Tag", ColorScheme);
+                    _bor = Colour.Primary.Get("Tag", ColorScheme);
                     break;
             }
-
             if (fore.HasValue) _fore = fore.Value;
             if (back.HasValue) _back = back.Value;
-
-            if (backImage != null) g.PaintImg(rect_read, backImage, backFit, _radius, false);
-
+            if (backImage != null) g.Image(rect_read, backImage, backFit, _radius, false);
             using (var path = rect_read.RoundPath(_radius))
             {
                 #region 绘制背景
 
-                using (var brush = new SolidBrush(_back))
-                {
-                    g.FillPath(brush, path);
-                }
+                g.Fill(_back, path);
 
-                if (borderWidth > 0)
-                {
-                    float border = borderWidth * Config.Dpi;
-                    using (var brush = new Pen(_bor, border))
-                    {
-                        g.DrawPath(brush, path);
-                    }
-                }
+                if (borderWidth > 0) g.Draw(_bor, borderWidth * Config.Dpi, path);
 
                 #endregion
 
-                PaintText(g, text, _fore, rect_read);
+                PaintText(g, Text, _fore, rect_read);
             }
-
             this.PaintBadge(g);
             base.OnPaint(e);
         }
 
         #region 渲染帮助
 
-        internal void PaintText(Graphics g, string? text, Color color, Rectangle rect_read)
+        internal void PaintText(Canvas g, string? text, Color color, Rectangle rect_read)
         {
-            var font_size = g.MeasureString(text ?? Config.NullText, Font).Size();
+            var font_size = g.MeasureText(text ?? Config.NullText, Font);
             if (text == null)
             {
                 if (PaintImageNoText(g, color, font_size, rect_read))
@@ -411,9 +407,9 @@ namespace AntdUI
                         int size = (int)(rect_read.Height * .4F);
                         var rect_arrow = new Rectangle(rect_read.X + (rect_read.Width - size) / 2, rect_read.Y + (rect_read.Height - size) / 2, size, size);
                         rect_close = rect_arrow;
-                        if (hover_close.Animation) g.PaintIconClose(rect_arrow, Helper.ToColor(hover_close.Value + Style.Db.TextQuaternary.A, Style.Db.Text));
-                        else if (hover_close.Switch) g.PaintIconClose(rect_arrow, Style.Db.Text);
-                        else g.PaintIconClose(rect_arrow, Style.Db.TextQuaternary);
+                        if (hover_close.Animation) g.PaintIconClose(rect_arrow, Helper.ToColor(hover_close.Value + Colour.TextQuaternary.Get("Tag", ColorScheme).A, Colour.Text.Get("Tag", ColorScheme)));
+                        else if (hover_close.Switch) g.PaintIconClose(rect_arrow, Colour.Text.Get("Tag", ColorScheme));
+                        else g.PaintIconClose(rect_arrow, Colour.TextQuaternary.Get("Tag", ColorScheme));
                     }
                 }
             }
@@ -424,14 +420,14 @@ namespace AntdUI
                 rect_close = rect.r;
                 if (closeIcon)
                 {
-                    if (hover_close.Animation) g.PaintIconClose(rect.r, Helper.ToColor(hover_close.Value + Style.Db.TextQuaternary.A, Style.Db.Text), .8F);
-                    else if (hover_close.Switch) g.PaintIconClose(rect.r, Style.Db.Text, .8F);
-                    else g.PaintIconClose(rect.r, Style.Db.TextQuaternary, .8F);
+                    if (hover_close.Animation) g.PaintIconClose(rect.r, Helper.ToColor(hover_close.Value + Colour.TextQuaternary.Get("Tag", ColorScheme).A, Colour.Text.Get("Tag", ColorScheme)), .8F);
+                    else if (hover_close.Switch) g.PaintIconClose(rect.r, Colour.Text.Get("Tag", ColorScheme), .8F);
+                    else g.PaintIconClose(rect.r, Colour.TextQuaternary.Get("Tag", ColorScheme), .8F);
                 }
                 PaintImage(g, color, rect.l);
                 using (var brush = new SolidBrush(color))
                 {
-                    g.DrawStr(text, Font, brush, rect.text, stringFormat);
+                    g.DrawText(text, Font, brush, rect.text, stringFormat);
                 }
             }
         }
@@ -443,7 +439,7 @@ namespace AntdUI
         /// <param name="color">颜色</param>
         /// <param name="font_size">字体大小</param>
         /// <param name="rect_read">客户区域</param>
-        bool PaintImageNoText(Graphics g, Color? color, Size font_size, Rectangle rect_read)
+        bool PaintImageNoText(Canvas g, Color? color, Size font_size, Rectangle rect_read)
         {
             if (imageSvg != null)
             {
@@ -452,7 +448,7 @@ namespace AntdUI
             }
             else if (image != null)
             {
-                g.DrawImage(image, GetImageRectCenter(font_size, rect_read));
+                g.Image(image, GetImageRectCenter(font_size, rect_read));
                 return false;
             }
             return true;
@@ -483,10 +479,10 @@ namespace AntdUI
         /// <param name="g">GDI</param>
         /// <param name="color">颜色</param>
         /// <param name="rectl">图标区域</param>
-        void PaintImage(Graphics g, Color? color, Rectangle rectl)
+        void PaintImage(Canvas g, Color? color, Rectangle rectl)
         {
             if (imageSvg != null) g.GetImgExtend(imageSvg, GetImageRect(rectl), color);
-            else if (image != null) g.DrawImage(image, GetImageRect(rectl));
+            else if (image != null) g.Image(image, GetImageRect(rectl));
         }
 
         /// <summary>
@@ -505,10 +501,7 @@ namespace AntdUI
 
         #endregion
 
-        public override Rectangle ReadRectangle
-        {
-            get => ClientRectangle.PaddingRect(Padding, borderWidth * Config.Dpi);
-        }
+        public override Rectangle ReadRectangle => ClientRectangle.PaddingRect(Padding, borderWidth / 2F * Config.Dpi);
 
         public override GraphicsPath RenderRegion
         {
@@ -528,7 +521,7 @@ namespace AntdUI
         public Tag()
         {
             base.BackColor = Color.Transparent;
-            hover_close = new ITaskOpacity(this);
+            hover_close = new ITaskOpacity(nameof(AntdUI.Tag), this);
         }
 
         RectangleF rect_close;
@@ -548,7 +541,7 @@ namespace AntdUI
         {
             if (closeIcon)
             {
-                hover_close.MaxValue = Style.Db.Text.A - Style.Db.TextQuaternary.A;
+                hover_close.MaxValue = Colour.Text.Get("Tag", ColorScheme).A - Colour.TextQuaternary.Get("Tag", ColorScheme).A;
                 hover_close.Switch = rect_close.Contains(e.Location);
                 SetCursor(hover_close.Switch);
             }
@@ -611,13 +604,13 @@ namespace AntdUI
             return PSize;
         }
 
-        internal Size PSize
+        public Size PSize
         {
             get
             {
                 return Helper.GDI(g =>
                 {
-                    var font_size = g.MeasureString(text ?? Config.NullText, Font).Size();
+                    var font_size = g.MeasureText(Text ?? Config.NullText, Font);
                     int count = 0;
                     if (HasImage) count++;
                     if (closeIcon) count++;
@@ -632,18 +625,10 @@ namespace AntdUI
             base.OnResize(e);
         }
 
-        internal bool BeforeAutoSize()
+        bool BeforeAutoSize()
         {
             if (autoSize == TAutoSize.None) return true;
-            if (InvokeRequired)
-            {
-                bool flag = false;
-                Invoke(new Action(() =>
-                {
-                    flag = BeforeAutoSize();
-                }));
-                return flag;
-            }
+            if (InvokeRequired) return ITask.Invoke(this, BeforeAutoSize);
             var PS = PSize;
             switch (autoSize)
             {
@@ -662,6 +647,26 @@ namespace AntdUI
                     break;
             }
             return false;
+        }
+
+        #endregion
+
+        #region 语言变化
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            this.AddListener();
+        }
+
+        public void HandleEvent(EventType id, object? tag)
+        {
+            switch (id)
+            {
+                case EventType.LANG:
+                    BeforeAutoSize();
+                    break;
+            }
         }
 
         #endregion

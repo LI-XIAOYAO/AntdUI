@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,7 +43,7 @@ namespace AntdUI
         public new bool AllowClear
         {
             get => false;
-            set { base.AllowClear = false; }
+            set => base.AllowClear = false;
         }
 
         decimal? minimum = null, maximum = null;
@@ -89,6 +89,7 @@ namespace AntdUI
                 currentValue = Constrain(value);
                 Text = GetNumberText(currentValue);
                 ValueChanged?.Invoke(this, new DecimalEventArgs(currentValue));
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -104,6 +105,22 @@ namespace AntdUI
             {
                 if (showcontrol == value) return;
                 showcontrol = value;
+                Invalidate();
+            }
+        }
+
+        bool wheelModifyEnabled = true;
+        /// <summary>
+        /// 鼠标滚轮修改值
+        /// </summary>
+        [Description("鼠标滚轮修改值"), Category("交互"), DefaultValue(true)]
+        public bool WheelModifyEnabled
+        {
+            get => wheelModifyEnabled;
+            set
+            {
+                if (wheelModifyEnabled == value) return;
+                wheelModifyEnabled = value;
                 Invalidate();
             }
         }
@@ -198,9 +215,10 @@ namespace AntdUI
         RectangleF rect_button, rect_button_up, rect_button_bottom;
         public InputNumber()
         {
-            hover_button = new ITaskOpacity(this);
-            hover_button_up = new ITaskOpacity(this);
-            hover_button_bottom = new ITaskOpacity(this);
+            var key = nameof(InputNumber);
+            hover_button = new ITaskOpacity(key, this);
+            hover_button_up = new ITaskOpacity(key, this);
+            hover_button_bottom = new ITaskOpacity(key, this);
         }
 
         protected override void Dispose(bool disposing)
@@ -218,30 +236,14 @@ namespace AntdUI
         {
             change = null;
             string keyInput = key.ToString();
-            if (char.IsDigit(key))
-            {
-                // 数字可以
-                return true;
-            }
-            else if (keyInput.Equals(decimalSeparator) || keyInput.Equals(groupSeparator) || keyInput.Equals(negativeSign))
-            {
-                // 小数分隔符可以
-                return true;
-            }
-            else if (key == '\b')
-            {
-                // Backspace键可以
-                return true;
-            }
-            else if (Hexadecimal && ((key >= 'a' && key <= 'f') || (key >= 'A' && key <= 'F')))
-            {
-                // 十六进制数字可以
-                return true;
-            }
+            if (char.IsDigit(key)) return true; // 数字可以
+            else if (keyInput.Equals(decimalSeparator) || keyInput.Equals(groupSeparator) || keyInput.Equals(negativeSign)) return true;// 小数分隔符可以
+            else if (key == '\b') return true;// Backspace键可以
+            else if (Hexadecimal && ((key >= 'a' && key <= 'f') || (key >= 'A' && key <= 'F'))) return true;// 十六进制数字可以
             return false;
         }
 
-        protected override void PaintOtherBor(Graphics g, RectangleF rect_read, float _radius, Color back, Color borColor, Color borderActive)
+        protected override void PaintOtherBor(Canvas g, RectangleF rect_read, float _radius, Color back, Color borColor, Color borderActive)
         {
             if (hover_button.Animation || hover_button.Switch)
             {
@@ -253,88 +255,79 @@ namespace AntdUI
 
                 using (var path = rect_button.RoundPath(radius, false, true, true, false))
                 {
-                    using (var brush = new SolidBrush(back))
-                    { g.FillPath(brush, path); }
+                    g.Fill(back, path);
                 }
 
                 if (hover_button.Animation)
                 {
-                    using (var pen = new Pen(Helper.ToColor(hover_button.Value, borColor), 1 * Config.Dpi))
+                    using (var pen = new Pen(Helper.ToColor(hover_button.Value, borColor), Config.Dpi))
                     {
                         using (var path = rect_button_up.RoundPath(radius, false, true, false, false))
                         {
-                            g.DrawPath(pen, path);
+                            g.Draw(pen, path);
                         }
                         using (var path = rect_button_bottom.RoundPath(radius, false, false, true, false))
                         {
-                            g.DrawPath(pen, path);
+                            g.Draw(pen, path);
                         }
                     }
                 }
                 else if (hover_button.Switch)
                 {
-                    using (var pen = new Pen(borColor, 1 * Config.Dpi))
+                    using (var pen = new Pen(borColor, Config.Dpi))
                     {
                         using (var path = rect_button_up.RoundPath(radius, false, true, false, false))
                         {
-                            g.DrawPath(pen, path);
+                            g.Draw(pen, path);
                         }
                         using (var path = rect_button_bottom.RoundPath(radius, false, false, true, false))
                         {
-                            g.DrawPath(pen, path);
+                            g.Draw(pen, path);
                         }
                     }
                 }
 
                 if (hover_button_up.Animation)
                 {
-                    using (var pen_def = new Pen(borColor, 1 * Config.Dpi))
+                    using (var pen = new Pen(borColor.BlendColors(hover_button_up.Value, borderActive), Config.Dpi))
                     {
-                        g.DrawLines(pen_def, TAlignMini.Top.TriangleLines(rect_button_up));
-                        using (var brush_hove = new Pen(Helper.ToColor(hover_button_up.Value, borderActive), pen_def.Width))
-                        {
-                            g.DrawLines(brush_hove, TAlignMini.Top.TriangleLines(rect_button_up));
-                        }
+                        g.DrawLines(pen, TAlignMini.Top.TriangleLines(rect_button_up));
                     }
                 }
                 else if (hover_button_up.Switch)
                 {
-                    using (var pen = new Pen(borderActive, 1 * Config.Dpi))
+                    using (var pen = new Pen(borderActive, Config.Dpi))
                     {
                         g.DrawLines(pen, TAlignMini.Top.TriangleLines(rect_button_up));
                     }
                 }
                 else
                 {
-                    using (var pen_def = new Pen(borColor, 1 * Config.Dpi))
+                    using (var pen = new Pen(borColor, Config.Dpi))
                     {
-                        g.DrawLines(pen_def, TAlignMini.Top.TriangleLines(rect_button_up));
+                        g.DrawLines(pen, TAlignMini.Top.TriangleLines(rect_button_up));
                     }
                 }
 
                 if (hover_button_bottom.Animation)
                 {
-                    using (var pen_def = new Pen(borColor, 1 * Config.Dpi))
+                    using (var pen = new Pen(borColor.BlendColors(hover_button_bottom.Value, borderActive), Config.Dpi))
                     {
-                        g.DrawLines(pen_def, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
-                        using (var brush_hove = new Pen(Helper.ToColor(hover_button_bottom.Value, borderActive), pen_def.Width))
-                        {
-                            g.DrawLines(brush_hove, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
-                        }
+                        g.DrawLines(pen, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
                     }
                 }
                 else if (hover_button_bottom.Switch)
                 {
-                    using (var pen = new Pen(borderActive, 1 * Config.Dpi))
+                    using (var pen = new Pen(borderActive, Config.Dpi))
                     {
                         g.DrawLines(pen, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
                     }
                 }
                 else
                 {
-                    using (var pen_def = new Pen(borColor, 1 * Config.Dpi))
+                    using (var pen = new Pen(borColor, Config.Dpi))
                     {
-                        g.DrawLines(pen_def, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
+                        g.DrawLines(pen, TAlignMini.Bottom.TriangleLines(rect_button_bottom));
                     }
                 }
             }
@@ -346,7 +339,14 @@ namespace AntdUI
 
         protected override void ChangeMouseHover(bool Hover, bool Focus)
         {
-            hover_button.Switch = showcontrol && !ReadOnly && (Hover || Focus);
+            if (showcontrol && !ReadOnly)
+            {
+                bool old = hover_button.Switch;
+                hover_button.Switch = (Hover || Focus);
+                if (old == hover_button.Switch) return;
+                UR = hover_button.Switch ? (int)rect_button.Width : 0;
+                CalculateRect();
+            }
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
@@ -368,11 +368,7 @@ namespace AntdUI
                     SetCursor(true);
                     return;
                 }
-                else
-                {
-                    hover_button_up.Switch = hover_button_bottom.Switch = false;
-                    SetCursor(false);
-                }
+                else hover_button_up.Switch = hover_button_bottom.Switch = false;
             }
             base.OnMouseMove(e);
         }
@@ -405,11 +401,11 @@ namespace AntdUI
                         while (isdownup || isdowndown && _downid == downid)
                         {
                             var old = currentValue;
-                            Invoke(new Action(() =>
+                            Invoke(() =>
                             {
                                 if (isdownup) Value = currentValue + Increment;
                                 else if (isdowndown) Value = currentValue - Increment;
-                            }));
+                            });
                             if (old == currentValue) return;
                             System.Threading.Thread.Sleep(200);
                         }
@@ -436,19 +432,25 @@ namespace AntdUI
 
         protected override void OnLostFocus(EventArgs e)
         {
+            base.OnLostFocus(e);
             if (IsHandleCreated)
             {
+                if (IsTextEmpty)
+                {
+                    Value = minimum ?? 0;
+                    return;
+                }
                 if (decimal.TryParse(Text, out var _d)) Value = _d;
-                else Text = GetNumberText(currentValue);
+                Text = GetNumberText(currentValue);
             }
-            base.OnLostFocus(e);
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            base.OnMouseWheel(e);
+            if (ReadOnly || !wheelModifyEnabled) return;
             if (e.Delta > 0) Value = currentValue + Increment;
             else Value = currentValue - Increment;
-            base.OnMouseWheel(e);
         }
 
         #endregion

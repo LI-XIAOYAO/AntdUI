@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -55,6 +55,7 @@ namespace AntdUI
                 _value = value;
                 Text = new DateTime(1997, 1, 1, value.Hours, value.Minutes, value.Seconds).ToString(Format);
                 ValueChanged?.Invoke(this, new TimeSpanNEventArgs(value));
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -65,10 +66,22 @@ namespace AntdUI
         public TAlignFrom Placement { get; set; } = TAlignFrom.BL;
 
         /// <summary>
+        /// 时间值水平对齐
+        /// </summary>
+        [Description("时间值水平对齐"), Category("外观"), DefaultValue(false)]
+        public bool ValueTimeHorizontal { get; set; }
+
+        /// <summary>
         /// 下拉箭头是否显示
         /// </summary>
         [Description("下拉箭头是否显示"), Category("外观"), DefaultValue(false)]
-        public bool DropDownArrow { get; set; } = false;
+        public bool DropDownArrow { get; set; }
+
+        /// <summary>
+        /// 显示此刻
+        /// </summary>
+        [Description("显示此刻"), Category("外观"), DefaultValue(true)]
+        public bool ShowButtonNow { get; set; } = true;
 
         protected override void OnHandleCreated(EventArgs e)
         {
@@ -95,19 +108,16 @@ namespace AntdUI
             }
         }
 
-        public override bool HasSuffix
-        {
-            get => showicon;
-        }
+        public override bool HasSuffix => showicon;
 
-        protected override void PaintRIcon(Graphics g, Rectangle rect_r)
+        protected override void PaintRIcon(Canvas g, Rectangle rect_r)
         {
             if (showicon)
             {
-                using (var bmp = SvgDb.IcoTime.SvgToBmp(rect_r.Width, rect_r.Height, Style.Db.TextQuaternary))
+                using (var bmp = SvgDb.IcoTime.SvgToBmp(rect_r.Width, rect_r.Height, Colour.TextQuaternary.Get("TimePicker", ColorScheme)))
                 {
                     if (bmp == null) return;
-                    g.DrawImage(bmp, rect_r);
+                    g.Image(bmp, rect_r);
                 }
             }
         }
@@ -128,7 +138,9 @@ namespace AntdUI
         /// <summary>
         /// 展开下拉菜单
         /// </summary>
-        bool ExpandDrop
+        [Browsable(false)]
+        [Description("展开下拉菜单"), Category("行为"), DefaultValue(false)]
+        public bool ExpandDrop
         {
             get => expandDrop;
             set
@@ -161,8 +173,13 @@ namespace AntdUI
             ExpandDrop = false;
             if (IsHandleCreated)
             {
+                if (IsTextEmpty)
+                {
+                    Value = new TimeSpan(0, 0, 0);
+                    return;
+                }
                 if (DateTime.TryParse("1997-1-1 " + Text, out var _d)) Value = new TimeSpan(_d.Hour, _d.Minute, _d.Second);
-                else Text = new DateTime(1997, 1, 1, _value.Hours, _value.Minutes, _value.Seconds).ToString(Format);
+                Text = new DateTime(1997, 1, 1, _value.Hours, _value.Minutes, _value.Seconds).ToString(Format);
             }
         }
 
@@ -194,16 +211,8 @@ namespace AntdUI
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
-            if (keyData == Keys.Escape && subForm != null)
-            {
-                subForm.IClose();
-                return true;
-            }
-            else if (keyData == Keys.Down && subForm == null)
-            {
-                ExpandDrop = true;
-                return true;
-            }
+            if (keyData == Keys.Escape && subForm != null) subForm.IClose();
+            else if (keyData == Keys.Down && subForm == null) ExpandDrop = true;
             else if (keyData == Keys.Enter && DateTime.TryParse("1997-1-1 " + Text, out var _d))
             {
                 Value = new TimeSpan(_d.Hour, _d.Minute, _d.Second);

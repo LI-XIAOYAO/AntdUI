@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -21,22 +21,39 @@ using System.ComponentModel;
 
 namespace AntdUI
 {
-    public abstract class ILayeredFormOpacity : ILayeredForm
+    public abstract class ILayeredFormOpacity : ILayeredForm, LayeredFormAsynLoad
     {
         ITask? task_start = null;
         bool run_end = false, ok_end = false;
         public byte maxalpha = 240;
         protected override void OnLoad(EventArgs e)
         {
-            if (Config.Animation)
+            if (Config.HasAnimation(name))
             {
-                var t = Animation.TotalFrames(10, 80);
-                task_start = new ITask((i) =>
+                if (this is SpinForm)
                 {
-                    var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
-                    SetAnimateValue((byte)(maxalpha * val));
-                    return true;
-                }, 10, t, IStart);
+                    var t = Animation.TotalFrames(10, 80);
+                    task_start = new ITask((i) =>
+                    {
+                        var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
+                        alpha = (byte)(maxalpha * val);
+                        return true;
+                    }, 10, t, () =>
+                    {
+                        alpha = maxalpha;
+                        LoadOK();
+                    });
+                }
+                else
+                {
+                    var t = Animation.TotalFrames(10, 80);
+                    task_start = new ITask((i) =>
+                    {
+                        var val = Animation.Animate(i, t, 1F, AnimationType.Ball);
+                        SetAnimateValue((byte)(maxalpha * val));
+                        return true;
+                    }, 10, t, IStart);
+                }
             }
             else IStart();
             base.OnLoad(e);
@@ -47,30 +64,48 @@ namespace AntdUI
         System.Drawing.Bitmap? bmp_tmp = null;
         void SetAnimateValue(byte _alpha, bool isrint = false)
         {
-            if (alpha != _alpha)
+            if (isrint)
             {
                 alpha = _alpha;
-                if (isrint)
+                Print(true);
+                return;
+            }
+            if (alpha == _alpha) return;
+            alpha = _alpha;
+            if (IsHandleCreated && TargetRect.Width > 0 && TargetRect.Height > 0)
+            {
+                try
                 {
-                    Print();
-                    return;
+                    if (bmp_tmp == null) bmp_tmp = PrintBit();
+                    if (bmp_tmp == null) return;
+                    if (Print(bmp_tmp) == RenderResult.Invalid) bmp_tmp = null;
                 }
-                if (IsHandleCreated && TargetRect.Width > 0 && TargetRect.Height > 0)
-                {
-                    try
-                    {
-                        if (bmp_tmp == null) bmp_tmp = PrintBit();
-                        if (bmp_tmp == null) return;
-                        Print(bmp_tmp);
-                    }
-                    catch { }
-                }
+                catch { }
             }
         }
 
         #endregion
 
-        public virtual void LoadOK() { }
+        public abstract string name { get; }
+
+        /// <summary>
+        /// 是否正在加载
+        /// </summary>
+        [Description("是否正在加载"), Category("参数"), DefaultValue(true)]
+        public bool IsLoad { get; set; } = true;
+
+        /// <summary>
+        /// 加载完成回调
+        /// </summary>
+        [Description("加载完成回调"), Category("参数"), DefaultValue(null)]
+        public Action? LoadCompleted { get; set; }
+
+        public virtual void LoadOK()
+        {
+            IsLoad = false;
+            LoadCompleted?.Invoke();
+        }
+        public virtual void ClosingAnimation() { }
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -78,10 +113,11 @@ namespace AntdUI
             if (!ok_end)
             {
                 e.Cancel = true;
-                if (Config.Animation)
+                if (Config.HasAnimation(name))
                 {
                     if (!run_end)
                     {
+                        ClosingAnimation();
                         run_end = true;
                         var t = Animation.TotalFrames(10, 80);
                         new ITask((i) =>
@@ -119,6 +155,7 @@ namespace AntdUI
         protected override void Dispose(bool disposing)
         {
             task_start?.Dispose();
+            task_start = null;
             base.Dispose(disposing);
         }
     }

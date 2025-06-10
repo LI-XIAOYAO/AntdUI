@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -26,16 +26,23 @@ namespace AntdUI
 {
     public class LayeredFormColorPicker : ILayeredFormOpacityDown
     {
-        internal float Radius = 10;
+        float Radius = 10, Radius2 = 8;
         TAlign ArrowAlign = TAlign.None;
         readonly int ArrowSize = 8;
-        int gap = 12, w = 258, h = 224, dot_size = 16, dot_bor_size = 2, line_h = 8, panel_color = 28;//260
+        int gap = 12, w = 258, h = 224, dot_size = 16, dot_bor_size = 2, line_h = 8, panel_color = 28, btn_size = 24;//260
+        int offy = 0;
         Color Value, ValueNAlpha, ValueHue;
         Action<Color> action;
         TColorMode mode;
+        PointF[]? rect_arrow;
+        bool AllowClear = false, ShowClose = false;
+        TAMode ColorScheme;
         public LayeredFormColorPicker(ColorPicker control, Rectangle rect_read, Action<Color> _action)
         {
+            ColorScheme = control.ColorScheme;
             control.Parent.SetTopMost(Handle);
+            AllowClear = control.AllowClear;
+            ShowClose = control.ShowClose;
             Font = control.Font;
             mode = control.Mode;
             MessageCloseMouseLeave = control.Trigger == Trigger.Hover;
@@ -44,7 +51,8 @@ namespace AntdUI
             var hsv = ValueNAlpha.ToHSV();
             hsv.s = hsv.v = 1;
             ValueHue = hsv.HSVToColor();
-            Radius = control.radius;
+            Radius = control.Radius * Config.Dpi;
+            Radius2 = Radius * 0.75F;
             PARENT = control;
             action = _action;
             int colors_h = 160;
@@ -55,6 +63,7 @@ namespace AntdUI
                 gap = (int)(gap * Config.Dpi);
                 dot_size = (int)(dot_size * Config.Dpi);
                 dot_bor_size = (int)(dot_bor_size * Config.Dpi);
+                btn_size = (int)(btn_size * Config.Dpi);
                 line_h = (int)(line_h * Config.Dpi);
                 panel_color = (int)(panel_color * Config.Dpi);
                 w = (int)(w * Config.Dpi);
@@ -84,8 +93,18 @@ namespace AntdUI
                 colors_h = chtmp;
                 h += chxc;
             }
+            int y = 10;
 
-            rect_colors = new Rectangle(10 + gap, 10 + gap, w - gap * 2, colors_h);
+            if (AllowClear || ShowClose)
+            {
+                if (AllowClear) rect_btn = new Rectangle(10 + w - gap - btn_size, y + gap, btn_size, btn_size);
+                if (ShowClose) rect_close = new Rectangle(10 + gap, y + gap, btn_size, btn_size);
+                offy = btn_size + line_h + line_h / 2;
+                y += offy;
+                h += offy;
+            }
+
+            rect_colors = new Rectangle(10 + gap, y + gap, w - gap * 2, colors_h);
             rect_color = new Rectangle(10 + gap + (w - gap * 2) - panel_color, rect_colors.Bottom + gap, panel_color, panel_color);
             rect_hue = new Rectangle(10 + gap, rect_colors.Bottom + gap, w - gap * 3 - panel_color, line_h);
             int yb = rect_hue.Bottom + gap;
@@ -106,7 +125,7 @@ namespace AntdUI
             bmp_dot_12 = new Bitmap(gap + 12, gap + 12);
             using (var g2 = Graphics.FromImage(bmp_dot_12).High())
             {
-                using (var brush = new SolidBrush(Style.Db.BgBase))
+                using (var brush = new SolidBrush(Colour.BgBase.Get("ColorPicker", ColorScheme)))
                 {
                     float yy = (bmp_dot_12.Height - gap) / 2F;
                     var rect = new RectangleF(6, 6, bmp_dot_12.Height - 12, bmp_dot_12.Height - 12);
@@ -121,7 +140,7 @@ namespace AntdUI
 
             int r_w = w + 20, r_h = h + 20;
             SetSize(r_w, r_h);
-            CLocation(control.PointToScreen(Point.Empty), control.Placement, control.DropDownArrow, ArrowSize, 10, r_w, r_h, rect_read, ref Inverted, ref ArrowAlign, true);
+            rect_arrow = CLocation(control.PointToScreen(Point.Empty), control.Placement, control.DropDownArrow, ArrowSize, 10, r_w, r_h, rect_read, ref Inverted, ref ArrowAlign, true);
 
             Location = TargetRect.Location;
             Size = TargetRect.Size;
@@ -140,6 +159,7 @@ namespace AntdUI
 
                         var input_r = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "R",
                             Location = rect_r.Location,
@@ -154,6 +174,7 @@ namespace AntdUI
 
                         var input_g = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "G",
                             Location = rect_g.Location,
@@ -168,6 +189,7 @@ namespace AntdUI
 
                         var input_b = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "B",
                             Location = rect_b.Location,
@@ -184,11 +206,10 @@ namespace AntdUI
                             new InputRect(input_g, rect_g, wsize, wsize2),
                             new InputRect(input_b, rect_b, wsize, wsize2)
                         };
-
                         input_r.TakePaint = input_g.TakePaint = input_b.TakePaint = () =>
                         {
                             if (RunAnimation) return;
-                            Print(true);
+                            Print();
                         };
                         Controls.Add(input_r);
                         Controls.Add(input_g);
@@ -204,6 +225,7 @@ namespace AntdUI
 
                         var input_r = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "R",
                             Location = rect_r.Location,
@@ -218,6 +240,7 @@ namespace AntdUI
 
                         var input_g = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "G",
                             Location = rect_g.Location,
@@ -232,6 +255,7 @@ namespace AntdUI
 
                         var input_b = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             PrefixText = "B",
                             Location = rect_b.Location,
@@ -246,6 +270,7 @@ namespace AntdUI
 
                         var input_a = new InputNumber
                         {
+                            TabStop = false,
                             ShowControl = false,
                             SuffixText = "%",
                             Location = rect_a.Location,
@@ -264,11 +289,10 @@ namespace AntdUI
                             new InputRect(input_b, rect_b, wsize, wsize2),
                             new InputRect(input_a, rect_a, wsize, wsize2)
                         };
-
                         input_r.TakePaint = input_g.TakePaint = input_b.TakePaint = input_a.TakePaint = () =>
                         {
                             if (RunAnimation) return;
-                            Print(true);
+                            Print();
                         };
                         Controls.Add(input_r);
                         Controls.Add(input_g);
@@ -302,6 +326,8 @@ namespace AntdUI
             }
         }
 
+        public override string name => nameof(ColorPicker);
+
         void ChangeColor(Color color, bool a = false)
         {
             color_alpha = Value = color;
@@ -311,8 +337,7 @@ namespace AntdUI
             ValueHue = hsv.HSVToColor();
 
             action(Value);
-            bmp_colors?.Dispose();
-            bmp_colors = null;
+            colors_mouse = null;
             bmp_hue?.Dispose();
             bmp_hue = null;
             bmp_alpha?.Dispose();
@@ -327,7 +352,7 @@ namespace AntdUI
 
         public override void LoadOK()
         {
-            BeginInvoke(new Action(() =>
+            BeginInvoke(() =>
             {
                 Location = TargetRect.Location;
                 Size = TargetRect.Size;
@@ -337,7 +362,7 @@ namespace AntdUI
                     Size = new Size(0, 30)
                 };
                 Controls.Add(input);
-            }));
+            });
             base.LoadOK();
         }
 
@@ -371,9 +396,9 @@ namespace AntdUI
                 if (rect_colors_big.Contains(e.Location))
                 {
                     //顶部渐变色卡
-                    if (bmp_colors_mouse != null)
+                    if (colors_mouse != null)
                     {
-                        var value = GetColors(e.X, e.Y, bmp_colors_mouse);
+                        var value = GetColors(e.X, e.Y, colors_mouse);
 
                         color_alpha = Value = Color.FromArgb(Value.A, value);
                         ValueNAlpha = Color.FromArgb(255, Value);
@@ -400,8 +425,7 @@ namespace AntdUI
                         color_alpha = Value = Color.FromArgb(Value.A, hsv_value.HSVToColor());
                         ValueNAlpha = Color.FromArgb(255, Value);
                         SetValue();
-                        bmp_colors?.Dispose();
-                        bmp_colors = null;
+                        colors_mouse = null;
                         bmp_alpha?.Dispose();
                         bmp_alpha = null;
                         Print(true);
@@ -422,6 +446,15 @@ namespace AntdUI
                         down_alpha = true;
                     }
                 }
+                else if (AllowClear && rect_btn.Contains(e.Location))
+                {
+                    if (PARENT is ColorPicker color && color.HasValue)
+                    {
+                        color.ClearValue();
+                        Print();
+                    }
+                }
+                else if (ShowClose && rect_close.Contains(e.Location)) IClose();
             }
             base.OnMouseDown(e);
         }
@@ -429,9 +462,29 @@ namespace AntdUI
         protected override void OnMouseMove(MouseEventArgs e)
         {
             if (RunAnimation) return;
-            if (down_colors && bmp_colors_mouse != null)
+            int count = 0;
+            if (AllowClear)
             {
-                var value = GetColors(e.X, e.Y, bmp_colors_mouse);
+                var hover = rect_btn.Contains(e.X, e.Y);
+                if (hover != hover_btn)
+                {
+                    hover_btn = hover;
+                    count++;
+                }
+            }
+            if (ShowClose)
+            {
+                var hover = rect_close.Contains(e.X, e.Y);
+                if (hover != hover_close)
+                {
+                    hover_close = hover;
+                    count++;
+                }
+            }
+            if (count > 0) Print();
+            if (down_colors && colors_mouse != null)
+            {
+                var value = GetColors(e.X, e.Y, colors_mouse);
 
                 color_alpha = Value = Color.FromArgb(Value.A, value);
                 ValueNAlpha = Color.FromArgb(255, Value);
@@ -453,8 +506,7 @@ namespace AntdUI
                 color_alpha = Value = Color.FromArgb(Value.A, hsv_value.HSVToColor());
                 ValueNAlpha = Color.FromArgb(255, Value);
                 SetValue();
-                bmp_colors?.Dispose();
-                bmp_colors = null;
+                colors_mouse = null;
                 bmp_alpha?.Dispose();
                 bmp_alpha = null;
                 Print(true);
@@ -473,7 +525,7 @@ namespace AntdUI
 
         Color GetColors(int x, int y, Dictionary<string, Color> dir)
         {
-            point_colors = new Point(x - 10 - gap, y - 10 - gap);
+            point_colors = new Point(x - 10 - gap, y - 10 - offy - gap);
 
             int w = rect_colors.Width - 1, h = rect_colors.Height - 1;
             if (point_colors.X < 0) point_colors.X = 0;
@@ -497,6 +549,9 @@ namespace AntdUI
 
         #region 渲染
 
+        bool hover_btn = false, hover_close = false;
+        Rectangle rect_btn, rect_close;
+
         public override Bitmap PrintBit()
         {
             var rect = TargetRectXY;
@@ -504,32 +559,58 @@ namespace AntdUI
             Bitmap original_bmp = new Bitmap(rect.Width, rect.Height);
             using (var g = Graphics.FromImage(original_bmp).High())
             {
-                using (var brush_bg = new SolidBrush(Style.Db.BgElevated))
+                using (var brush_bg = new SolidBrush(Colour.BgElevated.Get("ColorPicker", ColorScheme)))
                 {
                     using (var path = rect_read.RoundPath(Radius))
                     {
                         DrawShadow(g, rect);
-                        g.FillPath(brush_bg, path);
-                        if (ArrowAlign != TAlign.None) g.FillPolygon(brush_bg, ArrowAlign.AlignLines(ArrowSize, rect, rect_read));
+                        g.Fill(brush_bg, path);
+                        if (ArrowAlign != TAlign.None)
+                        {
+                            if (rect_arrow == null) g.FillPolygon(brush_bg, ArrowAlign.AlignLines(ArrowSize, rect, rect_read));
+                            else g.FillPolygon(brush_bg, rect_arrow);
+                        }
                     }
                     #region 渲染
 
+                    if (AllowClear)
+                    {
+                        using (var path = rect_btn.RoundPath(Radius2))
+                        {
+                            g.SetClip(path);
+                            using (var pen = new Pen(Color.FromArgb(245, 34, 45), rect_btn.Height * .12F))
+                            {
+                                g.DrawLine(pen, new Point(rect_btn.X, rect_btn.Bottom), new Point(rect_btn.Right, rect_btn.Y));
+                            }
+                            g.ResetClip();
+                            g.Draw(hover_btn ? Colour.BorderColor.Get("ColorPicker", ColorScheme) : Colour.Split.Get("ColorPicker", ColorScheme), Config.Dpi, path);
+                        }
+                    }
+
+                    if (ShowClose)
+                    {
+                        using (var path = rect_close.RoundPath(Radius2))
+                        {
+                            g.Draw(hover_close ? Colour.BorderColor.Get("ColorPicker", ColorScheme) : Colour.Split.Get("ColorPicker", ColorScheme), Config.Dpi, path);
+                        }
+                        g.PaintIconClose(rect_close, Colour.TextTertiary.Get("ColorPicker", ColorScheme), .8F);
+                    }
+
                     #region 调色板
 
-                    if (bmp_colors == null)
+                    using (var bmp = new Bitmap(rect_colors.Width, rect_colors.Height))
                     {
-                        bmp_colors = new Bitmap(rect_colors.Width, rect_colors.Height);
-                        using (var g2 = Graphics.FromImage(bmp_colors).High())
+                        using (var g2 = Graphics.FromImage(bmp).High())
                         {
-                            PaintColors(g2, new Rectangle(0, 0, bmp_colors.Width, bmp_colors.Height));
+                            PaintColors(g2, new Rectangle(0, 0, bmp.Width, bmp.Height));
                         }
-                        bmp_colors_mouse = GetColorsPoint(bmp_colors);
+                        if (colors_mouse == null) colors_mouse = GetColorsPoint(bmp);
+                        g.Image(bmp, rect_colors);
                     }
-                    g.DrawImage(bmp_colors, rect_colors);
                     using (var path = rect_colors.RoundPath(Radius))
                     {
                         path.AddRectangle(new Rectangle(rect_colors.X - 1, rect_colors.Y - 1, rect_colors.Width + 2, rect_colors.Height + 2));
-                        g.FillPath(brush_bg, path);
+                        g.Fill(brush_bg, path);
                     }
 
                     #endregion
@@ -538,7 +619,6 @@ namespace AntdUI
 
                     if (bmp_hue == null)
                     {
-                        System.Diagnostics.Debug.WriteLine("G HUE");
                         bmp_hue = new Bitmap(rect_hue.Width, rect_hue.Height);
                         using (var g2 = Graphics.FromImage(bmp_hue).High())
                         {
@@ -546,11 +626,11 @@ namespace AntdUI
                         }
                         GetHuePoint(bmp_hue);
                     }
-                    g.DrawImage(bmp_hue, rect_hue);
+                    g.Image(bmp_hue, rect_hue);
                     using (var path = rect_hue.RoundPath(rect_hue.Height))
                     {
                         path.AddRectangle(new Rectangle(rect_hue.X - 1, rect_hue.Y - 1, rect_hue.Width + 2, rect_hue.Height + 2));
-                        g.FillPath(brush_bg, path);
+                        g.Fill(brush_bg, path);
                     }
 
                     #endregion
@@ -577,12 +657,12 @@ namespace AntdUI
                                 PaintAlpha(g2, new Rectangle(0, 0, bmp_alpha.Width, bmp_alpha.Height), true);
                             }
                         }
-                        g.DrawImage(bmp_alpha, rect_alpha);
+                        g.Image(bmp_alpha, rect_alpha);
 
                         using (var path = rect_alpha.RoundPath(rect_alpha.Height))
                         {
                             path.AddRectangle(new Rectangle(rect_alpha.X - 1, rect_alpha.Y - 1, rect_alpha.Width + 2, rect_alpha.Height + 2));
-                            g.FillPath(brush_bg, path);
+                            g.Fill(brush_bg, path);
                         }
                     }
 
@@ -592,7 +672,7 @@ namespace AntdUI
 
                     using (var brush_val = new SolidBrush(Value))
                     using (var brush_hue = new SolidBrush(ValueHue))
-                    using (var pen = new Pen(Style.Db.BgBase, dot_bor_size))
+                    using (var pen = new Pen(Colour.BgBase.Get("ColorPicker", ColorScheme), dot_bor_size))
                     {
                         #region 调色板
 
@@ -606,7 +686,7 @@ namespace AntdUI
 
                         var _rect_hue = new Rectangle(rect_hue.X + point_hue - gap / 2, rect_hue.Y + rect_hue.Height / 2 - gap / 2, gap, gap);
 
-                        g.DrawImage(bmp_dot_12, new Rectangle(rect_hue.X + point_hue - bmp_dot_12.Height / 2, rect_hue.Y + (rect_hue.Height - bmp_dot_12.Height) / 2, bmp_dot_12.Width, bmp_dot_12.Height));
+                        g.Image(bmp_dot_12, new Rectangle(rect_hue.X + point_hue - bmp_dot_12.Height / 2, rect_hue.Y + (rect_hue.Height - bmp_dot_12.Height) / 2, bmp_dot_12.Width, bmp_dot_12.Height));
                         g.FillEllipse(brush_hue, _rect_hue);
                         g.DrawEllipse(pen, _rect_hue);
 
@@ -619,7 +699,7 @@ namespace AntdUI
                             brush_val.Color = color_alpha;
                             var _rect_alpha = new Rectangle(rect_alpha.X + point_alpha - gap / 2, rect_alpha.Y + rect_alpha.Height / 2 - gap / 2, gap, gap);
 
-                            g.DrawImage(bmp_dot_12, new Rectangle(rect_alpha.X + point_alpha - bmp_dot_12.Height / 2, rect_alpha.Y + (rect_alpha.Height - bmp_dot_12.Height) / 2, bmp_dot_12.Width, bmp_dot_12.Height));
+                            g.Image(bmp_dot_12, new Rectangle(rect_alpha.X + point_alpha - bmp_dot_12.Height / 2, rect_alpha.Y + (rect_alpha.Height - bmp_dot_12.Height) / 2, bmp_dot_12.Width, bmp_dot_12.Height));
                             g.FillEllipse(brush_val, _rect_alpha);
                             g.DrawEllipse(pen, _rect_alpha);
                         }
@@ -628,7 +708,7 @@ namespace AntdUI
 
                         using (var path = rect_color.RoundPath(Radius))
                         {
-                            g.FillPath(brush_val, path);
+                            g.Fill(brush_val, path);
                         }
                     }
 
@@ -666,26 +746,25 @@ namespace AntdUI
         Point point_colors = Point.Empty;
         Rectangle rect_colors_big;
         Rectangle rect_colors;
-        Bitmap? bmp_colors = null;
-        Dictionary<string, Color>? bmp_colors_mouse = null;
-        void PaintColors(Graphics g, Rectangle rect)
+        Dictionary<string, Color>? colors_mouse = null;
+        void PaintColors(Canvas g, Rectangle rect)
         {
             using (var brush = new SolidBrush(ValueHue))
             {
-                g.FillRectangle(brush, rect);
+                g.Fill(brush, rect);
             }
             RectangleF w = new RectangleF(rect.X, rect.Y, rect.Width - 2F, rect.Height), b = new RectangleF(rect.X, rect.Y + 2F, rect.Width, rect.Height - 4F);
             using (var brush = new LinearGradientBrush(w, Color.White, Color.Transparent, 0F))
             {
-                g.FillRectangle(brush, w);
+                g.Fill(brush, w);
             }
             using (var brush = new LinearGradientBrush(b, Color.Transparent, Color.Black, 90F))
             {
-                g.FillRectangle(brush, b);
+                g.Fill(brush, b);
             }
             using (var brush = new SolidBrush(Color.Black))
             {
-                g.FillRectangle(brush, new RectangleF(rect.X, rect.Height - 2F, rect.Width, 2F));
+                g.Fill(brush, new RectangleF(rect.X, rect.Height - 2F, rect.Width, 2F));
             }
         }
         Dictionary<string, Color> GetColorsPoint(Bitmap bmp_colors)
@@ -717,7 +796,7 @@ namespace AntdUI
         Rectangle rect_hue_big;
         Rectangle rect_hue;
         Bitmap? bmp_hue = null;
-        void PaintHue(Graphics g, Rectangle rect)
+        void PaintHue(Canvas g, Rectangle rect)
         {
             int width = (rect.Width - 4) / 6;
             Rectangle rect1 = new Rectangle(2, 0, width, rect.Height), rect2 = new Rectangle(rect1.X + width, 0, width, rect.Height),
@@ -726,31 +805,31 @@ namespace AntdUI
 
             using (var brush = new SolidBrush(Color.FromArgb(255, 0, 0)))
             {
-                g.FillRectangle(brush, rect);
+                g.Fill(brush, rect);
             }
             using (var brush = new LinearGradientBrush(rect1, Color.FromArgb(255, 0, 0), Color.FromArgb(255, 255, 0), 0F))
             {
-                g.FillRectangle(brush, rect1);
+                g.Fill(brush, rect1);
             }
             using (var brush = new LinearGradientBrush(rect2, Color.FromArgb(255, 255, 0), Color.FromArgb(0, 255, 0), 0F))
             {
-                g.FillRectangle(brush, rect2);
+                g.Fill(brush, rect2);
             }
             using (var brush = new LinearGradientBrush(rect3, Color.FromArgb(0, 255, 0), Color.FromArgb(0, 255, 255), 0F))
             {
-                g.FillRectangle(brush, rect3);
+                g.Fill(brush, rect3);
             }
             using (var brush = new LinearGradientBrush(rect4, Color.FromArgb(0, 255, 255), Color.FromArgb(0, 0, 255), 0F))
             {
-                g.FillRectangle(brush, rect4);
+                g.Fill(brush, rect4);
             }
             using (var brush = new LinearGradientBrush(rect5, Color.FromArgb(0, 0, 255), Color.FromArgb(255, 0, 255), 0F))
             {
-                g.FillRectangle(brush, rect5);
+                g.Fill(brush, rect5);
             }
             using (var brush = new LinearGradientBrush(rect6, Color.FromArgb(255, 0, 255), Color.FromArgb(255, 0, 0), 0F))
             {
-                g.FillRectangle(brush, rect6);
+                g.Fill(brush, rect6);
             }
         }
         void GetHuePoint(Bitmap bmp_hue)
@@ -800,11 +879,11 @@ namespace AntdUI
         Rectangle rect_alpha;
         Bitmap? bmp_alpha = null, bmp_alpha_read = null;
         Color color_alpha = Color.White;
-        void PaintAlpha(Graphics g, Rectangle rect, bool add)
+        void PaintAlpha(Canvas g, Rectangle rect, bool add)
         {
             if (add)
             {
-                using (var brush = new SolidBrush(Style.Db.FillSecondary))
+                using (var brush = new SolidBrush(Colour.FillSecondary.Get("ColorPicker", ColorScheme)))
                 {
                     int he = rect.Height / 2;
                     int u_x = 0;
@@ -812,7 +891,7 @@ namespace AntdUI
                     while (u_x < rect.Width)
                     {
                         ad = !ad;
-                        g.FillRectangle(brush, new Rectangle(u_x, ad ? 0 : he, he, he));
+                        g.Fill(brush, new Rectangle(u_x, ad ? 0 : he, he, he));
                         u_x += he;
                     }
                 }
@@ -820,11 +899,11 @@ namespace AntdUI
             rect.Offset(1, 0);
             using (var brush = new LinearGradientBrush(rect, Color.Transparent, ValueNAlpha, 0F))
             {
-                g.FillRectangle(brush, rect);
+                g.Fill(brush, rect);
             }
             using (var brush = new SolidBrush(ValueNAlpha))
             {
-                g.FillRectangle(brush, new Rectangle(rect.Width - 1, 0, 4, rect.Height));
+                g.Fill(brush, new Rectangle(rect.Width - 1, 0, 4, rect.Height));
             }
         }
         void GetAlphaPoint(Bitmap bmp_alpha)
@@ -848,13 +927,13 @@ namespace AntdUI
 
         #endregion
 
-        Bitmap? shadow_temp = null;
+        SafeBitmap? shadow_temp = null;
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
         /// <param name="rect">客户区域</param>
-        void DrawShadow(Graphics g, Rectangle rect)
+        void DrawShadow(Canvas g, Rectangle rect)
         {
             if (Config.ShadowEnabled)
             {
@@ -866,19 +945,18 @@ namespace AntdUI
                         shadow_temp = path.PaintShadow(rect.Width, rect.Height);
                     }
                 }
-                g.DrawImage(shadow_temp, rect, 0.2F);
+                g.Image(shadow_temp.Bitmap, rect, .2F);
             }
         }
 
         #endregion
 
-        public bool IProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        public void IProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
             foreach (var input in inputs)
             {
-                if (input.input.Focused) return input.input.IProcessCmdKey(ref msg, keyData);
+                if (input.input.Focused) input.input.HandKeyBoard(keyData);
             }
-            return false;
         }
 
         public void IKeyPress(KeyPressEventArgs e)
@@ -887,7 +965,7 @@ namespace AntdUI
             {
                 if (input.input.Focused)
                 {
-                    input.input.IKeyPress(e);
+                    input.input.IKeyPress(e.KeyChar);
                     return;
                 }
             }

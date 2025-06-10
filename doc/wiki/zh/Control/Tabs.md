@@ -1,8 +1,8 @@
-﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)・[SVG](../SVG.md)
+﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)
 
 ## Tabs
 
-Tabs 标签页 👚 [beta]
+Tabs 标签页 👚
 
 > 选项卡切换组件。
 
@@ -20,19 +20,19 @@ Tabs 标签页 👚 [beta]
 **FillActive** | 激活颜色 | Color`?` | `null` |
 ||||
 **Alignment** | 位置 | TabAlignment |Top|
-**Centered** 🔴 | 标签居中展示 | bool | false |
+**Centered** | 标签居中展示 | bool | false |
 ||||
-**TypExceed** 🔴 | 超出UI类型 | [TabTypExceed](Enum#tabtypexceed) | Button |
-**ScrollBack** 🔴 | 滚动条颜色 | Color`?` | `null` |
-**ScrollBackHover** 🔴 | 滚动条悬停颜色 | Color`?` | `null` |
-**ScrollFore** 🔴 | 滚动条文本颜色 | Color`?` | `null` |
-**ScrollForeHover** 🔴 | 滚动条悬停文本颜色 | Color`?` | `null` |
+**TypExceed** | 超出UI类型 | [TabTypExceed](Enum.md#tabtypexceed) | Button |
+**ScrollBack** | 滚动条颜色 | Color`?` | `null` |
+**ScrollBackHover** | 滚动条悬停颜色 | Color`?` | `null` |
+**ScrollFore** | 滚动条文本颜色 | Color`?` | `null` |
+**ScrollForeHover** | 滚动条悬停文本颜色 | Color`?` | `null` |
 ||||
 **Gap** | 间距 | int | 8 |
 **IconRatio** | 图标比例 | float | 0.7F |
-**ItemSize** 🔴 | 自定义项大小 | int? | `null` |
+**ItemSize** | 自定义项大小 | int? | `null` |
 ||||
-**Type** | 类型 | [TabType](Enum#tabtype) | Line |
+**Type** | 类型 | [TabType](Enum.md#tabtype) | Line |
 **Style** | 样式类型 | [IStyle](#istyle) | `非空` |
 ||||
 **TabMenuVisible** | 是否显示头 | bool | true |
@@ -45,9 +45,9 @@ Tabs 标签页 👚 [beta]
 
 名称 | 描述 | 返回值 | 参数 |
 :--|:--|:--|:--|
-**SelectTab** 🔴 | 选中项 | void | string tabPageName |
-**SelectTab** 🔴 | 选中项 | void | [TabPage](#tabpage) tabPage |
-**SelectTab** 🔴 | 选中项 | void | int index `序号` |
+**SelectTab** | 选中项 | void | string tabPageName |
+**SelectTab** | 选中项 | void | [TabPage](#tabpage) tabPage |
+**SelectTab** | 选中项 | void | int index `序号` |
 
 ### 事件
 
@@ -94,11 +94,11 @@ Tabs 标签页 👚 [beta]
 
 #### TabPage
 
-> 继承于 ScrollableControl
+> 继承于 [ScrollableControl](https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/System/Windows/Forms/Scrolling/ScrollableControl.cs)
 
 名称 | 描述 | 类型 | 默认值 |
 :--|:--|:--|:--|
-**Icon** | 图标S | Image`?` | `null` |
+**Icon** | 图标 | Image`?` | `null` |
 **IconSvg** | 图标SVG | string`?` | `null` |
 ||||
 **Badge** | 徽标内容 | string`?` | `null` |
@@ -109,4 +109,4 @@ Tabs 标签页 👚 [beta]
 ||||
 **Text** | 显示文本 | string ||
 **Visible** | 是否显示 | bool | true |
-**ReadOnly** 🔴 | 只读 | bool | false |
+**ReadOnly** | 只读 | bool | false |

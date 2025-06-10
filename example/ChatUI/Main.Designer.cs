@@ -22,17 +22,13 @@
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             AntdUI.Chat.MsgItem msgItem1 = new AntdUI.Chat.MsgItem();
             AntdUI.Chat.MsgItem msgItem2 = new AntdUI.Chat.MsgItem();
             AntdUI.Chat.MsgItem msgItem3 = new AntdUI.Chat.MsgItem();
             AntdUI.Chat.MsgItem msgItem4 = new AntdUI.Chat.MsgItem();
-            win = new AntdUI.WindowBar();
+            win = new AntdUI.PageHeader();
             msgList = new AntdUI.Chat.MsgList();
             chatList = new AntdUI.Chat.ChatList();
             SuspendLayout();
@@ -42,6 +38,8 @@
             win.Dock = DockStyle.Top;
             win.Location = new Point(0, 0);
             win.Name = "win";
+            win.ShowButton = true;
+            win.ShowIcon = true;
             win.Size = new Size(745, 36);
             win.SubText = "聊天气泡展示";
             win.TabIndex = 0;
@@ -71,7 +69,10 @@
             msgItem4.Name = "Tom";
             msgItem4.Text = "晚上一起 Crazy Day 4";
             msgItem4.Time = "疯狂星期四";
-            msgList.Items.AddRange(new AntdUI.Chat.MsgItem[] { msgItem1, msgItem2, msgItem3, msgItem4 });
+            msgList.Items.Add(msgItem1);
+            msgList.Items.Add(msgItem2);
+            msgList.Items.Add(msgItem3);
+            msgList.Items.Add(msgItem4);
             msgList.Location = new Point(0, 36);
             msgList.Margin = new Padding(2);
             msgList.Name = "msgList";
@@ -92,17 +93,17 @@
             Controls.Add(chatList);
             Controls.Add(msgList);
             Controls.Add(win);
-            Font = new Font("Microsoft YaHei UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+            Font = new Font("Microsoft YaHei UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
             Margin = new Padding(2);
             Name = "Main";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Form1";
+            Text = "ChatUI";
             ResumeLayout(false);
         }
 
         #endregion
 
-        private AntdUI.WindowBar win;
+        private AntdUI.PageHeader win;
         private AntdUI.Chat.MsgList msgList;
         private AntdUI.Chat.ChatList chatList;
     }

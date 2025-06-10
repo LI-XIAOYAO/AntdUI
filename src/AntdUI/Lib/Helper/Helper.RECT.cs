@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -128,7 +128,7 @@ namespace AntdUI
             return rectlr;
         }
 
-        public static void IconRectL(this Rectangle rect, int text_height, out Rectangle icon_rect, out Rectangle text_rect, float size = 0.8F)
+        public static void IconRectL(this Rectangle rect, int text_height, out Rectangle icon_rect, out Rectangle text_rect, float size = .8F)
         {
             int h = (int)(text_height * size);
             int dot_size_ = h / 2;
@@ -299,10 +299,7 @@ namespace AntdUI
                 return rect;
             }
         }
-        public static Rectangle PaddingRect(this Rectangle rect, Padding padding, int x, int y, int r, int b)
-        {
-            return new Rectangle(rect.X + padding.Left + x, rect.Y + padding.Top + y, rect.Width - padding.Horizontal - r, rect.Height - padding.Vertical - b);
-        }
+        public static Rectangle PaddingRect(this Rectangle rect, Padding padding, int x, int y, int r, int b) => new Rectangle(rect.X + padding.Left + x, rect.Y + padding.Top + y, rect.Width - padding.Horizontal - x - r, rect.Height - padding.Vertical - y - b);
         public static Rectangle PaddingRect(this Rectangle rect, params Padding[] paddings)
         {
             foreach (var padding in paddings)
@@ -325,7 +322,7 @@ namespace AntdUI
         {
             if (size > 0)
             {
-                int pr = (int)Math.Round(size), pr2 = pr * 2;
+                int pr = (int)Math.Ceiling(size), pr2 = pr * 2;
                 return new Rectangle(rect.X + padding.Left + pr, rect.Y + padding.Top + pr, rect.Width - padding.Horizontal - pr2, rect.Height - padding.Vertical - pr2);
             }
             return new Rectangle(rect.X + padding.Left, rect.Y + padding.Top, rect.Width - padding.Horizontal, rect.Height - padding.Vertical);
@@ -334,7 +331,7 @@ namespace AntdUI
         {
             if (size > 0)
             {
-                int pr = (int)Math.Round(size), pr2 = pr * 2;
+                int pr = (int)Math.Ceiling(size), pr2 = pr * 2;
                 return new Rectangle(rect.X + padding.Left + pr + x, rect.Y + padding.Top + pr + y, rect.Width - padding.Horizontal - pr2 - r, rect.Height - padding.Vertical - pr2 - b);
             }
             return new Rectangle(rect.X + padding.Left + x, rect.Y + padding.Top + y, rect.Width - padding.Horizontal - r, rect.Height - padding.Vertical - b);
@@ -348,11 +345,11 @@ namespace AntdUI
         /// <param name="shape">形状</param>
         /// <param name="joinLeft">连接左边</param>
         /// <param name="joinRight">连接右边</param>
-        public static Rectangle ReadRect(this Rectangle rect, float size, TShape shape, bool joinLeft, bool joinRight)
+        public static Rectangle ReadRect(this Rectangle rect, float size, TShape shape, TJoinMode joinMode, bool joinLeft, bool joinRight)
         {
             if (shape == TShape.Circle)
             {
-                int pr = (int)Math.Round(size), pr2 = pr * 2;
+                int pr = (int)Math.Ceiling(size), pr2 = pr * 2;
                 if (rect.Width > rect.Height)
                 {
                     int h = rect.Height - pr2;
@@ -364,7 +361,7 @@ namespace AntdUI
                     return new Rectangle(rect.X + pr, rect.Y + (rect.Height - w) / 2, w, w);
                 }
             }
-            return ReadRect(rect, size, joinLeft, joinRight);
+            return ReadRect(rect, size, joinMode, joinLeft, joinRight);
         }
 
         /// <summary>
@@ -374,25 +371,31 @@ namespace AntdUI
         /// <param name="size">动画区域</param>
         /// <param name="joinLeft">连接左边</param>
         /// <param name="joinRight">连接右边</param>
-        public static Rectangle ReadRect(this Rectangle rect, float size, bool joinLeft, bool joinRight)
+        public static Rectangle ReadRect(this Rectangle rect, float size, TJoinMode joinMode, bool joinLeft, bool joinRight)
         {
-            int pr = (int)Math.Round(size), pr2 = pr * 2;
-            if (joinLeft && joinRight) return new Rectangle(rect.X, rect.Y + pr, rect.Width, rect.Height - pr2);
-            else if (joinLeft)
+            int pr = (int)Math.Ceiling(size), pr2 = pr * 2;
+            switch (joinMode)
             {
-                var r = new Rectangle(rect.X, rect.Y + pr, rect.Width - pr, rect.Height - pr2);
-                rect.X = -pr;
-                rect.Width += pr;
-                return r;
+                case TJoinMode.Left:
+                    return new Rectangle(rect.Width - (rect.Width - pr), rect.Y + pr, rect.Width - pr, rect.Height - pr2);
+                case TJoinMode.Right:
+                    return new Rectangle(rect.X, rect.Y + pr, rect.Width - pr, rect.Height - pr2);
+                case TJoinMode.LR:
+                    return new Rectangle(rect.X, rect.Y + pr, rect.Width, rect.Height - pr2);
+
+                case TJoinMode.Top:
+                    return new Rectangle(rect.X + pr, rect.Height - (rect.Height - pr), rect.Width - pr2, rect.Height - pr);
+                case TJoinMode.Bottom:
+                    return new Rectangle(rect.X + pr, rect.Y, rect.Width - pr2, rect.Height - pr);
+                case TJoinMode.TB:
+                    return new Rectangle(rect.X + pr, rect.Y, rect.Width - pr2, rect.Height);
+                case TJoinMode.None:
+                default:
+                    if (joinLeft && joinRight) return new Rectangle(rect.X, rect.Y + pr, rect.Width, rect.Height - pr2);
+                    else if (joinLeft) return new Rectangle(rect.X, rect.Y + pr, rect.Width - pr, rect.Height - pr2);
+                    else if (joinRight) return new Rectangle(rect.Width - (rect.Width - pr), rect.Y + pr, rect.Width - pr, rect.Height - pr2);
+                    return new Rectangle(rect.X + pr, rect.Y + pr, rect.Width - pr2, rect.Height - pr2);
             }
-            else if (joinRight)
-            {
-                var r = new Rectangle(rect.Width - (rect.Width - pr), rect.Y + pr, rect.Width - pr, rect.Height - pr2);
-                rect.X = 0;
-                rect.Width += pr;
-                return r;
-            }
-            return new Rectangle(rect.X + pr, rect.Y + pr, rect.Width - pr2, rect.Height - pr2);
         }
 
         #endregion
@@ -490,12 +493,42 @@ namespace AntdUI
         public static PointF[] TriangleLines(this Rectangle rect, float prog, float d = 0.7F)
         {
             float size = rect.Width * d, size2 = size / 2;
-            float x = rect.X + rect.Width / 2F, y = rect.Y + rect.Height / 2F;
+            float x = rect.X + rect.Width / 2F, y = rect.Y + (rect.Height / 2F);
             if (prog == 0)
             {
                 return new PointF[] {
                     new PointF(x - size2, y),
-                    new PointF(x + size2,y)
+                    new PointF(x + size2, y)
+                };
+            }
+            else if (prog > 0)
+            {
+                float h = size2 * prog, h2 = h / 2;
+                return new PointF[] {
+                    new PointF(x - size2,y + h2),
+                    new PointF(x, y - h2),
+                    new PointF(x + size2,y + h2)
+                };
+            }
+            else
+            {
+                float h = size2 * -prog, h2 = h / 2;
+                return new PointF[] {
+                    new PointF(x - size2,y - h2),
+                    new PointF(x, y + h2),
+                    new PointF(x + size2,y - h2)
+                };
+            }
+        }
+        public static PointF[] TriangleLines(this RectangleF rect, float prog, float d = 0.7F)
+        {
+            float size = rect.Width * d, size2 = size / 2;
+            float x = rect.X + rect.Width / 2F, y = rect.Y + (rect.Height / 2F);
+            if (prog == 0)
+            {
+                return new PointF[] {
+                    new PointF(x - size2, y),
+                    new PointF(x + size2, y)
                 };
             }
             else if (prog > 0)
@@ -695,27 +728,25 @@ namespace AntdUI
                 case TAlign.BR:
                     return new Point(point.X + size.Width - width, point.Y + size.Height);
                 case TAlign.Left:
-                case TAlign.LT:
-                case TAlign.LB:
                     return new Point(point.X - width, point.Y + (size.Height - height) / 2);
+                case TAlign.LT:
+                    return new Point(point.X - width, point.Y);
+                case TAlign.LB:
+                    return new Point(point.X - width, point.Y + size.Height - height);
                 case TAlign.Right:
-                case TAlign.RT:
-                case TAlign.RB:
                     return new Point(point.X + size.Width, point.Y + (size.Height - height) / 2);
+                case TAlign.RT:
+                    return new Point(point.X + size.Width, point.Y);
+                case TAlign.RB:
+                    return new Point(point.X + size.Width, point.Y + size.Height - height);
                 default:
                     return new Point(point.X + (size.Width - width) / 2, point.Y - height);
             }
         }
 
-        public static Point AlignPoint(this TAlign align, Rectangle rect, Rectangle size)
-        {
-            return AlignPoint(align, rect.Location, rect.Size, size.Width, size.Height);
-        }
+        public static Point AlignPoint(this TAlign align, Rectangle rect, Rectangle size) => AlignPoint(align, rect.Location, rect.Size, size.Width, size.Height);
 
-        public static Point AlignPoint(this TAlign align, Rectangle rect, int width, int height)
-        {
-            return AlignPoint(align, rect.Location, rect.Size, width, height);
-        }
+        public static Point AlignPoint(this TAlign align, Rectangle rect, int width, int height) => AlignPoint(align, rect.Location, rect.Size, width, height);
 
         #endregion
     }

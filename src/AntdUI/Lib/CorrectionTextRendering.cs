@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -92,7 +92,7 @@ namespace AntdUI
                 {
                     using (var g_o = Graphics.FromImage(bmp).High())
                     {
-                        g_o.DrawString(text, font, Brushes.Black, new Rectangle(0, 0, bmp.Width, bmp.Height), s_f);
+                        g_o.String(text, font, Brushes.Black, new Rectangle(0, 0, bmp.Width, bmp.Height), s_f);
                     }
                     TextRealY(bmp, out var ry, out var rheight);
                     float ready = ry + rheight / 2F;
@@ -139,33 +139,11 @@ namespace AntdUI
             return bmp.Height - _y;
         }
 
-        #region 渲染字体
-
-        public static void DrawStr(this Graphics g, string? s, Font font, Brush brush, RectangleF layoutRectangle)
-        {
-            CORE(font, s, ref layoutRectangle);
-            g.DrawString(s, font, brush, layoutRectangle, null);
-        }
-
-        public static void DrawStr(this Graphics g, string? s, Font font, Brush brush, Rectangle layoutRectangle, StringFormat? format)
-        {
-            CORE(font, s, ref layoutRectangle);
-            g.DrawString(s, font, brush, layoutRectangle, format);
-        }
-
-        public static void DrawStr(this Graphics g, string? s, Font font, Brush brush, RectangleF layoutRectangle, StringFormat? format)
-        {
-            CORE(font, s, ref layoutRectangle);
-            g.DrawString(s, font, brush, layoutRectangle, format);
-        }
-
-        #endregion
-
         #region 误差核心
 
-        static void CORE(Font font, string? text, ref RectangleF layoutRectangle)
+        internal static void CORE(Font font, string? text, ref RectangleF layoutRectangle)
         {
-            if (enable && text != null)
+            if (enable && text != null && (tmpEnglish.Count > 0 || tmpChinese.Count > 0))
             {
                 if (text.ContainsChinese())
                 {
@@ -175,7 +153,7 @@ namespace AntdUI
             }
         }
 
-        static void CORE(Font font, string? text, ref Rectangle layoutRectangle)
+        internal static void CORE(Font font, string? text, ref Rectangle layoutRectangle)
         {
             if (enable && text != null)
             {

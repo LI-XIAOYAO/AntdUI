@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -33,10 +33,7 @@ namespace AntdUI
         /// <param name="form">所属控件</param>
         /// <param name="content">控件</param>
         /// <param name="Align">方向</param>
-        public static Form? open(Form form, Control content, TAlignMini Align = TAlignMini.Right)
-        {
-            return open(new Config(form, content) { Align = Align });
-        }
+        public static Form? open(Form form, Control content, TAlignMini Align = TAlignMini.Right) => open(new Config(form, content) { Align = Align });
 
         #region 配置
 
@@ -46,10 +43,7 @@ namespace AntdUI
         /// <param name="form">所属控件</param>
         /// <param name="content">控件</param>
         /// <param name="Align">方向</param>
-        public static Config config(Form form, Control content, TAlignMini Align = TAlignMini.Right)
-        {
-            return new Config(form, content) { Align = Align };
-        }
+        public static Config config(Form form, Control content, TAlignMini Align = TAlignMini.Right) => new Config(form, content) { Align = Align };
 
         #endregion
 
@@ -61,21 +55,21 @@ namespace AntdUI
         {
             if (config.Form.IsHandleCreated)
             {
-                if (config.Form.InvokeRequired)
-                {
-                    Form? form = null;
-                    config.Form.Invoke(new Action(() =>
-                    {
-                        form = open(config);
-                    }));
-                    return form;
-                }
+                if (config.Form.InvokeRequired) return ITask.Invoke(config.Form, new Func<Form?>(() => open(config)));
                 if (config.Mask)
                 {
-                    var formMask = new LayeredFormMask(config.Form);
-                    formMask.Show(config.Form);
-                    var frm = new LayeredFormDrawer(config, formMask);
-                    frm.Show(formMask);
+                    var mask = new LayeredFormMask(config.Form);
+                    mask.Show(config.Form);
+                    var frm = new LayeredFormDrawer(config, mask);
+                    ITask.Run(() =>
+                    {
+                        if (config.DisplayDelay > 0) System.Threading.Thread.Sleep(config.DisplayDelay);
+                        if (frm.isclose) return;
+                        config.Form.BeginInvoke(new Action(() =>
+                        {
+                            frm.Show(mask);
+                        }));
+                    });
                     return frm;
                 }
                 else
@@ -87,6 +81,60 @@ namespace AntdUI
             }
             return null;
         }
+
+#if !NET40
+
+        /// <summary>
+        /// Drawer 抽屉 等待
+        /// </summary>
+        /// <param name="form">所属控件</param>
+        /// <param name="content">控件</param>
+        /// <param name="Align">方向</param>
+        public static async System.Threading.Tasks.Task<Config?> wait(Form form, Control content, TAlignMini Align = TAlignMini.Right) => await wait(new Config(form, content) { Align = Align });
+
+        /// <summary>
+        /// Drawer 抽屉 等待
+        /// </summary>
+        /// <param name="config">配置</param>
+        public static async System.Threading.Tasks.Task<Config?> wait(this Config config)
+        {
+            return await ITask.Run(() =>
+            {
+                if (config.Form.IsHandleCreated)
+                {
+                    using (var resetEvent = new System.Threading.ManualResetEvent(false))
+                    {
+                        if (config.Mask)
+                        {
+                            var mask = ITask.Invoke(config.Form, new Func<LayeredFormMask>(() =>
+                            {
+                                var mask = new LayeredFormMask(config.Form);
+                                mask.Show(config.Form);
+                                return mask;
+                            }));
+                            var frm = ITask.Invoke(config.Form, new Func<LayeredFormDrawer>(() => new LayeredFormDrawer(config, mask)));
+                            if (config.DisplayDelay > 0) System.Threading.Thread.Sleep(config.DisplayDelay);
+                            if (frm.isclose) return config;
+                            config.Form.BeginInvoke(new Action(() =>
+                            {
+                                frm.Show(mask);
+                                frm.FormClosed += (a, b) => resetEvent.Set();
+                            }));
+                        }
+                        else
+                        {
+                            var frm = new LayeredFormDrawer(config);
+                            frm.Show(config.Form);
+                            frm.FormClosed += (a, b) => resetEvent.Set();
+                        }
+                        resetEvent.Wait();
+                    }
+                    return config;
+                }
+                return null;
+            });
+        }
+#endif
 
         /// <summary>
         /// 配置
@@ -153,6 +201,11 @@ namespace AntdUI
             /// 关闭回调
             /// </summary>
             public Action? OnClose { get; set; }
+
+            /// <summary>
+            /// 显示延迟
+            /// </summary>
+            public int DisplayDelay { get; set; } = 100;
         }
     }
 }

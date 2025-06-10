@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -28,7 +28,8 @@ namespace AntdUI
         #region 刷新UI
 
         public Action<bool>? action;
-        public Action<T>? action_add, action_del;
+        public Action<T>? action_add;
+        public Action<T, int>? action_del;
         void PropertyChanged(T value)
         {
             if (value is NotifyProperty notify)
@@ -55,7 +56,7 @@ namespace AntdUI
                 if (action_add == null && action_del == null) list[index] = value;
                 else
                 {
-                    action_del?.Invoke(list[index]);
+                    action_del?.Invoke(list[index], index);
                     list[index] = value;
                     action_add?.Invoke(value);
                 }
@@ -73,7 +74,7 @@ namespace AntdUI
                     if (action_add == null && action_del == null) list[index] = item;
                     else
                     {
-                        action_del?.Invoke(list[index]);
+                        action_del?.Invoke(list[index], index);
                         list[index] = item;
                         action_add?.Invoke(item);
                     }
@@ -149,6 +150,13 @@ namespace AntdUI
             action_add?.Invoke(item);
             action?.Invoke(true);
         }
+        public void InsertAntRemove(int index, T item)
+        {
+            list.Remove(item);
+            list.Insert(index, item);
+            PropertyChanged(item);
+            action?.Invoke(true);
+        }
         public void Insert(int index, object? value)
         {
             if (value is T item)
@@ -215,7 +223,7 @@ namespace AntdUI
         {
             if (action_del != null)
             {
-                foreach (var item in list) action_del?.Invoke(item);
+                foreach (var item in list) action_del?.Invoke(item, -1);
             }
             list.Clear();
             action?.Invoke(true);
@@ -225,17 +233,19 @@ namespace AntdUI
         {
             if (value is T item)
             {
+                int i = IndexOf(item);
                 list.Remove(item);
-                action_del?.Invoke(item);
+                action_del?.Invoke(item, i);
                 action?.Invoke(true);
             }
         }
         public bool Remove(T item)
         {
+            int i = IndexOf(item);
             bool flag = list.Remove(item);
             if (flag)
             {
-                action_del?.Invoke(item);
+                action_del?.Invoke(item, i);
                 action?.Invoke(true);
             }
             return flag;
@@ -246,7 +256,7 @@ namespace AntdUI
             {
                 try
                 {
-                    action_del?.Invoke(list[index]);
+                    action_del?.Invoke(list[index], index);
                 }
                 catch { }
             }
@@ -376,7 +386,7 @@ namespace AntdUI
         public IEnumerator GetEnumerator()
         {
             for (int i = 0, Len = count; i < Len; i++)
-                yield return list[i];
+                yield return list![i];
         }
 
         public int IndexOf(object? value)
@@ -441,8 +451,41 @@ namespace AntdUI
         int count = 0;
 
         #endregion
+
+        public object[] ToArray() => list ?? new object[0];
+
+        public T[] ToArray<T>()
+        {
+            if (list == null || list.Length == 0) return new T[0];
+            var result = new List<T>(count);
+            foreach (var it in list)
+            {
+                if (it is T t) result.Add(t);
+            }
+            return result.ToArray();
+        }
+
+        public List<object> ToList()
+        {
+            if (list == null || list.Length == 0) return new List<object>(0);
+            var result = new List<object>(count);
+            result.AddRange(list);
+            return result;
+        }
+
+        public List<T> ToList<T>()
+        {
+            if (list == null || list.Length == 0) return new List<T>(0);
+            var result = new List<T>(count);
+            foreach (var it in list)
+            {
+                if (it is T t) result.Add(t);
+            }
+            return result;
+        }
     }
 
+    [Obsolete("use BindingList")]
     public class AntList<T> : IList<T>
     {
         public AntList() { }
@@ -570,12 +613,12 @@ namespace AntdUI
         public IEnumerator<T> GetEnumerator()
         {
             for (int i = 0, Len = count; i < Len; i++)
-                yield return list[i];
+                yield return list![i];
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
             for (int i = 0, Len = count; i < Len; i++)
-                yield return list[i];
+                yield return list![i];
         }
 
         public int Count => count;
@@ -626,7 +669,11 @@ namespace AntdUI
             }
         }
 
-        public bool Try<T>(out T val)
+#if NET40 || NET46 || NET48
+        public bool Try<T>(out T? val)
+#else
+        public bool Try<T>([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out T? val)
+#endif
         {
             if (_value is T v) { val = v; return true; }
             val = default;

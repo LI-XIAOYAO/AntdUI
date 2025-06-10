@@ -1,4 +1,4 @@
-﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)・[SVG](../SVG.md)
+﻿[首页](../Home.md)・[更新日志](../UpdateLog.md)・[配置](../Config.md)・[主题](../Theme.md)
 
 ## Collapse
 
@@ -7,7 +7,7 @@ Collapse 折叠面板 👚
 > 可以折叠/展开的内容区域。
 
 - 默认属性：Items
-- 默认事件：Click
+- 默认事件：ExpandChanged
 
 ### 属性
 
@@ -27,13 +27,22 @@ Collapse 折叠面板 👚
 ||||
 **Items** | 数据 `CollapseItem[]` | [CollapseItem[]](#collapseitem) | [] |
 
+### 事件
+
+名称 | 描述 | 返回值 | 参数 |
+:--|:--|:--|:--|
+**ExpandChanged** | Expand 属性值更改时发生 | void | [CollapseItem](#collapseitem) value `对象`, bool Expand `是否展开` |
+
 
 ### 数据
 
 #### CollapseItem
 
-> 继承于 ScrollableControl
+> 继承于 [ScrollableControl](https://github.com/dotnet/winforms/blob/main/src/System.Windows.Forms/System/Windows/Forms/Scrolling/ScrollableControl.cs)
 
 名称 | 描述 | 类型 | 默认值 |
 :--|:--|:--|:--|
 **Expand** | 展开 | bool | true |
+**Full** 🔴 | 是否铺满剩下空间 | bool | false |
+**Text** | 文本 | string`?` | `null` |
+🌏 **LocalizationText** | 国际化文本 | string`?` | `null` |

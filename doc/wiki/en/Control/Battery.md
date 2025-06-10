@@ -1,27 +1,28 @@
-﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)・[SVG](../SVG.md)
+﻿[Home](../Home.md)・[UpdateLog](../UpdateLog.md)・[Config](../Config.md)・[Theme](../Theme.md)
 
 ## Battery
+👚
 
-Battery 电量 👚
+> Display device battery level.
 
-> 展示设备电量。
+- DefaultProperty：Value
+- DefaultEvent：Click
 
-- 默认属性：Value
-- 默认事件：Click
+### Property
 
-### 属性
-
-名称 | 描述 | 类型 | 默认值 |
+Name | Description | Type | Default Value |
 :--|:--|:--|:--|
-**OriginalBackColor** 🔴 | 原装背景颜色 | Color | Transparent |
+**OriginalBackColor** | Original background color | Color | Transparent |
 ||||
-**ForeColor** | 文字颜色 | Color`?` | `null` |
-**BackColor** | 背景颜色 | Color`?` | `null` |
-**Radius** | 圆角 | int | 4 |
-**DotSize** | 点大小 | int | 8 |
-**Value** | 进度条 | int | 0 |
+**ForeColor** | Text color | Color`?` | `null` |
+**BackColor** | Background color | Color`?` | `null` |
+**Radius** | Rounded corners | int | 4 |
+**DotSize** | Dot size | int | 8 |
+**Value** | Progress value | int | 0 |
 ||||
-**ShowText** | 显示 | bool | true |
-**FillFully** | 满电颜色 | Color | 0, 210, 121 |
-**FillWarn** | 警告电量颜色 | Color | 250, 173, 20 |
-**FillDanger** | 危险电量颜色 | Color | 255, 77, 79 |
+**ShowText** | Display Text | bool | true |
+**FillFully** | Full charge color | Color | 0, 210, 121 |
+**FillWarn** | Warning battery color | Color | 250, 173, 20 |
+**FillDanger** | Dangerous battery color | Color | 255, 77, 79 |
+**ValueWarn** 🔴 | Warning battery threshold | int | 30 |
+**ValueDanger** 🔴 | Dangerous electricity threshold | int | 20 |

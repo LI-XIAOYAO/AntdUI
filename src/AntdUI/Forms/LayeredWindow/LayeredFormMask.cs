@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -31,20 +31,7 @@ namespace AntdUI
         {
             form = _form;
             TopMost = _form.TopMost;
-            if (form.WindowState != FormWindowState.Maximized)
-            {
-                if (form is BorderlessForm borderless) Radius = (int)(borderless.Radius * Config.Dpi);
-                else if (OS.Win11) Radius = (int)(8 * Config.Dpi); //Win11
-                if (form is Window || form is FormNoBar)
-                {
-                    //无边框处理
-                }
-                else if (form.FormBorderStyle != FormBorderStyle.None)
-                {
-                    HasBor = true;
-                    Bor = (int)(7 * Config.Dpi);
-                }
-            }
+            HasBor = form.FormFrame(out Radius, out Bor);
             if (form is Window window)
             {
                 SetSize(window.Size);
@@ -60,6 +47,8 @@ namespace AntdUI
                 Location = form.Location;
             }
         }
+
+        public override string name => "Mask";
 
         protected override void OnLoad(EventArgs e)
         {
@@ -114,13 +103,11 @@ namespace AntdUI
         Bitmap? temp = null;
         public override Bitmap PrintBit()
         {
-            Rectangle rect;
-            if (HasBor) rect = new Rectangle(Bor, 0, TargetRect.Width - Bor * 2, TargetRect.Height - Bor);
-            else rect = TargetRectXY;
-            if (temp == null || (temp.Width != TargetRect.Width || temp.Height != TargetRect.Height))
+            Rectangle rect_read = TargetRectXY, rect = HasBor ? new Rectangle(Bor, 0, rect_read.Width - Bor * 2, rect_read.Height - Bor) : rect_read;
+            if (temp == null || (temp.Width != rect_read.Width || temp.Height != rect_read.Height))
             {
                 temp?.Dispose();
-                temp = new Bitmap(TargetRect.Width, TargetRect.Height);
+                temp = new Bitmap(rect_read.Width, rect_read.Height);
                 using (var g = Graphics.FromImage(temp).High())
                 {
                     using (var brush = new SolidBrush(Color.FromArgb(115, 0, 0, 0)))
@@ -129,10 +116,10 @@ namespace AntdUI
                         {
                             using (var path = rect.RoundPath(Radius))
                             {
-                                g.FillPath(brush, path);
+                                g.Fill(brush, path);
                             }
                         }
-                        else g.FillRectangle(brush, rect);
+                        else g.Fill(brush, rect);
                     }
                 }
             }

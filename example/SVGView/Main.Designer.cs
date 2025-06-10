@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -47,7 +47,7 @@ namespace SVGView
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
-            windowBar1 = new AntdUI.WindowBar();
+            windowBar1 = new AntdUI.PageHeader();
             button2 = new AntdUI.Button();
             button1 = new AntdUI.Button();
             input1 = new AntdUI.Input();
@@ -61,8 +61,11 @@ namespace SVGView
             windowBar1.Controls.Add(button2);
             windowBar1.Controls.Add(button1);
             windowBar1.Dock = DockStyle.Top;
+            windowBar1.LocalizationText = "Title";
             windowBar1.Location = new Point(0, 0);
             windowBar1.Name = "windowBar1";
+            windowBar1.ShowButton = true;
+            windowBar1.ShowIcon = true;
             windowBar1.Size = new Size(800, 36);
             windowBar1.TabIndex = 0;
             windowBar1.Text = "SVG视图";
@@ -71,10 +74,11 @@ namespace SVGView
             // 
             button2.AutoSizeMode = AntdUI.TAutoSize.Width;
             button2.Dock = DockStyle.Right;
-            button2.IconSvg = resources.GetString("button2.ImageSvg");
-            button2.Location = new Point(525, 0);
+            button2.IconSvg = resources.GetString("button2.IconSvg");
+            button2.LocalizationText = "Auto";
+            button2.Location = new Point(502, 0);
             button2.Name = "button2";
-            button2.Size = new Size(77, 36);
+            button2.Size = new Size(90, 36);
             button2.TabIndex = 1;
             button2.Text = "一键";
             button2.Type = AntdUI.TTypeMini.Success;
@@ -84,9 +88,10 @@ namespace SVGView
             // 
             button1.AutoSizeMode = AntdUI.TAutoSize.Width;
             button1.Dock = DockStyle.Right;
-            button1.Location = new Point(602, 0);
+            button1.LocalizationText = "Zip";
+            button1.Location = new Point(592, 0);
             button1.Name = "button1";
-            button1.Size = new Size(57, 36);
+            button1.Size = new Size(64, 36);
             button1.TabIndex = 0;
             button1.Text = "剔除";
             button1.Type = AntdUI.TTypeMini.Primary;
@@ -94,6 +99,7 @@ namespace SVGView
             // 
             // input1
             // 
+            input1.AutoScroll = true;
             input1.Dock = DockStyle.Left;
             input1.Location = new Point(0, 36);
             input1.Multiline = true;
@@ -118,6 +124,7 @@ namespace SVGView
             Controls.Add(pictureBox1);
             Controls.Add(input1);
             Controls.Add(windowBar1);
+            Font = new Font("Microsoft YaHei UI", 11F);
             Name = "Main";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "SVG视图";
@@ -129,7 +136,7 @@ namespace SVGView
 
         #endregion
 
-        private AntdUI.WindowBar windowBar1;
+        private AntdUI.PageHeader windowBar1;
         private AntdUI.Input input1;
         private AntdUI.Button button1;
         private PictureBox pictureBox1;

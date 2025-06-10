@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -86,6 +82,8 @@ namespace Demo.Controls
             header1.Description = "进行标记和分类的小标签";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Tag.Description";
+            header1.LocalizationText = "Tag.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -113,7 +111,7 @@ namespace Demo.Controls
             // 
             panel5.Controls.Add(tag16);
             panel5.Dock = DockStyle.Top;
-            panel5.Location = new Point(0, 213);
+            panel5.Location = new Point(0, 231);
             panel5.Name = "panel5";
             panel5.Size = new Size(1300, 61);
             panel5.TabIndex = 6;
@@ -124,6 +122,7 @@ namespace Demo.Controls
             tag16.BackColor = Color.FromArgb(59, 89, 153);
             tag16.ForeColor = Color.White;
             tag16.Image = Properties.Resources.img1;
+            tag16.LocalizationText = "Tag.{id}";
             tag16.Location = new Point(13, 13);
             tag16.Name = "tag16";
             tag16.Size = new Size(107, 27);
@@ -133,11 +132,11 @@ namespace Demo.Controls
             // divider3
             // 
             divider3.Dock = DockStyle.Top;
-            divider3.Location = new Point(0, 191);
-            divider3.Margin = new Padding(10);
+            divider3.LocalizationText = "Tag.{id}";
+            divider3.Location = new Point(0, 203);
             divider3.Name = "divider3";
             divider3.Orientation = AntdUI.TOrientation.Left;
-            divider3.Size = new Size(1300, 22);
+            divider3.Size = new Size(1300, 28);
             divider3.TabIndex = 5;
             divider3.Text = "图标按钮";
             // 
@@ -154,7 +153,7 @@ namespace Demo.Controls
             panel4.Controls.Add(tag11);
             panel4.Controls.Add(tag6);
             panel4.Dock = DockStyle.Top;
-            panel4.Location = new Point(0, 103);
+            panel4.Location = new Point(0, 115);
             panel4.Name = "panel4";
             panel4.Size = new Size(1300, 88);
             panel4.TabIndex = 4;
@@ -265,13 +264,13 @@ namespace Demo.Controls
             // divider2
             // 
             divider2.Dock = DockStyle.Top;
-            divider2.Location = new Point(0, 81);
-            divider2.Margin = new Padding(10);
+            divider2.LocalizationText = "Tag.{id}";
+            divider2.Location = new Point(0, 87);
             divider2.Name = "divider2";
             divider2.Orientation = AntdUI.TOrientation.Left;
-            divider2.Size = new Size(1300, 22);
+            divider2.Size = new Size(1300, 28);
             divider2.TabIndex = 3;
-            divider2.Text = "多彩标签\r\n";
+            divider2.Text = "多彩标签";
             // 
             // panel2
             // 
@@ -279,7 +278,7 @@ namespace Demo.Controls
             panel2.Controls.Add(tag2);
             panel2.Controls.Add(tag1);
             panel2.Dock = DockStyle.Top;
-            panel2.Location = new Point(0, 22);
+            panel2.Location = new Point(0, 28);
             panel2.Name = "panel2";
             panel2.Size = new Size(1300, 59);
             panel2.TabIndex = 2;
@@ -352,11 +351,11 @@ namespace Demo.Controls
             // divider1
             // 
             divider1.Dock = DockStyle.Top;
+            divider1.LocalizationText = "Tag.{id}";
             divider1.Location = new Point(0, 0);
-            divider1.Margin = new Padding(10);
             divider1.Name = "divider1";
             divider1.Orientation = AntdUI.TOrientation.Left;
-            divider1.Size = new Size(1300, 22);
+            divider1.Size = new Size(1300, 28);
             divider1.TabIndex = 1;
             divider1.Text = "基本";
             // 

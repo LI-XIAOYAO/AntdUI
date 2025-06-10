@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -30,14 +30,15 @@ namespace AntdUI
         ContextMenuStrip.Config config;
         public override bool MessageEnable => true;
         public override bool MessageCloseSub => true;
+        public override bool MessageClickMe => false;
 
         Font FontSub;
         float radius = 0;
         public LayeredFormContextMenuStrip(ContextMenuStrip.Config _config)
         {
+            PARENT = this;
             if (_config.TopMost)
             {
-                PARENT = this;
                 Helper.SetTopMost(Handle);
                 MessageCloseMouseLeave = true;
             }
@@ -92,7 +93,6 @@ namespace AntdUI
                     break;
             }
             Init(point);
-
             KeyCall = keys =>
             {
                 if (keys == Keys.Escape)
@@ -174,7 +174,6 @@ namespace AntdUI
         public LayeredFormContextMenuStrip(ContextMenuStrip.Config _config, LayeredFormContextMenuStrip parent, Point point, IContextMenuStripItem[] subs)
         {
             PARENT = parent;
-            MessageCloseMouseLeave = true;
             maxalpha = 250;
             config = _config;
             Font = config.Font ?? config.Control.Font;
@@ -185,6 +184,8 @@ namespace AntdUI
             scrollY = new ScrollY(this);
             Init(point);
         }
+
+        public override string name => nameof(AntdUI.ContextMenuStrip);
 
         void Init(Point point)
         {
@@ -205,6 +206,7 @@ namespace AntdUI
             else if (point.Y > (screen.Y + screen.Height) - TargetRect.Height) point.Y = screen.Y + screen.Height - TargetRect.Height;
 
             SetLocation(point);
+            if (OS.Win7OrLower) Select();
         }
 
         bool has_subtext = false;
@@ -223,8 +225,8 @@ namespace AntdUI
                     if (it is ContextMenuStripItem item)
                     {
                         if (!has_subtext && item.SubText != null) has_subtext = true;
-                        var size = g.MeasureString(item.Text + item.SubText, Font);
-                        int w = (int)Math.Ceiling(size.Width), hc = (int)Math.Ceiling(size.Height), h = hc + sp;
+                        var size = g.MeasureText(item.Text + item.SubText, Font);
+                        int w = size.Width, hc = size.Height, h = hc + sp;
                         if (has_sub == 0 && (item.Sub != null && item.Sub.Length > 0)) has_sub = hc;
                         if (has_icon == 0 && (item.Icon != null || item.IconSvg != null)) has_icon = (int)(hc * 0.68F);
                         if (has_checked == 0 && item.Checked) has_checked = (int)(hc * 0.8F);
@@ -313,14 +315,11 @@ namespace AntdUI
             {
                 using (var path_sh = DrawShadow(g, rect, rect_read))
                 {
-                    using (var brush = new SolidBrush(Style.Db.BgElevated))
-                    {
-                        g.FillPath(brush, path_sh);
-                    }
-                    using (var brush = new SolidBrush(Style.Db.Text))
-                    using (var brushSplit = new SolidBrush(Style.Db.Split))
-                    using (var brushSecondary = new SolidBrush(Style.Db.TextSecondary))
-                    using (var brushEnabled = new SolidBrush(Style.Db.TextQuaternary))
+                    g.Fill(Colour.BgElevated.Get("ContextMenuStrip"), path_sh);
+                    using (var brush = new SolidBrush(Colour.Text.Get("ContextMenuStrip")))
+                    using (var brushSplit = new SolidBrush(Colour.Split.Get("ContextMenuStrip")))
+                    using (var brushSecondary = new SolidBrush(Colour.TextSecondary.Get("ContextMenuStrip")))
+                    using (var brushEnabled = new SolidBrush(Colour.TextQuaternary.Get("ContextMenuStrip")))
                     {
                         if (scrollY.Show)
                         {
@@ -329,34 +328,31 @@ namespace AntdUI
                         }
                         foreach (var it in rectsContent)
                         {
-                            if (it.Tag == null) g.FillRectangle(brushSplit, it.Rect);
+                            if (it.Tag == null) g.Fill(brushSplit, it.Rect);
                             else
                             {
                                 if (it.Hover)
                                 {
                                     using (var path = Helper.RoundPath(it.Rect, radius))
                                     {
-                                        using (var brush_hover = new SolidBrush(Style.Db.PrimaryBg))
-                                        {
-                                            g.FillPath(brush_hover, path);
-                                        }
+                                        g.Fill(Colour.PrimaryBg.Get("ContextMenuStrip"), path);
                                     }
                                 }
                                 if (it.Tag.Enabled)
                                 {
-                                    g.DrawStr(it.Tag.SubText, FontSub, brushSecondary, it.RectT, stringRight);
+                                    g.DrawText(it.Tag.SubText, FontSub, brushSecondary, it.RectT, stringRight);
                                     if (it.Tag.Fore.HasValue)
                                     {
                                         using (var brush_fore = new SolidBrush(it.Tag.Fore.Value))
                                         {
-                                            g.DrawStr(it.Tag.Text, Font, brush_fore, it.RectT, stringLeft);
+                                            g.DrawText(it.Tag.Text, Font, brush_fore, it.RectT, stringLeft);
                                         }
                                     }
-                                    else g.DrawStr(it.Tag.Text, Font, brush, it.RectT, stringLeft);
+                                    else g.DrawText(it.Tag.Text, Font, brush, it.RectT, stringLeft);
 
                                     if (it.Tag.Sub != null && it.Tag.Sub.Length > 0)
                                     {
-                                        using (var pen = new Pen(Style.Db.TextSecondary, 2F * Config.Dpi))
+                                        using (var pen = new Pen(Colour.TextSecondary.Get("ContextMenuStrip"), 2F * Config.Dpi))
                                         {
                                             pen.StartCap = pen.EndCap = LineCap.Round;
                                             g.DrawLines(pen, TAlignMini.Right.TriangleLines(it.RectSub));
@@ -364,7 +360,7 @@ namespace AntdUI
                                     }
                                     if (it.Tag.Checked)
                                     {
-                                        using (var pen = new Pen(Style.Db.Primary, 3F * Config.Dpi))
+                                        using (var pen = new Pen(Colour.Primary.Get("ContextMenuStrip"), 3F * Config.Dpi))
                                         {
                                             g.DrawLines(pen, PaintArrow(it.RectCheck));
                                         }
@@ -373,19 +369,19 @@ namespace AntdUI
                                     {
                                         using (var bmp = it.Tag.IconSvg.SvgToBmp(it.RectIcon.Width, it.RectIcon.Height, it.Tag.Fore ?? brush.Color))
                                         {
-                                            if (bmp != null) g.DrawImage(bmp, it.RectIcon);
+                                            if (bmp != null) g.Image(bmp, it.RectIcon);
                                         }
                                     }
-                                    else if (it.Tag.Icon != null) g.DrawImage(it.Tag.Icon, it.RectIcon);
+                                    else if (it.Tag.Icon != null) g.Image(it.Tag.Icon, it.RectIcon);
                                 }
                                 else
                                 {
-                                    g.DrawStr(it.Tag.SubText, FontSub, brushEnabled, it.RectT, stringRight);
-                                    g.DrawStr(it.Tag.Text, Font, brushEnabled, it.RectT, stringLeft);
+                                    g.DrawText(it.Tag.SubText, FontSub, brushEnabled, it.RectT, stringRight);
+                                    g.DrawText(it.Tag.Text, Font, brushEnabled, it.RectT, stringLeft);
 
                                     if (it.Tag.Sub != null && it.Tag.Sub.Length > 0)
                                     {
-                                        using (var pen = new Pen(Style.Db.TextQuaternary, 2F * Config.Dpi))
+                                        using (var pen = new Pen(Colour.TextQuaternary.Get("ContextMenuStrip"), 2F * Config.Dpi))
                                         {
                                             pen.StartCap = pen.EndCap = LineCap.Round;
                                             g.DrawLines(pen, TAlignMini.Right.TriangleLines(it.RectSub));
@@ -393,7 +389,7 @@ namespace AntdUI
                                     }
                                     if (it.Tag.Checked)
                                     {
-                                        using (var pen = new Pen(Style.Db.Primary, 3F * Config.Dpi))
+                                        using (var pen = new Pen(Colour.Primary.Get("ContextMenuStrip"), 3F * Config.Dpi))
                                         {
                                             g.DrawLines(pen, PaintArrow(it.RectCheck));
                                         }
@@ -402,10 +398,10 @@ namespace AntdUI
                                     {
                                         using (var bmp = it.Tag.IconSvg.SvgToBmp(it.RectIcon.Width, it.RectIcon.Height, brushEnabled.Color))
                                         {
-                                            if (bmp != null) g.DrawImage(bmp, it.RectIcon);
+                                            if (bmp != null) g.Image(bmp, it.RectIcon);
                                         }
                                     }
-                                    else if (it.Tag.Icon != null) g.DrawImage(it.Tag.Icon, it.RectIcon);
+                                    else if (it.Tag.Icon != null) g.Image(it.Tag.Icon, it.RectIcon);
                                 }
                             }
                         }
@@ -428,14 +424,14 @@ namespace AntdUI
             };
         }
 
-        Bitmap? shadow_temp = null;
+        SafeBitmap? shadow_temp = null;
         /// <summary>
         /// 绘制阴影
         /// </summary>
         /// <param name="g">GDI</param>
         /// <param name="rect_client">客户区域</param>
         /// <param name="rect_read">真实区域</param>
-        GraphicsPath DrawShadow(Graphics g, Rectangle rect_client, Rectangle rect_read)
+        GraphicsPath DrawShadow(Canvas g, Rectangle rect_client, Rectangle rect_read)
         {
             var path = rect_read.RoundPath(radius);
             if (Config.ShadowEnabled)
@@ -445,7 +441,7 @@ namespace AntdUI
                     shadow_temp?.Dispose();
                     shadow_temp = path.PaintShadow(rect_client.Width, rect_client.Height);
                 }
-                g.DrawImage(shadow_temp, rect_client, 0.2F);
+                g.Image(shadow_temp.Bitmap, rect_client, .2F);
             }
             return path;
         }
@@ -455,6 +451,7 @@ namespace AntdUI
         #region 鼠标
 
         int select_index = -1;
+        InRect? MDown;
         protected override void OnMouseDown(MouseEventArgs e)
         {
             if (scrollY.MouseDown(e.Location))
@@ -470,7 +467,7 @@ namespace AntdUI
                         if (it.Tag != null && it.Tag.Enabled && it.Rect.Contains(e.X, e.Y + y))
                         {
                             select_index = i;
-                            it.Down = true;
+                            MDown = it;
                             base.OnMouseDown(e);
                             return;
                         }
@@ -485,84 +482,76 @@ namespace AntdUI
             if (scrollY.MouseUp(e.Location) && OnTouchUp())
             {
                 int y = scrollY.Show ? (int)scrollY.Value : 0;
-                foreach (var it in rectsContent)
-                {
-                    if (it.Down)
-                    {
-                        if (it.Rect.Contains(e.X, e.Y + y))
-                        {
-                            if (it.Tag != null)
-                            {
-                                if (it.Tag.Sub == null || it.Tag.Sub.Length == 0)
-                                {
-                                    IClose();
-                                    LayeredFormContextMenuStrip item = this;
-                                    while (item.PARENT is LayeredFormContextMenuStrip form && item.PARENT != form)
-                                    {
-                                        form.IClose();
-                                        item = form;
-                                    }
-                                    resetEvent = new ManualResetEvent(false);
-                                    ITask.Run(() =>
-                                    {
-                                        if (Config.Animation && resetEvent.Wait(false)) return;
-                                        if (config.CallSleep > 0) Thread.Sleep(config.CallSleep);
-                                        config.Control.BeginInvoke(new Action(() =>
-                                        {
-                                            config.Call(it.Tag);
-                                        }));
-                                    });
-                                }
-                            }
-                        }
-                        it.Down = false;
-                        return;
-                    }
-                }
+                if (MDown == null) return;
+                var it = MDown;
+                MDown = null;
+                if (it.Rect.Contains(e.X, e.Y + y)) ClickItem(it);
             }
             base.OnMouseUp(e);
         }
 
         bool ClickItem(InRect it)
         {
-            if (it.Tag != null)
+            if (it.Tag == null) return false;
+            if (it.Tag.Sub == null || it.Tag.Sub.Length == 0)
             {
-                if (it.Tag.Sub == null || it.Tag.Sub.Length == 0)
+                if (Config.HasAnimation(name))
                 {
                     IClose();
-                    LayeredFormContextMenuStrip item = this;
-                    while (item.PARENT is LayeredFormContextMenuStrip form)
-                    {
-                        form.IClose();
-                        item = form;
-                    }
+                    CloseSub();
                     resetEvent = new ManualResetEvent(false);
                     ITask.Run(() =>
                     {
                         if (resetEvent.Wait(false)) return;
                         if (config.CallSleep > 0) Thread.Sleep(config.CallSleep);
-                        config.Control.BeginInvoke(new Action(() =>
-                        {
-                            config.Call(it.Tag);
-                        }));
+                        config.Control.BeginInvoke(new Action(() => config.Call(it.Tag)));
                     });
                 }
                 else
                 {
-                    if (subForm == null)
+                    if (config.CallSleep > 0)
                     {
-                        subForm = new LayeredFormContextMenuStrip(config, this, new Point(TargetRect.X + (it.Rect.X + it.Rect.Width) - 20, TargetRect.Y + it.Rect.Y - 20 - (scrollY.Show ? (int)scrollY.Value : 0)), it.Tag.Sub);
-                        subForm.Show(this);
+                        IClose();
+                        CloseSub();
+                        ITask.Run(() =>
+                        {
+                            Thread.Sleep(config.CallSleep);
+                            config.Control.BeginInvoke(new Action(() => config.Call(it.Tag)));
+                        });
                     }
                     else
                     {
-                        subForm?.IClose();
-                        subForm = null;
+                        IClose();
+                        CloseSub();
+                        config.Call(it.Tag);
                     }
                 }
-                return true;
             }
-            return false;
+            else
+            {
+                if (subForm == null)
+                {
+                    subForm = new LayeredFormContextMenuStrip(config, this, new Point(TargetRect.X + (it.Rect.X + it.Rect.Width) - 20, TargetRect.Y + it.Rect.Y - 20 - (scrollY.Show ? (int)scrollY.Value : 0)), it.Tag.Sub);
+                    subForm.Show(this);
+                }
+                else
+                {
+                    subForm?.IClose();
+                    subForm = null;
+                }
+            }
+            return true;
+        }
+
+        void CloseSub()
+        {
+            LayeredFormContextMenuStrip item = this;
+            while (item.PARENT is LayeredFormContextMenuStrip form)
+            {
+                if (item == form) return;
+                form.IClose();
+                item = form;
+            }
         }
 
         void FocusItem(InRect it)
@@ -637,7 +626,7 @@ namespace AntdUI
             scrollY.MouseWheel(e.Delta);
             base.OnMouseWheel(e);
         }
-        protected override bool OnTouchScrollY(int value) => scrollY.MouseWheel(value);
+        protected override bool OnTouchScrollY(int value) => scrollY.MouseWheelCore(value);
 
         ManualResetEvent? resetEvent;
 
@@ -661,7 +650,6 @@ namespace AntdUI
             }
             public ContextMenuStripItem? Tag { get; set; }
             public bool Hover { get; set; }
-            public bool Down { get; set; }
             public Rectangle RectT { get; set; }
             public Rectangle RectIcon { get; set; }
             public Rectangle RectCheck { get; set; }

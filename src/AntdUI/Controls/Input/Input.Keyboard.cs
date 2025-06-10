@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -24,168 +24,445 @@ namespace AntdUI
 {
     partial class Input
     {
-        public bool IProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
-        {
-            return ProcessCmdKey(ref msg, keyData);
-        }
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
+            bool result = base.ProcessCmdKey(ref msg, keyData);
             switch (keyData)
             {
-                case Keys.Back:
-                    ProcessBackSpaceKey();
-                    return true;
-                case Keys.Delete:
-                    ProcessDelete();
-                    return true;
-                //========================================================
+                case Keys.Tab:
+                    if (AcceptsTab) return true;
+                    break;
                 case Keys.Left:
-                    ProcessLeftKey(false);
-                    return true;
                 case Keys.Left | Keys.Shift:
-                    ProcessLeftKey(true);
-                    return true;
+                case Keys.Right:
+                case Keys.Right | Keys.Shift:
+                    if (HandShortcutKeys) return true;
+                    break;
                 case Keys.Up:
+                case Keys.Up | Keys.Shift:
+                case Keys.Down:
+                case Keys.Down | Keys.Shift:
+                    if (HandShortcutKeys) return multiline;
+                    break;
+            }
+            return result;
+        }
+
+        public bool HandKeyBoard(Keys key)
+        {
+            if (OnVerifyKeyboard(key))
+            {
+                switch (key)
+                {
+                    case Keys.Back:
+                        return ProcessShortcutKeys(ShortcutKeys.Back);
+                    case Keys.Delete:
+                        return ProcessShortcutKeys(ShortcutKeys.Delete);
+
+                    case Keys.Tab:
+                        return ProcessShortcutKeys(ShortcutKeys.Tab);
+                    case Keys.Enter:
+                        return ProcessShortcutKeys(ShortcutKeys.Enter);
+                    case Keys.Control | Keys.A:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlA);
+                    case Keys.Control | Keys.C:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlC);
+                    case Keys.Control | Keys.X:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlX);
+                    case Keys.Control | Keys.V:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlV);
+                    case Keys.Control | Keys.Z:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlZ);
+                    case Keys.Control | Keys.Y:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlY);
+
+                    case Keys.Left:
+                        return ProcessShortcutKeys(ShortcutKeys.Left);
+                    case Keys.Left | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.LeftShift);
+                    case Keys.Up:
+                        return ProcessShortcutKeys(ShortcutKeys.Up);
+                    case Keys.Up | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.UpShift);
+                    case Keys.Right:
+                        return ProcessShortcutKeys(ShortcutKeys.Right);
+                    case Keys.Right | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.RightShift);
+                    case Keys.Down:
+                        return ProcessShortcutKeys(ShortcutKeys.Down);
+                    case Keys.Down | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.DownShift);
+                    case Keys.Home:
+                        return ProcessShortcutKeys(ShortcutKeys.Home);
+                    case Keys.Home | Keys.Control:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeControl);
+                    case Keys.Home | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeShift);
+                    case Keys.Home | Keys.Control | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeControlShift);
+                    case Keys.End:
+                        return ProcessShortcutKeys(ShortcutKeys.End);
+                    case Keys.End | Keys.Control:
+                        return ProcessShortcutKeys(ShortcutKeys.EndControl);
+                    case Keys.End | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.EndShift);
+                    case Keys.End | Keys.Control | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.EndControlShift);
+                    case Keys.PageUp:
+                        return ProcessShortcutKeys(ShortcutKeys.PageUp);
+                    case Keys.PageDown:
+                        return ProcessShortcutKeys(ShortcutKeys.PageDown);
+                }
+            }
+            return false;
+        }
+        bool HandKeyDown(Keys key)
+        {
+            if (OnVerifyKeyboard(key))
+            {
+                switch (key)
+                {
+                    case Keys.Back:
+                        return ProcessShortcutKeys(ShortcutKeys.Back);
+                    case Keys.Delete:
+                        return ProcessShortcutKeys(ShortcutKeys.Delete);
+
+                    case Keys.Enter:
+                        return ProcessShortcutKeys(ShortcutKeys.Enter);
+                    case Keys.Control | Keys.A:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlA);
+                    case Keys.Control | Keys.C:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlC);
+                    case Keys.Control | Keys.X:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlX);
+                    case Keys.Control | Keys.V:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlV);
+                    case Keys.Control | Keys.Z:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlZ);
+                    case Keys.Control | Keys.Y:
+                        return ProcessShortcutKeys(ShortcutKeys.ControlY);
+
+                    case Keys.Home:
+                        return ProcessShortcutKeys(ShortcutKeys.Home);
+                    case Keys.Home | Keys.Control:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeControl);
+                    case Keys.Home | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeShift);
+                    case Keys.Home | Keys.Control | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.HomeControlShift);
+                    case Keys.End:
+                        return ProcessShortcutKeys(ShortcutKeys.End);
+                    case Keys.End | Keys.Control:
+                        return ProcessShortcutKeys(ShortcutKeys.EndControl);
+                    case Keys.End | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.EndShift);
+                    case Keys.End | Keys.Control | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.EndControlShift);
+                    case Keys.PageUp:
+                        return ProcessShortcutKeys(ShortcutKeys.PageUp);
+                    case Keys.PageDown:
+                        return ProcessShortcutKeys(ShortcutKeys.PageDown);
+                }
+            }
+            return false;
+        }
+        bool HandKeyUp(Keys key)
+        {
+            if (OnVerifyKeyboard(key))
+            {
+                switch (key)
+                {
+                    case Keys.Tab:
+                        return ProcessShortcutKeys(ShortcutKeys.Tab);
+
+                    case Keys.Left:
+                        return ProcessShortcutKeys(ShortcutKeys.Left);
+                    case Keys.Left | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.LeftShift);
+                    case Keys.Up:
+                        return ProcessShortcutKeys(ShortcutKeys.Up);
+                    case Keys.Up | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.UpShift);
+                    case Keys.Right:
+                        return ProcessShortcutKeys(ShortcutKeys.Right);
+                    case Keys.Right | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.RightShift);
+                    case Keys.Down:
+                        return ProcessShortcutKeys(ShortcutKeys.Down);
+                    case Keys.Down | Keys.Shift:
+                        return ProcessShortcutKeys(ShortcutKeys.DownShift);
+                }
+            }
+            return false;
+        }
+
+        Keys GetKeyBoard(int code)
+        {
+            Keys keyData = (Keys)code;
+            bool Control = ModifierKeys.HasFlag(Keys.Control), Shift = ModifierKeys.HasFlag(Keys.Shift);
+            if (Control && Shift) return keyData | Keys.Control | Keys.Shift;
+            else if (Control)
+            {
+                if (keyData == Keys.Control) return keyData;
+                return keyData | Keys.Control;
+            }
+            else if (Shift)
+            {
+                if (keyData == Keys.Shift) return keyData;
+                return keyData | Keys.Shift;
+            }
+            return keyData;
+        }
+
+        internal void IKeyPress(char keyChar)
+        {
+            if (keyChar < 32) return;
+            if (Verify(keyChar, out var change)) EnterText(change ?? keyChar.ToString());
+        }
+
+        #region 处理快捷键
+
+        protected virtual bool OnVerifyKeyboard(Keys keyData)
+        {
+            if (VerifyKeyboard == null) return true;
+            var args = new InputVerifyKeyboardEventArgs(keyData);
+            VerifyKeyboard(this, args);
+            return args.Result;
+        }
+
+        /// <summary>
+        /// 主动触发快捷键
+        /// </summary>
+        /// <param name="keyData">键盘数据</param>
+        /// <returns>返回true拦截消息</returns>
+        public bool ProcessShortcutKeys(ShortcutKeys keyData)
+        {
+            switch (keyData)
+            {
+                case ShortcutKeys.Back:
+                    ProcessBackSpaceKey();
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.Delete:
+                    ProcessDelete();
+                    if (HandShortcutKeys) return true;
+                    break;
+                //========================================================
+                case ShortcutKeys.Left:
+                    ProcessLeftKey(false);
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.LeftShift:
+                    ProcessLeftKey(true);
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.Up:
                     if (multiline) ProcessUpKey(false);
                     else ProcessLeftKey(false);
-                    return true;
-                case Keys.Up | Keys.Shift:
+                    if (HandShortcutKeys) return multiline;
+                    break;
+                case ShortcutKeys.UpShift:
                     if (multiline) ProcessUpKey(true);
                     else ProcessLeftKey(false);
-                    return true;
-                case Keys.Right:
+                    if (HandShortcutKeys) return multiline;
+                    break;
+                case ShortcutKeys.Right:
                     ProcessRightKey(false);
-                    return true;
-                case Keys.Right | Keys.Shift:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.RightShift:
                     ProcessRightKey(true);
-                    return true;
-                case Keys.Down:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.Down:
                     if (multiline) ProcessDownKey(false);
                     else ProcessRightKey(false);
-                    return true;
-                case Keys.Down | Keys.Shift:
+                    if (HandShortcutKeys) return multiline;
+                    break;
+                case ShortcutKeys.DownShift:
                     if (multiline) ProcessDownKey(true);
                     else ProcessRightKey(false);
-                    return true;
-                case Keys.Home:
+                    if (HandShortcutKeys) return multiline;
+                    break;
+                case ShortcutKeys.Home:
                     SpeedScrollTo = true;
                     ProcessHomeKey(false, false);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.End:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.End:
                     SpeedScrollTo = true;
                     ProcessEndKey(false, false);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Control | Keys.Home:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.HomeControl:
                     SpeedScrollTo = true;
                     ProcessHomeKey(true, false);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Control | Keys.End:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.EndControl:
                     SpeedScrollTo = true;
                     ProcessEndKey(true, false);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Shift | Keys.Home:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.HomeShift:
                     SpeedScrollTo = true;
                     ProcessHomeKey(false, true);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Shift | Keys.End:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.EndShift:
                     SpeedScrollTo = true;
                     ProcessEndKey(false, true);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Control | Keys.Shift | Keys.Home:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.HomeControlShift:
                     SpeedScrollTo = true;
                     ProcessHomeKey(true, true);
                     SpeedScrollTo = false;
-                    return true;
-                case Keys.Control | Keys.Shift | Keys.End:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.EndControlShift:
                     SpeedScrollTo = true;
                     ProcessEndKey(true, true);
                     SpeedScrollTo = false;
-                    return true;
+                    if (HandShortcutKeys) return true;
+                    break;
                 //========================================================
-                case Keys.Tab:
-                    if (multiline && AcceptsTab)
+                case ShortcutKeys.Tab:
+                    if (AcceptsTab)
                     {
                         EnterText("\t");
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
-                case Keys.Enter:
+                case ShortcutKeys.Enter:
                     if (multiline)
                     {
                         EnterText(Environment.NewLine);
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
                 //========================================================
-                case Keys.Control | Keys.A:
+                case ShortcutKeys.ControlA:
                     SelectAll();
-                    return true;
-                case Keys.Control | Keys.C:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.ControlC:
                     Copy();
-                    return true;
-                case Keys.Control | Keys.X:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.ControlX:
                     Cut();
-                    return true;
-                case Keys.Control | Keys.V:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.ControlV:
                     Paste();
-                    return true;
-                case Keys.Control | Keys.Z:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.ControlZ:
                     Undo();
-                    return true;
-                case Keys.Control | Keys.Y:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.ControlY:
                     Redo();
-                    return true;
-                case Keys.PageUp:
+                    if (HandShortcutKeys) return true;
+                    break;
+                case ShortcutKeys.PageUp:
                     if (ScrollYShow && cache_font != null)
                     {
                         SpeedScrollTo = true;
                         SelectionLength = 0;
                         var index = GetCaretPostion(CaretInfo.Rect.X, CaretInfo.Rect.Y - (rect_text.Height - cache_font[0].rect.Height));
-                        SelectionStart = index;
+                        SetSelectionStart(index);
                         SpeedScrollTo = false;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
-                case Keys.PageDown:
+                case ShortcutKeys.PageDown:
                     if (ScrollYShow && cache_font != null)
                     {
                         SpeedScrollTo = true;
                         SelectionLength = 0;
                         var index = GetCaretPostion(CaretInfo.Rect.X, CaretInfo.Rect.Y + (rect_text.Height - cache_font[0].rect.Height));
-                        SelectionStart = index;
+                        SetSelectionStart(index);
                         SpeedScrollTo = false;
-                        return true;
+                        if (HandShortcutKeys) return true;
                     }
                     break;
             }
-            return base.ProcessCmdKey(ref msg, keyData);
+            return false;
         }
 
-        internal void IKeyPress(KeyPressEventArgs e)
+        /// <summary>
+        /// 快捷键枚举
+        /// </summary>
+        public enum ShortcutKeys
         {
-            OnKeyPress(e);
-        }
-
-        protected override void OnKeyPress(KeyPressEventArgs e)
-        {
-            if (e.KeyChar < 32)
-            {
-                base.OnKeyPress(e);
-                return;
-            }
-            if (Verify(e.KeyChar, out var change))
-            {
-                EnterText(change ?? e.KeyChar.ToString());
-                base.OnKeyPress(e);
-            }
-            else e.Handled = true;
+            None,
+            /// <summary>
+            /// BackSpace
+            /// </summary>
+            Back,
+            /// <summary>
+            /// 删除
+            /// </summary>
+            Delete,
+            /// <summary>
+            /// 制表符
+            /// </summary>
+            Tab,
+            /// <summary>
+            /// 回车
+            /// </summary>
+            Enter,
+            /// <summary>
+            /// 全选
+            /// </summary>
+            ControlA,
+            /// <summary>
+            /// 复制
+            /// </summary>
+            ControlC,
+            /// <summary>
+            /// 剪贴
+            /// </summary>
+            ControlX,
+            /// <summary>
+            /// 粘贴
+            /// </summary>
+            ControlV,
+            /// <summary>
+            /// 撤消
+            /// </summary>
+            ControlZ,
+            /// <summary>
+            /// 重做
+            /// </summary>
+            ControlY,
+            Left,
+            LeftShift,
+            Right,
+            RightShift,
+            Up,
+            UpShift,
+            Down,
+            DownShift,
+            Home,
+            HomeShift,
+            HomeControl,
+            HomeControlShift,
+            End,
+            EndShift,
+            EndControl,
+            EndControlShift,
+            PageUp,
+            PageDown
         }
 
         /// <summary>
@@ -211,18 +488,20 @@ namespace AntdUI
                 }
                 Text = string.Join("", texts);
                 SelectionLength = 0;
-                SelectionStart = start;
+                SetSelectionStart(start);
             }
             else if (selectionStart > 0)
             {
+                AddHistoryRecord();
                 int start = selectionStart - 1;
+                if (start == 0) CaretInfo.FirstRet = true;
                 var texts = new List<string>(cache_font.Length);
                 foreach (var it in cache_font)
                 {
                     if (start != it.i) texts.Add(it.text);
                 }
                 Text = string.Join("", texts);
-                SelectionStart = start;
+                SetSelectionStart(start);
             }
         }
 
@@ -244,7 +523,7 @@ namespace AntdUI
                 }
                 Text = string.Join("", texts);
                 SelectionLength = 0;
-                SelectionStart = start;
+                SetSelectionStart(start);
             }
             else if (selectionStart < cache_font.Length)
             {
@@ -255,12 +534,13 @@ namespace AntdUI
                     if (start != it.i) texts.Add(it.text);
                 }
                 Text = string.Join("", texts);
-                SelectionStart = start;
+                SetSelectionStart(start);
             }
         }
 
         void ProcessLeftKey(bool shift)
         {
+            tmpUp = 0;
             if (shift)
             {
                 int old = selectionStartTemp;
@@ -274,24 +554,31 @@ namespace AntdUI
             }
             if (SelectionLength > 0)
             {
-                if (selectionStartTemp < selectionStart) SelectionStart = selectionStartTemp;
+                if (selectionStartTemp < selectionStart) SetSelectionStart(selectionStartTemp);
                 else
                 {
                     int old = selectionStart;
                     selectionStart--;
-                    SelectionStart = old;
+                    SetSelectionStart(old);
                 }
                 SelectionLength = 0;
             }
             else
             {
                 SelectionLength = 0;
-                SelectionStart--;
+                if (selectionStart == 1) CaretInfo.FirstRet = true;
+                SetSelectionStart(selectionStart - 1);
             }
         }
 
         void ProcessRightKey(bool shift)
         {
+            tmpUp = 0;
+            if (CaretInfo.FirstRet)
+            {
+                CaretInfo.FirstRet = false;
+                CaretInfo.Place = true;
+            }
             if (shift)
             {
                 if (selectionStart > selectionStartTemp)
@@ -310,22 +597,23 @@ namespace AntdUI
             }
             if (SelectionLength > 0)
             {
-                if (selectionStartTemp > selectionStart) SelectionStart = selectionStartTemp + selectionLength;
+                if (selectionStartTemp > selectionStart) SetSelectionStart(selectionStartTemp + selectionLength);
                 else
                 {
                     int old = selectionStart;
                     selectionStart--;
-                    SelectionStart = old + selectionLength;
+                    SetSelectionStart(old + selectionLength);
                 }
                 SelectionLength = 0;
             }
             else
             {
                 SelectionLength = 0;
-                SelectionStart++;
+                SetSelectionStart(selectionStart + 1);
             }
         }
 
+        int tmpUp = 0;
         void ProcessUpKey(bool shift)
         {
             if (shift)
@@ -333,22 +621,23 @@ namespace AntdUI
                 if (cache_font == null)
                 {
                     SelectionLength = 0;
-                    SelectionStart--;
+                    SetSelectionStart(selectionStart - 1);
                 }
                 else
                 {
                     int index = selectionStartTemp, cend = cache_font.Length - 1;
                     if (index > cend) index = cend;
                     var it = cache_font[index];
-                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Y - it.rect.Height / 2, cache_font);
+                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Y - it.rect.Height / 2, cache_font, out bool two);
+                    CaretInfo.FirstRet = two;
                     if (nearest == null || nearest.i == selectionStartTemp)
                     {
-                        SelectionStart = index - 1;
+                        SetSelectionStart(index - 1);
                         SelectionLength++;
                     }
                     else
                     {
-                        SelectionStart = nearest.i;
+                        SetSelectionStart(nearest.i);
                         SelectionLength += index - nearest.i + (index >= cend ? 1 : 0);
                     }
                 }
@@ -356,34 +645,58 @@ namespace AntdUI
             else
             {
                 SelectionLength = 0;
-                if (cache_font == null) SelectionStart--;
+                if (cache_font == null) SetSelectionStart(selectionStart - 1);
                 else
                 {
                     int end = SelectionStart;
                     if (end > cache_font.Length - 1) end = cache_font.Length - 1;
                     var it = cache_font[end];
-                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Y - it.rect.Height / 2, cache_font);
-                    if (nearest == null || nearest.i == selectionStart) SelectionStart--;
-                    else SelectionStart = nearest.i;
+                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Y - it.rect.Height / 2, cache_font, out bool two);
+                    CaretInfo.FirstRet = two;
+                    if (nearest == null) SetSelectionStart(selectionStart - 1);
+                    else
+                    {
+                        if (nearest.i == 0)
+                        {
+                            if (tmpUp > 0)
+                            {
+                                CaretInfo.FirstRet = true;
+                                tmpUp = 0;
+                                SetCaretPostion(nearest.i);
+                            }
+                            else if (!CaretInfo.FirstRet) tmpUp++;
+                        }
+                        else tmpUp = 0;
+                        if (nearest.i == selectionStart) SetSelectionStart(selectionStart - 1);
+                        else SetSelectionStart(nearest.i);
+                    }
                 }
             }
         }
 
         void ProcessDownKey(bool shift)
         {
+            tmpUp = 0;
+            if (CaretInfo.FirstRet)
+            {
+                CaretInfo.FirstRet = false;
+                CaretInfo.Place = true;
+                tmpUp++;
+            }
             if (shift)
             {
                 if (cache_font == null)
                 {
                     SelectionLength = 0;
-                    SelectionStart++;
+                    SetSelectionStart(selectionStart + 1);
                 }
                 else
                 {
                     int index = selectionStartTemp + selectionLength;
                     if (index > cache_font.Length - 1) return;
                     var it = cache_font[index];
-                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Bottom + it.rect.Height / 2, cache_font);
+                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Bottom + it.rect.Height / 2, cache_font, out bool two);
+                    CaretInfo.FirstRet = two;
                     if (nearest == null || nearest.i == index) SelectionLength++;
                     else SelectionLength += nearest.i - index;
                     CurrentPosIndex = selectionStart + selectionLength;
@@ -393,15 +706,16 @@ namespace AntdUI
             else
             {
                 SelectionLength = 0;
-                if (cache_font == null) SelectionStart++;
+                if (cache_font == null) SetSelectionStart(selectionStart + 1);
                 else
                 {
                     int end = SelectionStart;
                     if (end > cache_font.Length - 1) return;
                     var it = cache_font[end];
-                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Bottom + it.rect.Height / 2, cache_font);
-                    if (nearest == null || nearest.i == selectionStart) SelectionStart++;
-                    else SelectionStart = nearest.i;
+                    var nearest = FindNearestFont(it.rect.X + it.rect.Width / 2, it.rect.Bottom + it.rect.Height / 2, cache_font, out bool two);
+                    CaretInfo.FirstRet = two;
+                    if (nearest == null || nearest.i == selectionStart) SetSelectionStart(selectionStart + 1);
+                    else SetSelectionStart(nearest.i);
                 }
             }
         }
@@ -413,7 +727,7 @@ namespace AntdUI
                 int index = selectionStartTemp;
                 if (index == 0) return;
                 if (ScrollYShow) ScrollY = 0;
-                SelectionStart = 0;
+                SetSelectionStart(0);
                 SelectionLength += index;
             }
             else
@@ -422,7 +736,7 @@ namespace AntdUI
                 if (ctrl)
                 {
                     if (ScrollYShow) ScrollY = 0;
-                    SelectionStart = 0;
+                    SetSelectionStart(0);
                 }
                 else
                 {
@@ -435,13 +749,13 @@ namespace AntdUI
                             int start = FindStartY(cache_font, index - 1);
                             if (start == index) return;
                             CaretInfo.Place = false;
-                            SelectionStart = start;
+                            SetSelectionStart(start);
                         }
                     }
                     else
                     {
                         if (ScrollYShow) ScrollY = 0;
-                        SelectionStart = 0;
+                        SetSelectionStart(0);
                     }
                 }
             }
@@ -463,7 +777,7 @@ namespace AntdUI
                 {
                     if (ScrollYShow) ScrollY = ScrollYMax;
                     SelectionLength = 0;
-                    SelectionStart = cache_font.Length;
+                    SetSelectionStart(cache_font.Length);
                 }
                 else
                 {
@@ -474,16 +788,18 @@ namespace AntdUI
                         int start = FindEndY(cache_font, index) + 1;
                         if (start == index) return;
                         CaretInfo.Place = true;
-                        SelectionStart = start;
+                        SetSelectionStart(start);
                     }
                     else
                     {
                         if (ScrollYShow) ScrollY = ScrollYMax;
                         SelectionLength = 0;
-                        SelectionStart = cache_font.Length;
+                        SetSelectionStart(cache_font.Length);
                     }
                 }
             }
         }
+
+        #endregion
     }
 }

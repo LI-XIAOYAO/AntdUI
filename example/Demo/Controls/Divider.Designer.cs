@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -43,10 +43,6 @@ namespace Demo.Controls
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             header1 = new AntdUI.PageHeader();
@@ -66,6 +62,8 @@ namespace Demo.Controls
             header1.Description = "区隔内容的分割线。";
             header1.Dock = DockStyle.Top;
             header1.Font = new Font("Microsoft YaHei UI", 12F);
+            header1.LocalizationDescription = "Divider.Description";
+            header1.LocalizationText = "Divider.Text";
             header1.Location = new Point(0, 0);
             header1.Name = "header1";
             header1.Padding = new Padding(0, 0, 0, 10);
@@ -91,7 +89,6 @@ namespace Demo.Controls
             panel1.Controls.Add(label2);
             panel1.Controls.Add(divider1);
             panel1.Controls.Add(label1);
-            panel1.Font = new Font("Microsoft YaHei UI", 12F);
             panel1.Location = new Point(3, 3);
             panel1.Name = "panel1";
             panel1.Size = new Size(512, 213);
@@ -103,7 +100,7 @@ namespace Demo.Controls
             divider2.Font = new Font("Microsoft YaHei UI", 12F, FontStyle.Bold);
             divider2.Location = new Point(0, 116);
             divider2.Name = "divider2";
-            divider2.Size = new Size(512, 20);
+            divider2.Size = new Size(512, 26);
             divider2.TabIndex = 3;
             divider2.Text = "With Text";
             divider2.Thickness = 2F;
@@ -136,6 +133,7 @@ namespace Demo.Controls
             // 
             // divider3
             // 
+            divider3.LocalizationText = "Divider.Text";
             divider3.Location = new Point(521, 3);
             divider3.Name = "divider3";
             divider3.Size = new Size(29, 317);
@@ -148,7 +146,7 @@ namespace Demo.Controls
             // 
             Controls.Add(flowLayoutPanel1);
             Controls.Add(header1);
-            Font = new Font("Microsoft YaHei UI", 16F);
+            Font = new Font("Microsoft YaHei UI", 12F);
             Name = "Divider";
             Size = new Size(740, 402);
             flowLayoutPanel1.ResumeLayout(false);

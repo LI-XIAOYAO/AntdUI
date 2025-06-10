@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
+
+using System.Runtime.InteropServices;
 
 namespace SVGView
 {
@@ -26,9 +28,12 @@ namespace SVGView
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
+            ComWrappers.RegisterForMarshalling(WinFormsComInterop.WinFormsComWrappers.Instance);
+            AntdUI.Config.TextRenderingHighQuality = true;
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            AntdUI.Localization.DefaultLanguage = "zh-CN";
+            var lang = AntdUI.Localization.CurrentLanguage;
+            if (lang.StartsWith("en")) AntdUI.Localization.Provider = new Localizer();
             Application.Run(new Main());
         }
     }

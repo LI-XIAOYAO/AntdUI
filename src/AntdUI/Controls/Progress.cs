@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -50,9 +50,10 @@ namespace AntdUI
             get => fore;
             set
             {
-                if (fore == value) fore = value;
+                if (fore == value) return;
                 fore = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ForeColor));
             }
         }
 
@@ -72,6 +73,7 @@ namespace AntdUI
                 if (back == value) return;
                 back = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Back));
             }
         }
 
@@ -89,6 +91,7 @@ namespace AntdUI
                 if (fill == value) return;
                 fill = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Fill));
             }
         }
 
@@ -107,6 +110,7 @@ namespace AntdUI
                 if (radius == value) return;
                 radius = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Radius));
             }
         }
 
@@ -123,6 +127,7 @@ namespace AntdUI
                 if (shape == value) return;
                 shape = value;
                 Invalidate();
+                OnPropertyChanged(nameof(Shape));
             }
         }
 
@@ -135,31 +140,40 @@ namespace AntdUI
         [Description("文本"), Category("外观"), DefaultValue(null)]
         public override string? Text
         {
-            get => text;
+            get => this.GetLangI(LocalizationText, text);
             set
             {
                 if (text == value) return;
                 text = value;
                 if (useSystemText) Invalidate();
                 OnTextChanged(EventArgs.Empty);
+                OnPropertyChanged(nameof(Text));
             }
         }
+
+        [Description("文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationText { get; set; }
 
         string? textUnit = "%";
         /// <summary>
         /// 单位文本
         /// </summary>
         [Description("单位文本"), Category("外观"), DefaultValue("%")]
+        [Localizable(true)]
         public string? TextUnit
         {
-            get => textUnit;
+            get => this.GetLangI(LocalizationTextUnit, textUnit);
             set
             {
                 if (textUnit == value) return;
                 textUnit = value;
                 Invalidate();
+                OnPropertyChanged(nameof(TextUnit));
             }
         }
+
+        [Description("单位文本"), Category("国际化"), DefaultValue(null)]
+        public string? LocalizationTextUnit { get; set; }
 
         bool useSystemText = false;
         /// <summary>
@@ -174,14 +188,21 @@ namespace AntdUI
                 if (useSystemText == value) return;
                 useSystemText = value;
                 Invalidate();
+                OnPropertyChanged(nameof(UseSystemText));
             }
         }
+
+        /// <summary>
+        /// 使文本居中显示
+        /// </summary>
+        [Description("使文本居中显示"), Category("外观"), DefaultValue(false)]
+        public bool UseTextCenter { get; set; }
 
         /// <summary>
         /// 显示进度文本小数点位数
         /// </summary>
         [Description("显示进度文本小数点位数"), Category("外观"), DefaultValue(0)]
-        public int ShowTextDot { get; set; } = 0;
+        public int ShowTextDot { get; set; }
 
         #endregion
 
@@ -199,6 +220,7 @@ namespace AntdUI
                 state = value;
                 Invalidate();
                 if (showInTaskbar) ShowTaskbar();
+                OnPropertyChanged(nameof(State));
             }
         }
 
@@ -215,6 +237,7 @@ namespace AntdUI
                 if (iconratio == value) return;
                 iconratio = value;
                 Invalidate();
+                OnPropertyChanged(nameof(IconRatio));
             }
         }
 
@@ -231,6 +254,7 @@ namespace AntdUI
                 if (valueratio == value) return;
                 valueratio = value;
                 Invalidate();
+                OnPropertyChanged(nameof(ValueRatio));
             }
         }
 
@@ -253,7 +277,7 @@ namespace AntdUI
                 _value = value;
                 ThreadValue?.Dispose();
                 ThreadValue = null;
-                if (Config.Animation && IsHandleCreated && Animation > 0)
+                if (Config.HasAnimation(nameof(Progress)) && IsHandleCreated && Animation > 0)
                 {
                     var t = AntdUI.Animation.TotalFrames(10, Animation);
                     if (_value > _value_show)
@@ -291,6 +315,7 @@ namespace AntdUI
                     Invalidate();
                 }
                 if (showInTaskbar) ShowTaskbar();
+                OnPropertyChanged(nameof(Value));
             }
         }
 
@@ -336,6 +361,7 @@ namespace AntdUI
                     });
                 }
                 else Invalidate();
+                OnPropertyChanged(nameof(Loading));
             }
         }
 
@@ -343,7 +369,7 @@ namespace AntdUI
         /// 动画铺满
         /// </summary>
         [Description("动画铺满"), Category("外观"), DefaultValue(false)]
-        public bool LoadingFull { get; set; } = false;
+        public bool LoadingFull { get; set; }
 
         /// <summary>
         /// 动画时长
@@ -366,6 +392,7 @@ namespace AntdUI
                 if (steps == value) return;
                 steps = value;
                 if (shape == TShapeProgress.Steps) Invalidate();
+                OnPropertyChanged(nameof(Steps));
             }
         }
 
@@ -382,6 +409,7 @@ namespace AntdUI
                 if (stepSize == value) return;
                 stepSize = value;
                 if (shape == TShapeProgress.Steps) Invalidate();
+                OnPropertyChanged(nameof(StepSize));
             }
         }
 
@@ -398,6 +426,7 @@ namespace AntdUI
                 if (stepGap == value) return;
                 stepGap = value;
                 if (shape == TShapeProgress.Steps) Invalidate();
+                OnPropertyChanged(nameof(StepGap));
             }
         }
 
@@ -458,6 +487,7 @@ namespace AntdUI
                     if (showInTaskbar) ShowTaskbar();
                     else if (ownerForm != null) TaskbarProgressState(ownerForm, ThumbnailProgressState.NoProgress);
                 }
+                OnPropertyChanged(nameof(ShowInTaskbar));
             }
         }
 
@@ -506,10 +536,7 @@ namespace AntdUI
             old_state = state;
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                {
-                    Windows7Taskbar.SetProgressState(hwnd.Handle, state);
-                }));
+                Invoke(() => Windows7Taskbar.SetProgressState(hwnd.Handle, state));
                 return;
             }
             Windows7Taskbar.SetProgressState(hwnd.Handle, state);
@@ -523,10 +550,7 @@ namespace AntdUI
             old_value = value;
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                {
-                    Windows7Taskbar.SetProgressValue(hwnd.Handle, value);
-                }));
+                Invoke(() => Windows7Taskbar.SetProgressValue(hwnd.Handle, value));
                 return;
             }
             Windows7Taskbar.SetProgressValue(hwnd.Handle, value);
@@ -542,26 +566,28 @@ namespace AntdUI
         protected override void OnPaint(PaintEventArgs e)
         {
             var rect_t = ClientRectangle;
+            if (rect_t.Width == 0 || rect_t.Height == 0) return;
             var rect = rect_t.PaddingRect(Padding);
+            if (rect.Width == 0 || rect.Height == 0) return;
             var g = e.Graphics.High();
             Color color;
             switch (state)
             {
                 case TType.Success:
-                    color = fill ?? Style.Db.Success;
+                    color = fill ?? Colour.Success.Get("Progress", ColorScheme);
                     break;
                 case TType.Info:
-                    color = fill ?? Style.Db.Info;
+                    color = fill ?? Colour.Info.Get("Progress", ColorScheme);
                     break;
                 case TType.Warn:
-                    color = fill ?? Style.Db.Warning;
+                    color = fill ?? Colour.Warning.Get("Progress", ColorScheme);
                     break;
                 case TType.Error:
-                    color = fill ?? Style.Db.Error;
+                    color = fill ?? Colour.Error.Get("Progress", ColorScheme);
                     break;
                 case TType.None:
                 default:
-                    color = fill ?? Style.Db.Primary;
+                    color = fill ?? Colour.Primary.Get("Progress", ColorScheme);
                     break;
             }
             switch (shape)
@@ -587,23 +613,20 @@ namespace AntdUI
             base.OnPaint(e);
         }
 
-        void PaintShapeMini(Graphics g, Rectangle rect, Color color)
+        void PaintShapeMini(Canvas g, Rectangle rect, Color color)
         {
             var _back = back ?? Color.FromArgb(40, color);
-            var font_size = g.MeasureString("100" + textUnit, Font).Size();
+            var font_size = g.MeasureString("100" + TextUnit, Font);
             rect.IconRectL(font_size.Height, out var icon_rect, out var text_rect, iconratio);
             if (icon_rect.Width == 0 || icon_rect.Height == 0) return;
-            using (var brush = new SolidBrush(fore ?? Style.Db.Text))
+            using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
             {
-                string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit);
-                g.DrawStr(textShow, Font, brush, new Rectangle(text_rect.X + 8, text_rect.Y, text_rect.Width - 8, text_rect.Height), s_l);
+                string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? Text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit);
+                g.String(textShow, Font, brush, new Rectangle(text_rect.X + 8, text_rect.Y, text_rect.Width - 8, text_rect.Height), s_l);
             }
 
             int w = radius == 0 ? (int)Math.Round(icon_rect.Width * .2F) : (int)(radius * Config.Dpi);
-            using (var brush = new Pen(_back, w))
-            {
-                g.DrawEllipse(brush, icon_rect);
-            }
+            g.DrawEllipse(_back, w, icon_rect);
 
             #region 进度条
 
@@ -622,7 +645,7 @@ namespace AntdUI
                 if (_value_show > 0)
                 {
                     float alpha = 60 * (1F - AnimationLoadingValue);
-                    using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), w))
+                    using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), w))
                     {
                         brush.StartCap = brush.EndCap = LineCap.Round;
                         g.DrawArc(brush, icon_rect, -90, (int)(max * AnimationLoadingValue));
@@ -632,7 +655,7 @@ namespace AntdUI
                 {
                     max = 360;
                     float alpha = 80 * (1F - AnimationLoadingValue);
-                    using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), w))
+                    using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), w))
                     {
                         brush.StartCap = brush.EndCap = LineCap.Round;
                         g.DrawArc(brush, icon_rect, -90, (int)(max * AnimationLoadingValue));
@@ -642,10 +665,10 @@ namespace AntdUI
 
             #endregion
         }
-        void PaintShapeSteps(Graphics g, Rectangle rect_t, Rectangle rect, Color color)
+        void PaintShapeSteps(Canvas g, Rectangle rect_t, Rectangle rect, Color color)
         {
-            var _back = back ?? Style.Db.FillSecondary;
-            var font_size = g.MeasureString("100" + textUnit, Font).Size();
+            var _back = back ?? Colour.FillSecondary.Get("Progress", ColorScheme);
+            var font_size = g.MeasureString("100" + TextUnit, Font);
             int pro_gap = (int)(stepGap * Config.Dpi), pro_h = (int)(font_size.Height * valueratio);
             float pro_w = (int)(stepSize * Config.Dpi), has_x = 0;
             int pro_y = rect.Y + (rect.Height - pro_h) / 2;
@@ -659,8 +682,8 @@ namespace AntdUI
                     float w = rect.Width;
                     if (state == TType.None)
                     {
-                        string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit);
-                        w -= g.MeasureString(textShow, Font).Size().Width + pro_h / 2;
+                        string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? Text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit);
+                        w -= g.MeasureString(textShow, Font).Width + pro_h / 2;
                     }
                     else
                     {
@@ -682,10 +705,10 @@ namespace AntdUI
                         float tmpw = LoadingFull ? rect.Width : 0;
                         for (int i = 0; i < steps; i++)
                         {
-                            if (prog > i) g.FillRectangle(brush_fill, rects[i]);
+                            if (prog > i) g.Fill(brush_fill, rects[i]);
                             else
                             {
-                                g.FillRectangle(brush, rects[i]);
+                                g.Fill(brush, rects[i]);
                                 tmpw = rects[i].Right;
                             }
                         }
@@ -695,11 +718,11 @@ namespace AntdUI
                             {
                                 foreach (var it in rects) path.AddRectangle(it);
                                 var alpha = 60 * (1F - AnimationLoadingValue);
-                                using (var brush_prog = new SolidBrush(Helper.ToColor(alpha, Style.Db.TextBase)))
+                                using (var brush_prog = new SolidBrush(Helper.ToColor(alpha, Colour.TextBase.Get("Progress", ColorScheme))))
                                 {
                                     var state = g.Save();
                                     g.SetClip(new RectangleF(rect.X, rect.Y, tmpw * _value_show * AnimationLoadingValue, rect.Height));
-                                    g.FillPath(brush_prog, path);
+                                    g.Fill(brush_prog, path);
                                     g.Restore(state);
                                 }
                             }
@@ -713,18 +736,18 @@ namespace AntdUI
                             {
                                 foreach (var it in rects) path.AddRectangle(it);
                                 var alpha = 80 * (1F - AnimationLoadingValue);
-                                using (var brush_prog = new SolidBrush(Helper.ToColor(alpha, Style.Db.TextBase)))
+                                using (var brush_prog = new SolidBrush(Helper.ToColor(alpha, Colour.TextBase.Get("Progress", ColorScheme))))
                                 {
                                     var state = g.Save();
                                     g.SetClip(new RectangleF(rect.X, rect.Y, rect.Width * AnimationLoadingValue, rect.Height));
-                                    g.FillPath(brush_prog, path);
+                                    g.Fill(brush_prog, path);
                                     g.Restore(state);
                                 }
                             }
                         }
                         for (int i = 0; i < steps; i++)
                         {
-                            g.FillRectangle(brush, rects[i]);
+                            g.Fill(brush, rects[i]);
                         }
                     }
                 }
@@ -733,89 +756,113 @@ namespace AntdUI
             if (state == TType.None)
             {
                 int has_x2 = (int)Math.Ceiling(has_x + pro_h / 2);
-                using (var brush = new SolidBrush(fore ?? Style.Db.Text))
+                using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
                 {
-                    string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit);
-                    g.DrawStr(textShow, Font, brush, new Rectangle(rect.X + has_x2, rect.Y, rect.Width - has_x2, rect.Height), s_l);
+                    string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? Text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit);
+                    g.String(textShow, Font, brush, new Rectangle(rect.X + has_x2, rect.Y, rect.Width - has_x2, rect.Height), s_l);
                 }
             }
             else
             {
                 int has_x2 = (int)Math.Ceiling(has_x);
                 int ico_size = (int)(font_size.Height * (iconratio + 0.1F)), size_font_w = pro_h + ico_size;
-                g.PaintIcons(state, new Rectangle((rect.X + has_x2 + size_font_w) - ico_size, rect_t.Y + (rect_t.Height - ico_size) / 2, ico_size, ico_size));
+                g.PaintIcons(state, new Rectangle((rect.X + has_x2 + size_font_w) - ico_size, rect_t.Y + (rect_t.Height - ico_size) / 2, ico_size, ico_size), "Progress", ColorScheme);
             }
         }
-        void PaintShapeRound(Graphics g, Rectangle rect_t, Rectangle rect, Color color, bool round)
+        void PaintShapeRound(Canvas g, Rectangle rect_t, Rectangle rect, Color color, bool round)
         {
-            var _back = back ?? Style.Db.FillSecondary;
+            var _back = back ?? Colour.FillSecondary.Get("Progress", ColorScheme);
             float _radius = radius * Config.Dpi;
             if (round) _radius = rect.Height;
 
             if (state == TType.None)
             {
-                string? showtmp, textShow;
-
-                if (ValueFormatChanged == null)
+                if (UseTextCenter)
                 {
-                    if (useSystemText) showtmp = textShow = text;
-                    else
+                    string? textShow;
+                    if (ValueFormatChanged == null)
                     {
-                        string basetext = (_value_show * 100F).ToString("F" + ShowTextDot);
-                        var chars = new char[basetext.Length];
-                        chars[0] = basetext[0];
-                        for (int i = 1; i < basetext.Length; i++)
-                        {
-                            if (basetext[i] == '.') chars[i] = '.';
-                            else chars[i] = '0';
-                        }
-                        showtmp = string.Join("", chars) + textUnit;
-                        textShow = basetext + textUnit;
+                        if (useSystemText) textShow = Text;
+                        else textShow = (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit;
                     }
-                }
-                else showtmp = textShow = ValueFormatChanged(this, new FloatEventArgs(_value_show));
+                    else textShow = ValueFormatChanged(this, new FloatEventArgs(_value_show));
 
-                if (showtmp == null && textShow == null)
-                {
-                    var sizef = g.MeasureString(Config.NullText, Font).Size();
+                    var sizef = g.MeasureString(Config.NullText, Font);
                     int pro_h = (int)(sizef.Height * valueratio);
                     rect.Y = rect.Y + (rect.Height - pro_h) / 2;
                     rect.Height = pro_h;
                     PaintProgress(g, _radius, rect, _back, color);
+
+                    using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
+                    {
+                        g.String(textShow, Font, brush, rect_t, s_c);
+                    }
                 }
                 else
                 {
-                    var sizef = g.MeasureString(showtmp, Font).Size();
-                    int pro_h = (int)(sizef.Height * valueratio), size_font_w = (int)Math.Ceiling(sizef.Width + sizef.Height * .2F);
-                    var rect_rext = new Rectangle(rect.Right - size_font_w, rect_t.Y, size_font_w, rect_t.Height);
-                    rect.Y = rect.Y + (rect.Height - pro_h) / 2;
-                    rect.Height = pro_h;
-                    rect.Width -= size_font_w;
-                    PaintProgress(g, _radius, rect, _back, color);
+                    string? showtmp, textShow;
 
-                    using (var brush = new SolidBrush(fore ?? Style.Db.Text))
+                    if (ValueFormatChanged == null)
                     {
-                        g.DrawStr(textShow, Font, brush, rect_rext, s_r);
+                        if (useSystemText) showtmp = textShow = Text;
+                        else
+                        {
+                            string basetext = (_value_show * 100F).ToString("F" + ShowTextDot);
+                            var chars = new char[basetext.Length];
+                            chars[0] = basetext[0];
+                            for (int i = 1; i < basetext.Length; i++)
+                            {
+                                if (basetext[i] == '.') chars[i] = '.';
+                                else chars[i] = '0';
+                            }
+                            showtmp = string.Join("", chars) + TextUnit;
+                            textShow = basetext + TextUnit;
+                        }
+                    }
+                    else showtmp = textShow = ValueFormatChanged(this, new FloatEventArgs(_value_show));
+
+                    if (showtmp == null && textShow == null)
+                    {
+                        var sizef = g.MeasureString(Config.NullText, Font);
+                        int pro_h = (int)(sizef.Height * valueratio);
+                        rect.Y = rect.Y + (rect.Height - pro_h) / 2;
+                        rect.Height = pro_h;
+                        PaintProgress(g, _radius, rect, _back, color);
+                    }
+                    else
+                    {
+                        var sizef = g.MeasureString(showtmp, Font);
+                        int pro_h = (int)(sizef.Height * valueratio), size_font_w = (int)Math.Ceiling(sizef.Width + sizef.Height * .2F);
+                        var rect_rext = new Rectangle(rect.Right - size_font_w, rect_t.Y, size_font_w, rect_t.Height);
+                        rect.Y = rect.Y + (rect.Height - pro_h) / 2;
+                        rect.Height = pro_h;
+                        rect.Width -= size_font_w;
+                        if (rect.Width > 0) PaintProgress(g, _radius, rect, _back, color);
+
+                        using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
+                        {
+                            g.String(textShow, Font, brush, rect_rext, s_r);
+                        }
                     }
                 }
             }
             else
             {
-                string showtext = (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit;
-                var sizef = g.MeasureString(showtext, Font).Size();
+                string showtext = (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit;
+                var sizef = g.MeasureString(showtext, Font);
                 int pro_h = (int)(sizef.Height * valueratio), ico_size = (int)(sizef.Height * (iconratio + 0.1F));
                 int size_font_w = pro_h + ico_size;
                 var rect_rext = new Rectangle(rect.Right - size_font_w, rect_t.Y, size_font_w, rect_t.Height);
                 rect.Y = rect.Y + (rect.Height - pro_h) / 2;
                 rect.Height = pro_h;
                 rect.Width -= size_font_w;
-                PaintProgress(g, _radius, rect, _back, color);
-                g.PaintIcons(state, new Rectangle(rect_rext.Right - ico_size, rect_rext.Y + (rect_rext.Height - ico_size) / 2, ico_size, ico_size));
+                if (rect.Width > 0) PaintProgress(g, _radius, rect, _back, color);
+                g.PaintIcons(state, new Rectangle(rect_rext.Right - ico_size, rect_rext.Y + (rect_rext.Height - ico_size) / 2, ico_size, ico_size), "Progress", ColorScheme);
             }
         }
-        void PaintShapeCircle(Graphics g, Rectangle rect, Color color)
+        void PaintShapeCircle(Canvas g, Rectangle rect, Color color)
         {
-            var _back = back ?? Style.Db.FillSecondary;
+            var _back = back ?? Colour.FillSecondary.Get("Progress", ColorScheme);
 
             int prog_size;
             if (rect.Width == rect.Height) prog_size = rect.Width;
@@ -825,10 +872,7 @@ namespace AntdUI
             prog_size -= w;
             var rect_prog = new Rectangle(rect.X + (rect.Width - prog_size) / 2, rect.Y + (rect.Height - prog_size) / 2, prog_size, prog_size);
 
-            using (var brush = new Pen(_back, w))
-            {
-                g.DrawEllipse(brush, rect_prog);
-            }
+            g.DrawEllipse(_back, w, rect_prog);
 
             #region 进度条
 
@@ -847,7 +891,7 @@ namespace AntdUI
                 if (_value_show > 0)
                 {
                     float alpha = 60 * (1F - AnimationLoadingValue);
-                    using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), w))
+                    using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), w))
                     {
                         brush.StartCap = brush.EndCap = LineCap.Round;
                         g.DrawArc(brush, rect_prog, -90, (int)(max * AnimationLoadingValue));
@@ -857,7 +901,7 @@ namespace AntdUI
                 {
                     max = 360;
                     float alpha = 80 * (1F - AnimationLoadingValue);
-                    using (var brush = new Pen(Helper.ToColor(alpha, Style.Db.BgBase), w))
+                    using (var brush = new Pen(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), w))
                     {
                         brush.StartCap = brush.EndCap = LineCap.Round;
                         g.DrawArc(brush, rect_prog, -90, (int)(max * AnimationLoadingValue));
@@ -871,10 +915,10 @@ namespace AntdUI
             {
                 if (state == TType.None)
                 {
-                    using (var brush = new SolidBrush(fore ?? Style.Db.Text))
+                    using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
                     {
-                        string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit);
-                        g.DrawStr(textShow, Font, brush, rect, s_c);
+                        string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? Text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit);
+                        g.String(textShow, Font, brush, rect, s_c);
                     }
                 }
                 else
@@ -885,22 +929,19 @@ namespace AntdUI
             }
             else
             {
-                using (var brush = new SolidBrush(fore ?? Style.Db.Text))
+                using (var brush = new SolidBrush(fore ?? Colour.Text.Get("Progress", ColorScheme)))
                 {
-                    string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + textUnit);
-                    g.DrawStr(textShow, Font, brush, rect, s_c);
+                    string textShow = ValueFormatChanged?.Invoke(this, new FloatEventArgs(_value_show)) ?? (useSystemText ? Text ?? "" : (_value_show * 100F).ToString("F" + ShowTextDot) + TextUnit);
+                    g.String(textShow, Font, brush, rect, s_c);
                 }
             }
         }
 
-        void PaintProgress(Graphics g, float radius, Rectangle rect, Color back, Color color)
+        void PaintProgress(Canvas g, float radius, Rectangle rect, Color back, Color color)
         {
             using (var path = rect.RoundPath(radius))
             {
-                using (var brush = new SolidBrush(back))
-                {
-                    g.FillPath(brush, path);
-                }
+                g.Fill(back, path);
                 bool handloading = true;
                 if (_value_show > 0)
                 {
@@ -909,21 +950,15 @@ namespace AntdUI
                     {
                         using (var path_prog = new RectangleF(rect.X, rect.Y, _w, rect.Height).RoundPath(radius))
                         {
-                            using (var brush = new SolidBrush(color))
-                            {
-                                g.FillPath(brush, path_prog);
-                            }
+                            g.Fill(color, path_prog);
                         }
                         if (loading && AnimationLoadingValue > 0)
                         {
                             handloading = false;
                             var alpha = 60 * (1F - AnimationLoadingValue);
-                            using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.BgBase)))
+                            using (var path_prog = new RectangleF(rect.X, rect.Y, _w * AnimationLoadingValue, rect.Height).RoundPath(radius))
                             {
-                                using (var path_prog = new RectangleF(rect.X, rect.Y, _w * AnimationLoadingValue, rect.Height).RoundPath(radius))
-                                {
-                                    g.FillPath(brush, path_prog);
-                                }
+                                g.Fill(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), path_prog);
                             }
                         }
                     }
@@ -933,30 +968,24 @@ namespace AntdUI
                         {
                             using (var g2 = Graphics.FromImage(bmp).High())
                             {
-                                using (var brush = new SolidBrush(color))
+                                using (var path_prog = new RectangleF(-_w, 0, _w * 2, rect.Height).RoundPath(radius))
                                 {
-                                    using (var path_prog = new RectangleF(-_w, 0, _w * 2, rect.Height).RoundPath(radius))
-                                    {
-                                        g2.FillPath(brush, path_prog);
-                                    }
+                                    g2.Fill(color, path_prog);
                                 }
                                 if (loading && AnimationLoadingValue > 0)
                                 {
                                     handloading = false;
                                     var alpha = 60 * (1F - AnimationLoadingValue);
-                                    using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.BgBase)))
+                                    using (var path_prog = new RectangleF(-_w, 0, _w * 2 * AnimationLoadingValue, rect.Height).RoundPath(radius))
                                     {
-                                        using (var path_prog = new RectangleF(-_w, 0, _w * 2 * AnimationLoadingValue, rect.Height).RoundPath(radius))
-                                        {
-                                            g2.FillPath(brush, path_prog);
-                                        }
+                                        g2.Fill(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme)), path_prog);
                                     }
                                 }
                             }
                             using (var brush = new TextureBrush(bmp, WrapMode.Clamp))
                             {
                                 brush.TranslateTransform(rect.X, rect.Y);
-                                g.FillPath(brush, path);
+                                g.Fill(brush, path);
                             }
                         }
                     }
@@ -965,11 +994,11 @@ namespace AntdUI
                 if (loading && AnimationLoadingValue > 0 && handloading && LoadingFull)
                 {
                     var alpha = 80 * (1F - AnimationLoadingValue);
-                    using (var brush = new SolidBrush(Helper.ToColor(alpha, Style.Db.BgBase)))
+                    using (var brush = new SolidBrush(Helper.ToColor(alpha, Colour.BgBase.Get("Progress", ColorScheme))))
                     {
                         using (var path_prog = new RectangleF(rect.X, rect.Y, rect.Width * AnimationLoadingValue, rect.Height).RoundPath(radius))
                         {
-                            g.FillPath(brush, path_prog);
+                            g.Fill(brush, path_prog);
                         }
                     }
                 }
@@ -1003,10 +1032,7 @@ namespace AntdUI
         /// </summary>
         /// <param name="hwnd">The window handle.</param>
         /// <param name="state">The progress state.</param>
-        public static void SetProgressState(IntPtr hwnd, ThumbnailProgressState state)
-        {
-            TaskbarList.SetProgressState(hwnd, state);
-        }
+        public static void SetProgressState(IntPtr hwnd, ThumbnailProgressState state) => TaskbarList.SetProgressState(hwnd, state);
 
         /// <summary>
         /// Sets the progress value of the specified window's
@@ -1015,15 +1041,9 @@ namespace AntdUI
         /// <param name="hwnd">The window handle.</param>
         /// <param name="current">The current value.</param>
         /// <param name="maximum">The maximum value.</param>
-        public static void SetProgressValue(IntPtr hwnd, ulong current, ulong maximum)
-        {
-            TaskbarList.SetProgressValue(hwnd, current, maximum);
-        }
+        public static void SetProgressValue(IntPtr hwnd, ulong current, ulong maximum) => TaskbarList.SetProgressValue(hwnd, current, maximum);
 
-        public static void SetProgressValue(IntPtr hwnd, ulong current)
-        {
-            TaskbarList.SetProgressValue(hwnd, current, 100);
-        }
+        public static void SetProgressValue(IntPtr hwnd, ulong current) => TaskbarList.SetProgressValue(hwnd, current, 100);
     }
 
     /// <summary>
@@ -1053,13 +1073,13 @@ namespace AntdUI
         Paused = 0x8
     }
 
+    [ComImport]
     [Guid("56FDF344-FD6D-11d0-958A-006097C9A090")]
     [ClassInterface(ClassInterfaceType.None)]
-    [ComImport]
     internal class CTaskbarList { }
 
     [ComImport]
-    [Guid("ea1afb91-9e28-4b86-90e9-9e9f8a5eefaf")]
+    [Guid("EA1AFB91-9E28-4B86-90E9-9E9F8A5EEFAF")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface ITaskbarList3
     {

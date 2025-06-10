@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -25,37 +25,27 @@ namespace AntdUI
     public class ScrollY
     {
         IControl? control;
+        TAMode ColorScheme = TAMode.Auto;
 
         public ScrollY(IControl _control)
         {
-            Invalidate = () =>
-            {
-                _control.Invalidate();
-            };
+            ColorScheme = _control.ColorScheme;
+            Invalidate = () => _control.Invalidate();
             control = _control;
         }
 
         public ScrollY(FlowLayoutPanel _control)
         {
             SIZE = SystemInformation.VerticalScrollBarWidth;
-            Invalidate = () =>
-            {
-                _control.Invalidate(Rect);
-            };
+            Invalidate = () => _control.Invalidate(Rect);
         }
         public ScrollY(Control _control)
         {
-            Invalidate = () =>
-            {
-                _control.Invalidate();
-            };
+            Invalidate = () => _control.Invalidate();
         }
         public ScrollY(ILayeredForm _form)
         {
-            Invalidate = () =>
-            {
-                _form.Print();
-            };
+            Invalidate = () => _form.Print();
             Gap = Back = false;
         }
 
@@ -106,8 +96,8 @@ namespace AntdUI
         /// <summary>
         /// 虚拟高度
         /// </summary>
-        public float VrValue { get; set; } = 0F;
-        public float VrValueI { get; set; } = 0F;
+        public float VrValue { get; set; }
+        public float VrValueI { get; set; }
         public int Height { get; set; }
 
         /// <summary>
@@ -149,30 +139,23 @@ namespace AntdUI
 
         public int SIZE { get; set; } = 20;
         public bool ShowX { get; set; }
-        public virtual void SizeChange(Rectangle rect)
-        {
-            Rect = new Rectangle(rect.Right - SIZE, rect.Y, SIZE, rect.Height);
-        }
+        public virtual void SizeChange(Rectangle rect) => Rect = new Rectangle(rect.Right - SIZE, rect.Y, SIZE, rect.Height);
 
         /// <summary>
         /// 渲染滚动条竖
         /// </summary>
         /// <param name="g"></param>
-        public virtual void Paint(Graphics g)
-        {
-            Paint(g, Style.Db.TextBase);
-        }
-        public virtual void Paint(Graphics g, Color baseColor)
+        public virtual void Paint(Canvas g) => Paint(g, Colour.TextBase.Get("ScrollBar", ColorScheme));
+        public virtual void Paint(Canvas g, Color baseColor)
         {
             if (Show)
             {
-                if (Back)
+                if (Back && IsPaintScroll())
                 {
                     using (var brush = new SolidBrush(Color.FromArgb(10, baseColor)))
                     {
-                        if (ShowX) g.FillRectangle(brush, new Rectangle(Rect.X, Rect.Y, Rect.Width, Rect.Height - SIZE));
-                        else g.FillRectangle(brush, Rect);
-                        //g.FillRectangle(brush, Rect);
+                        if (ShowX) g.Fill(brush, new Rectangle(Rect.X, Rect.Y, Rect.Width, Rect.Height - SIZE));
+                        else g.Fill(brush, Rect);
                     }
                 }
                 float height = (Rect.Height / VrValue) * Rect.Height;
@@ -186,14 +169,17 @@ namespace AntdUI
                     if (Slider.Y < 6) Slider.Y = 6;
                     else if (Slider.Y > (ShowX ? (Rect.Height - SIZE) : Rect.Height) - height - 6) Slider.Y = (ShowX ? (Rect.Height - SIZE) : Rect.Height) - height - 6;
                 }
-                using (var brush = new SolidBrush(Color.FromArgb(141, baseColor)))
+                using (var path = Slider.RoundPath(Slider.Width))
                 {
-                    using (var path = Slider.RoundPath(Slider.Width))
-                    {
-                        g.FillPath(brush, path);
-                    }
+                    g.Fill(Color.FromArgb(141, baseColor), path);
                 }
             }
+        }
+
+        bool IsPaintScroll()
+        {
+            if (Config.ScrollBarHide) return hover;
+            else return true;
         }
 
         public bool ShowDown = false;
@@ -241,7 +227,11 @@ namespace AntdUI
 
         public virtual bool MouseUp(Point e)
         {
-            ShowDown = false;
+            if (ShowDown)
+            {
+                ShowDown = false;
+                return false;
+            }
             return true;
         }
 
@@ -285,19 +275,27 @@ namespace AntdUI
             return true;
         }
 
-        public bool MouseWheel(int delta)
+        public bool MouseWheel(int Delta)
         {
-            if (Show && delta != 0)
+            if (Show && Delta != 0)
             {
-                Value -= delta;//120
+                int delta = Delta / SystemInformation.MouseWheelScrollDelta * (int)(Config.ScrollStep * Config.Dpi);
+                Value -= delta;
                 return true;
             }
             return false;
         }
 
-        public void Leave()
+        internal bool MouseWheelCore(int delta)
         {
-            Hover = false;
+            if (Show && delta != 0)
+            {
+                Value -= delta;
+                return true;
+            }
+            return false;
         }
+
+        public void Leave() => Hover = false;
     }
 }

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -41,6 +41,21 @@ namespace AntdUI
             _text = text;
             _type = type;
         }
+
+        /// <summary>
+        /// 标签
+        /// </summary>
+        /// <param name="text">文本</param>
+        /// <param name="type">类型</param>
+        /// <param name="gap">间隔</param>
+        public CellTag(string text, TTypeMini type, int gap)
+        {
+            _text = text;
+            _type = type;
+            Gap = gap;
+        }
+
+        #region 属性
 
         Color? fore;
         /// <summary>
@@ -72,17 +87,17 @@ namespace AntdUI
             }
         }
 
-        float borderwidth = 1F;
+        float borderWidth = 1F;
         /// <summary>
         /// 边框宽度
         /// </summary>
         public float BorderWidth
         {
-            get => borderwidth;
+            get => borderWidth;
             set
             {
-                if (borderwidth == value) return;
-                borderwidth = value;
+                if (borderWidth == value) return;
+                borderWidth = value;
                 OnPropertyChanged();
             }
         }
@@ -117,9 +132,43 @@ namespace AntdUI
             }
         }
 
-        public override string ToString()
+        /// <summary>
+        /// 间距
+        /// </summary>
+        public int? Gap { get; set; }
+
+        #endregion
+
+        #region 设置
+
+        public CellTag SetFore(Color? value)
         {
-            return _text;
+            fore = value;
+            return this;
         }
+        public CellTag SetBack(Color? value)
+        {
+            back = value;
+            return this;
+        }
+        public CellTag SetBorderWidth(float value = 0F)
+        {
+            borderWidth = value;
+            return this;
+        }
+        public CellTag SetType(TTypeMini value = TTypeMini.Success)
+        {
+            _type = value;
+            return this;
+        }
+        public CellTag SetGap(int? value)
+        {
+            Gap = value;
+            return this;
+        }
+
+        #endregion
+
+        public override string ToString() => _text;
     }
 }

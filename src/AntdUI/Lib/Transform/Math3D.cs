@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // SEE THE LICENSE FOR THE SPECIFIC LANGUAGE GOVERNING PERMISSIONS AND
 // LIMITATIONS UNDER THE License.
-// GITEE: https://gitee.com/antdui/AntdUI
+// GITEE: https://gitee.com/AntdUI/AntdUI
 // GITHUB: https://github.com/AntdUI/AntdUI
 // CSDN: https://blog.csdn.net/v_132
 // QQ: 17379620
@@ -37,9 +37,9 @@ namespace AntdUI
 
             public Point3D(float x, float y, float z)
             {
-                X = (double)x;
-                Y = (double)y;
-                Z = (double)z;
+                X = x;
+                Y = y;
+                Z = z;
             }
 
             public Point3D(double x, double y, double z)
@@ -53,10 +53,7 @@ namespace AntdUI
             {
             }
 
-            public override string ToString()
-            {
-                return "(" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + ")";
-            }
+            public override string ToString() => "(" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + ")";
         }
 
         public class Camera

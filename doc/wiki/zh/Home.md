@@ -1,194 +1,208 @@
-﻿📖 **AntdUI** Ant Design UI
+﻿📚 **AntdUI** 文档
 
-中文・[English](../en/Home.md)・[更新日志](UpdateLog.md)・[配置](Config.md)・[主题](Theme.md)・[SVG](SVG.md)
+> 基于 [dotnet Winforms](https://github.com/dotnet/winforms) 开发的界面库
 
-基于 [dotnet Winforms](https://github.com/dotnet/winforms) 开发的界面库
+中文・[English](../en/Home.md)・[更新日志](UpdateLog.md)
 
-<details>
-<summary><strong>安装</strong></summary>
-
-### NuGet安装
-
-> 👏 推荐使用NuGet快速安装
-
-#### 通过Visual Studio可视化安装
-![nuget](Img/NuGet.png)
-
-#### 通过PM命令安装
-PM> `Install-Package AntdUI`
+- [**安装** 界面库入门](Install.md)
+- [**DPI** 高分辨率模糊/字体看起来不清晰](DPI.md)
+- [**配置** 全局配置](Config.md)
+- [**主题** 浅色深色模式 自定义主题](Theme.md)
+- [**SVG** 引用/来源](SVG.md)
+- [**AOT** 本机代码](AOT.md)
 
 ---
 
-### 下载源码
-
-> 打开AntdUI的码云地址：[https://gitee.com/antdui/AntdUI](https://gitee.com/antdui/AntdUI)
-![downcode](Img/DownCode.png)
-
-解压后双击打开 `AntdUI.sln` 解决方案，将 `examples/Overview` 项目设为启动项目，`F5` 启动
-
-#### 源码下载无法编译？
-
-> 编译器要求 **Visual Studio 2022** 以及以上
-
-[Visual Studio 安装 旧版本(.NET Framework 4.0 和 4.5)](InstallOldVersionFramework.md)
-
-#### 看不到工具箱？
-
-需将 `AntdUI.csproj` 内 `TargetFrameworks` 只保留自己项目使用的框架版本，然后重新生成
-
-> 操作完还是无法显示，重启VS让其重新加载，**多重新生成确保dll是最新的**
-
-</details>
-
----
-
-<details>
-<summary>注意事项</summary>
-
-#### 源码下载无法编译❓
-
-编译器要求 **Visual Studio 2022** 以及以上，[Visual Studio 安装 旧版本(.NET Framework 4.0 和 4.5)](InstallOldVersionFramework.md)
-
-####
-
-#### 为什么设计器里面的窗口显示不全❓
-
-HDPI问题，**应使用100%缩放来设计界面**
-- 使用CMD `devenv.exe /noScale`
-- 👏 [解决 Visual Studio 中 Windows 窗体设计器的 HDPI/缩放问题](https://learn.microsoft.com/zh-cn/visualstudio/designers/disable-dpi-awareness?view=vs-2022) `<ForceDesignerDpiUnaware>true</ForceDesignerDpiUnaware>`
-- 桌面右键显示设置 将缩放修改至 `100%`
-
-####
-
-#### 那我如何启用DPI支持呢❓
-
-CORE 可以轻而易举的解决[Application.SetHighDpiMode(HighDpiMode.SystemAware)](https://learn.microsoft.com/zh-cn/dotnet/api/system.windows.forms.application.sethighdpimode?view=windowsdesktop-8.0)；`Framework` 系，需要通过清单启用 [Windows 窗体中的高 DPI 支持](https://learn.microsoft.com/zh-cn/dotnet/desktop/winforms/high-dpi-support-in-windows-forms?view=netframeworkdesktop-4.8)
-
-####
-
-#### HDPI 下为何设计器与编译后的布局不一致❓
-
-将每个`.Designer.cs` 中的 `AutoScaleMode` 移除/恢复默认值，移除 `AutoScaleFactor` 也不受影响
-
-####
-
-#### 适配DPI后字体依旧模糊❓
-
-[解决字体模糊问题](BlurredFont.md)
-
-####
-
-</details>
-
----
-
-<details open>
-<summary><strong>🧰 控件</strong></summary>
+## 🧰 控件
 
 ### 通用 `2`
 
 #### [Button 按钮](Control/Button.md)
-[![Button](Icon/Button.jpg)](Control/Button.md)
+[![Button](Icon/Button.png)](Control/Button.md)
 
 #### [FloatButton 悬浮按钮](Control/FloatButton.md)
-[![FloatButton](Icon/FloatButton.jpg)](Control/FloatButton.md)
+[![FloatButton](Icon/FloatButton.png)](Control/FloatButton.md)
 
-### 布局 `4`
+
+### 布局 `5`
 
 #### [Divider 分割线](Control/Divider.md)
-[![Divider](Icon/Divider.jpg)](Control/Divider.md)
+[![Divider](Icon/Divider.png)](Control/Divider.md)
 
 #### [StackPanel 堆栈布局](Control/StackPanel.md)
-[![StackPanel](Icon/StackPanel.jpg)](Control/StackPanel.md)
+[![StackPanel](Icon/StackPanel.png)](Control/StackPanel.md)
 
 #### [FlowPanel 流动布局](Control/FlowPanel.md)
-[![FlowPanel](Icon/FlowPanel.jpg)](Control/FlowPanel.md)
+[![FlowPanel](Icon/FlowPanel.png)](Control/FlowPanel.md)
 
 #### [GridPanel 格栅布局](Control/GridPanel.md)
-[![GridPanel](Icon/GridPanel.jpg)](Control/GridPanel.md)
+[![GridPanel](Icon/GridPanel.png)](Control/GridPanel.md)
+
+#### [Splitter 分隔面板](Control/Splitter.md)
+[![Splitter](Icon/Splitter.png)](Control/Splitter.md)
 
 
 ### 导航 `6`
 
 #### [Breadcrumb 面包屑](Control/Breadcrumb.md)
-[![Breadcrumb](Icon/Breadcrumb.jpg)](Control/Breadcrumb.md)
+[![Breadcrumb](Icon/Breadcrumb.png)](Control/Breadcrumb.md)
 
 #### [Dropdown 下拉菜单](Control/Dropdown.md)
-[![Dropdown](Icon/Dropdown.jpg)](Control/Dropdown.md)
+[![Dropdown](Icon/Dropdown.png)](Control/Dropdown.md)
 
 #### [Menu 导航菜单](Control/Menu.md)
+[![Menu](Icon/Menu.png)](Control/Menu.md)
+
 #### [PageHeader 页头](Control/PageHeader.md)
+[![PageHeader](Icon/PageHeader.png)](Control/PageHeader.md)
+
 #### [Pagination 分页](Control/Pagination.md)
+[![Pagination](Icon/Pagination.png)](Control/Pagination.md)
+
 #### [Steps 步骤条](Control/Steps.md)
+[![Steps](Icon/Steps.png)](Control/Steps.md)
 
 
 ### 数据录入 `13`
 
 #### [Checkbox 多选框](Control/Checkbox.md)
+[![Checkbox](Icon/Checkbox.png)](Control/Checkbox.md)
+
 #### [ColorPicker 颜色选择器](Control/ColorPicker.md)
+[![ColorPicker](Icon/ColorPicker.png)](Control/ColorPicker.md)
+
 #### [DatePicker 日期选择框](Control/DatePicker.md)
+[![DatePicker](Icon/DatePicker.png)](Control/DatePicker.md)
+
 #### [DatePickerRange 日期范围选择框](Control/DatePicker.md#datepickerrange)
+[![DatePickerRange](Icon/DatePickerRange.png)](Control/DatePicker.md#datepickerrange)
+
 #### [Input 输入框](Control/Input.md)
+[![Input](Icon/Input.png)](Control/Input.md)
+
 #### [InputNumber 数字输入框](Control/Input.md#inputnumber)
+[![InputNumber](Icon/InputNumber.png)](Control/Input.md#inputnumber)
+
 #### [Radio 单选框](Control/Radio.md)
+[![Radio](Icon/Radio.png)](Control/Radio.md)
+
 #### [Rate 评分](Control/Rate.md)
+[![Rate](Icon/Rate.png)](Control/Rate.md)
+
 #### [Select 选择器](Control/Select.md)
+[![Select](Icon/Select.png)](Control/Select.md)
+
 #### [Slider 滑动输入条](Control/Slider.md)
+[![Slider](Icon/Slider.png)](Control/Slider.md)
+
 #### [SliderRange 滑动范围输入条](Control/Slider.md#sliderrange)
+[![SliderRange](Icon/SliderRange.png)](Control/Slider.md#sliderrange)
+
 #### [Switch 开关](Control/Switch.md)
+[![Switch](Icon/Switch.png)](Control/Switch.md)
+
 #### [TimePicker 时间选择框](Control/TimePicker.md)
+[![TimePicker](Icon/TimePicker.png)](Control/TimePicker.md)
+
 #### [UploadDragger 拖拽上传](Control/UploadDragger.md)
-[![UploadDragger](Icon/UploadDragger.jpg)](Control/UploadDragger.md)
+[![UploadDragger](Icon/UploadDragger.png)](Control/UploadDragger.md)
 
 
-### 数据展示 `16`
+### 数据展示 `18`
 
 #### [Avatar 头像](Control/Avatar.md)
+[![Avatar](Icon/Avatar.png)](Control/Avatar.md)
+
 #### [Badge 徽标数](Control/Badge.md)
+[![Badge](Icon/Badge.png)](Control/Badge.md)
+
 #### [Calendar 日历](Control/Calendar.md)
 #### [Panel 面板](Control/Panel.md)
+[![Panel](Icon/Panel.png)](Control/Panel.md)
+
 #### [Carousel 走马灯](Control/Carousel.md)
+[![Carousel](Icon/Carousel.png)](Control/Carousel.md)
+
 #### [Collapse 折叠面板](Control/Collapse.md)
+[![Collapse](Icon/Collapse.png)](Control/Collapse.md)
+
 #### [Preview 图片预览](Control/Preview.md)
+[![Preview](Icon/Preview.png)](Control/Preview.md)
+
 #### [Popover 气泡卡片](Control/Popover.md)
+[![Popover](Icon/Popover.png)](Control/Popover.md)
+
 #### [Segmented 分段控制器](Control/Segmented.md)
+[![Segmented](Icon/Segmented.png)](Control/Segmented.md)
+
 #### [Table 表格](Control/Table.md)
+[![Table](Icon/Table.png)](Control/Table.md)
+
 #### [Tabs 标签页](Control/Tabs.md)
+[![Tabs](Icon/Tabs.png)](Control/Tabs.md)
+
 #### [Tag 标签](Control/Tag.md)
+[![Tag](Icon/Tag.png)](Control/Tag.md)
+
 #### [Timeline 时间轴](Control/Timeline.md)
+[![Timeline](Icon/Timeline.png)](Control/Timeline.md)
+
 #### [Tooltip 文字提示](Control/Tooltip.md)
+[![Tooltip](Icon/Tooltip.png)](Control/Tooltip.md)
+
 #### [Tree 树形控件](Control/Tree.md)
+[![Tree](Icon/Tree.png)](Control/Tree.md)
+
+#### [Tour 漫游式引导](Control/Tour.md)
 #### [Label 文本](Control/Label.md)
+#### [LabelTime 时间文本](Control/LabelTime.md)
+[![LabelTime](Icon/LabelTime.png)](Control/LabelTime.md)
 
 
 ### 反馈 `7`
 
 #### [Alert 警告提示](Control/Alert.md)
+[![Alert](Icon/Alert.png)](Control/Alert.md)
+
 #### [Drawer 抽屉](Control/Drawer.md)
 #### [Message 全局提示](Control/Message.md)
+[![Message](Icon/Message.png)](Control/Message.md)
+
 #### [Modal 对话框](Control/Modal.md)
+[![Modal](Icon/Modal.png)](Control/Modal.md)
+
 #### [Notification 通知提醒框](Control/Notification.md)
+[![Notification](Icon/Notification.png)](Control/Notification.md)
+
 #### [Progress 进度条](Control/Progress.md)
+[![Progress](Icon/Progress.png)](Control/Progress.md)
+
 #### [Spin 加载中](Control/Spin.md)
+[![Spin](Icon/Spin.png)](Control/Spin.md)
 
 
 ### 其他 `5`
 
-#### [WindowBar 窗口栏](Control/WindowBar.md)
-#### [Battery 电量](Control/Battery.md)
-#### [Signal 信号强度](Control/Signal.md)
-#### [ContextMenuStrip 右键菜单](Control/ContextMenuStrip.md)
-#### [Image3D 图片3D](Control/Image3D.md)
+#### ~~[WindowBar 窗口栏](Control/WindowBar.md)~~
 
-</details>
+> ⚠ 已移除 使用 [PageHeader 页头](Control/PageHeader.md) 替换
+
+#### [Battery 电量](Control/Battery.md)
+[![Battery](Icon/Battery.png)](Control/Battery.md)
+
+#### [Signal 信号强度](Control/Signal.md)
+[![Signal](Icon/Signal.png)](Control/Signal.md)
+
+#### [ContextMenuStrip 右键菜单](Control/ContextMenuStrip.md)
+[![ContextMenuStrip](Icon/ContextMenuStrip.png)](Control/ContextMenuStrip.md)
+
+#### [Image3D 图片3D](Control/Image3D.md)
+[![Image3D](Icon/Image3D.gif)](Control/Image3D.md)
 
 ---
 
-<details open>
-<summary><strong>🪟 窗口</strong></summary>
+## 🪟 窗口
 
 #### [Window](Form/Window.md)
 #### [BorderlessForm](Form/BorderlessForm.md)
 #### [BaseForm](Form/BaseForm.md)
-
-</details>
